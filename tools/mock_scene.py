@@ -9,7 +9,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 ROOT = os.path.dirname(HERE)
 
-from pixel import img_from_rows, recolor, PALETTE  # noqa: E402
+from pixel import img_from_rows, recolor, PALETTE, strip_outline, outline_img  # noqa: E402
 import character_anims as A  # noqa: E402
 import ui_and_items as U  # noqa: E402
 import art_v3 as V3  # noqa: E402
@@ -36,8 +36,13 @@ for x in range(0, W, 24):                                          # wall bricks
     d.rectangle([x, 4, x + 20, 18], outline=(44, 40, 52, 255))
 
 
-def paste(rows, x, y, scale=1.0, mirror=False):
+def paste(rows, x, y, scale=1.0, mirror=False, body=False):
+    """body=True: a player body frame -> outline stripped and re-added the way the game renders it
+    (the outline image is 1 px larger on every side, so it is placed at x-1, y-1)."""
     sp = img_from_rows(rows)
+    if body:
+        sp = outline_img(img_from_rows(strip_outline(rows)))
+        x, y = x - 1, y - 1
     if mirror:
         sp = sp.transpose(Image.FLIP_LEFT_RIGHT)
     if scale != 1.0:
@@ -51,37 +56,37 @@ def shadow(x, y, w):
 
 
 # ---------------------------------------------------------------- 1. Pluto with the Royal Canin bag, kibble flying, Coco behind
-px, py = 60, 70
-shadow(px + 4, py + 19, 18)
-paste(A.IDLE_SIDE[0], px, py)
+px, py = 60, 64                       # frames are 26 tall: feet fill on row 24
+shadow(px + 4, py + 25, 18)
+paste(A.IDLE_SIDE[0], px, py, body=True)
 # bag: PrimaryHand attach is (7, 5) px from the sprite's bottom-left; Pluto's paw sits at about (px+21, py+13)
-gx, gy = px + 21 - 7, py + 13 - (V3.GUN_H - 5)
+gx, gy = px + 21 - 7, py + 19 - (V3.GUN_H - 5)
 paste(V3.GUN_FIRE[0], gx, gy)
-paste(P.HAND, px + 19, py + 11)
+paste(P.HAND, px + 19, py + 17, body=True)
 for i, (kx, ky) in enumerate(((gx + 34, gy + 6), (gx + 46, gy + 5), (gx + 58, gy + 7), (gx + 68, gy + 11))):
     paste(U.KIBBLE, kx, ky)
 # Coco Blue trailing behind, with a crumb
-shadow(px - 26, py + 19, 14)
-paste(V4.COCO_MOVE[1], px - 28, py + 8)
-paste(U.CRUMB, px - 10, py + 20)
+shadow(px - 26, py + 25, 14)
+paste(V4.COCO_MOVE[1], px - 28, py + 14)
+paste(U.CRUMB, px - 10, py + 26)
 
 # ---------------------------------------------------------------- 2. Wet Pluto with the gravy pouch beside the bathtub
-wx, wy = 150, 66
-paste(U.BATHTUB, wx - 40, wy - 8)
-shadow(wx + 4, wy + 19, 18)
-paste(A.ALT_CLIPS['idle'][0], wx, wy)
-paste(V4.GUN2_FIRE[0], wx + 21 - 4, wy + 13 - (V4.GUN2_H - 4))
-paste(recolor(P.HAND, A.WET_MAP), wx + 19, wy + 11)
-for gxx, gyy in ((wx + 46, wy + 8), (wx + 58, wy + 10)):
+wx, wy = 150, 60
+paste(U.BATHTUB, wx - 40, wy - 2)
+shadow(wx + 4, wy + 25, 18)
+paste(A.ALT_CLIPS['idle'][0], wx, wy, body=True)
+paste(V4.GUN2_FIRE[0], wx + 21 - 4, wy + 19 - (V4.GUN2_H - 4))
+paste(recolor(P.HAND, A.WET_MAP), wx + 19, wy + 17, body=True)
+for gxx, gyy in ((wx + 46, wy + 14), (wx + 58, wy + 16)):
     paste(V4.GRAVY, gxx, gyy)
 
 # ---------------------------------------------------------------- 3. Puffed Up Pluto: halo behind, body scaled 1.25, anger marks above
-ax, ay = 228, 62
-shadow(ax + 4, ay + 19, 18)
+ax, ay = 228, 56
+shadow(ax + 4, ay + 25, 18)
 paste(FUR.fur_layer(A.CLIPS['idle'][0], 2), ax - FUR.MARGIN_X, ay - FUR.MARGIN_TOP)
-paste(A.CLIPS['idle'][0], ax, ay)
-paste(V5.ANGER_MARKS[2], ax + 12, ay - 12)
-paste(V4.FUR_PUFF[1], ax - 8, ay + 2)
+paste(A.CLIPS['idle'][0], ax, ay, body=True)
+paste(V5.ANGER_MARKS[2], ax + 12, ay - 8)
+paste(V4.FUR_PUFF[1], ax - 8, ay + 8)
 
 # ---------------------------------------------------------------- 4. Wet Food Can thrown + splash with hearts, kibble bowl
 cx, cy = 118, 122
@@ -91,7 +96,7 @@ paste(V4.LOVE_BURST[2], cx + 18, cy - 10)
 paste(V4.BOWL_PICKUP, cx + 44, cy + 8)
 # a running Pluto heading for the bowl
 shadow(cx + 70, cy + 19, 18)
-paste(A.RUN_SIDE[0], cx + 66, cy)
+paste(A.RUN_SIDE[0], cx + 66, cy - 6, body=True)
 
 # ---------------------------------------------------------------- HUD: face card + hearts (top-left), items + ammo (bottom-right)
 paste(U.framed_38(V3.FACE_34), 4, 4)

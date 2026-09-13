@@ -1,6 +1,6 @@
 """UI cards, gun, projectile and active-item art for Pluto."""
 from PIL import Image, ImageDraw, ImageFont
-from pixel import check_rect as R, img_from_rows, rotate, shift, pad, overlay, recolor, rows_from_img, PALETTE
+from pixel import check_rect as R, img_from_rows, rotate, shift_clip as shift, pad_clip as pad, overlay_clip as overlay, recolor, rows_from_img, PALETTE
 import character_anims as A
 import poses as P
 
@@ -350,7 +350,8 @@ def win_pic():
     d.rectangle([0, 0, W - 1, H - 1], outline=PALETTE['o'])
     d.rectangle([0, 52, W - 1, H - 1], fill=PALETTE['B'])
     d.line([(0, 52), (W, 52)], fill=PALETTE['b'])
-    cat = img_from_rows(A.PAWS).resize((18 * 3, 20 * 3), Image.NEAREST)
+    cat_im = img_from_rows(A.PAWS)
+    cat = cat_im.resize((cat_im.width * 3, cat_im.height * 3), Image.NEAREST)
     im.alpha_composite(cat, (30, 0))
     heart = img_from_rows(R([".oo.oo.", "oHHoHHo", "oHHHHHo", ".oHHHo.", "..oHo..", "...o..."]))
     for (x, y, s) in ((8, 10, 2), (95, 8, 2), (14, 32, 1), (100, 30, 1), (88, 40, 1)):

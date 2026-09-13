@@ -1,100 +1,129 @@
 """Derive every Alexandria CharacterAPI animation clip for Pluto from the key poses.
 
-Returns {clip_folder: [rows, rows, ...]}. Folders whose value is None get a
-cc_sprite_placeholder.png (Alexandria then falls back to the base clip).
+Canvas: 24 x 26. The 18 x 22 pose sits at x=3 (centred, so the game's uv flip does not move the
+body) and y=4 at rest; the 4 rows above are headroom for the vanilla 4-px run hop. Frames are
+anchored bottom-left by Alexandria, so the feet fill row (GROUND = 24) must be identical on every
+grounded frame; airborne frames move the pixels UP inside the canvas.
+
+Returns {clip_folder: [rows, ...]}. Folders whose value is None get a cc_sprite_placeholder.png
+(Alexandria then falls back to the base clip). FRAME_DY records the body offset of each frame of
+the derived clips so the free-hand stubs can follow the body.
 """
-from pixel import shift, overlay, erase, flip_h, recolor, squash, rotate, pad, check_rect, scale_down, shade
+from pixel import shift, overlay, flip_h, recolor, squash, rotate, pad, check_rect, scale_down
 import poses as P
 import poses_extra as X
 
-W, H = 24, P.H          # 18-wide poses sit at x=3 on a 24-wide canvas; the margins hold the tail
-BODY_DX = 3
+W, H = 24, P.H + 4
+BODY_DX, BODY_DY = 3, 4
+GROUND = H - 2                  # feet fill row (row H-1 is the transparent outline margin)
+TAIL_Y = 8                      # tail top, pose-relative (base tucks in behind the rump)
 EMPTY = ['.' * W] * H
+FRAME_DY = {}                   # clip -> [body dy per frame]
 
 
+# ---------------------------------------------------------------- composition helpers
 def with_legs(body, legs):
-    """legs: list of (rows, dx, dy) placed on the body canvas (x already in 22-wide coords)."""
+    """legs: list of (rows, x, y) placed on the canvas (canvas coords)."""
     out = body
-    for rows, dx, dy in legs:
-        out = overlay(out, rows, dx, dy)
+    for rows, x, y in legs:
+        out = overlay(out, rows, x, y)
     return out
 
 
-def with_tail(pose18, kind='side', sway=0):
-    """Widen an 18x20 pose to 22x20 and draw the ringed tail behind it.
-    side/front: tail curls up on the left (behind the body); back: on the right; none: no tail."""
-    body = pad(pose18, W, H, BODY_DX, 0)
+def with_tail(pose, kind='side', tail='A', dy=0, tail_dy=0, dx=0):
+    """Place an 18x22 pose on the canvas at (BODY_DX+dx, BODY_DY+dy) and draw the ringed tail BEHIND it.
+    kind: side/front (tail curls up on the left), back (on the right), lying (flat on the floor),
+    none. tail: 'A' / 'B' (sway variants). tail_dy lets the tail lag the body; dx knocks the body back."""
+    body = pad(pose, W, H, BODY_DX + dx, BODY_DY + dy)
     if kind == 'none':
         return body
-    tail = X.TAIL_B if sway else X.TAIL_A
+    if kind == 'lying':
+        canvas = pad(X.TAIL_FLAT, W, H, 0, BODY_DY + 19)          # on the floor, left of the body
+        return overlay(canvas, body)
+    t = X.TAIL_B if tail == 'B' else X.TAIL_A
+    ty = BODY_DY + TAIL_Y + tail_dy
     if kind == 'back':
-        canvas = pad(flip_h(tail), W, H, 16, 7)
-    elif kind == 'lying':
-        canvas = pad(X.TAIL_FLAT, W, H, 0, 15)
+        canvas = pad(flip_h(t), W, H, W - 8, ty)
     else:
-        canvas = pad(tail, W, H, 0, 7)
+        canvas = pad(t, W, H, 0, ty)
     return overlay(canvas, body)
 
 
-# ---------------------------------------------------------------- idle (breathing: 4 frames)
-def breathe(body18, kind, legs, bobs=(0, 0, 1, 0)):
-    """Body bobs down by 1px on frame 3, legs stay planted, tail tip sways on frames 3-4."""
+def record(clip, dys):
+    FRAME_DY[clip] = list(dys)
+
+
+# ---------------------------------------------------------------- idle (breathing: 4 frames @ 6 fps)
+def breathe(body, kind, legs, bobs=(0, 0, 1, 0), tail_lag=(0, 0, 0, 1), flick=None):
+    """Body settles 1 px on frame 3, feet stay planted, tail follows one frame later and sways;
+    frame 2 flicks an ear (flick = ear tip columns) so no two frames are identical."""
     out = []
     for i, b in enumerate(bobs):
-        bd = with_tail(shift(body18, 0, b), kind, sway=(i >= 2))
+        pose = P.ear_flick(body, *flick) if (flick and i == 1) else body
+        bd = with_tail(pose, kind, tail='B' if i >= 2 else 'A', dy=b, tail_dy=tail_lag[i])
         out.append(with_legs(bd, legs))
     return out
 
 
-SIDE_LEGS = [(P.SIDE_LEG, 5 + BODY_DX, 17), (P.SIDE_LEG, 12 + BODY_DX, 17)]
-FRONT_LEGS = [(P.SIDE_LEG, 3 + BODY_DX, 17), (P.SIDE_LEG, 12 + BODY_DX, 17)]
+LEG_Y = BODY_DY + P.HEAD_ROWS + P.BODY_ROWS      # canvas row where the legs start at rest (23)
+SIDE_LEGS = [(P.SIDE_LEG, 5 + BODY_DX, LEG_Y), (P.SIDE_LEG, 12 + BODY_DX, LEG_Y)]
+FRONT_LEGS = [(P.SIDE_LEG, 3 + BODY_DX, LEG_Y), (P.SIDE_LEG, 12 + BODY_DX, LEG_Y)]
 BACK_LEGS = FRONT_LEGS
 
-IDLE_SIDE = breathe(P.SIDE_BODY, 'side', SIDE_LEGS)
-IDLE_FRONT = breathe(P.FRONT_BODY, 'front', FRONT_LEGS)
-IDLE_BACK = breathe(P.BACK_BODY, 'back', BACK_LEGS)
+IDLE_SIDE = breathe(P.SIDE_BODY, 'side', SIDE_LEGS, flick=(12, 15))
+IDLE_FRONT = breathe(P.FRONT_BODY, 'front', FRONT_LEGS, flick=(11, 14))
+IDLE_BACK = breathe(P.BACK_BODY, 'back', BACK_LEGS, flick=(11, 14))
+for _c in ('idle', 'idle_forward', 'idle_backward', 'idle_bw'):
+    record(_c, (0, 0, 1, 0))
 
 
-# ---------------------------------------------------------------- run cycles (6 frames)
-def lean(body18, dx=1, upto=11):
-    """Lean the head and shoulders forward by dx pixels (rows 0..upto)."""
-    return [r if i > upto else (('.' * dx) + r)[:len(r)] if dx > 0 else r for i, r in enumerate(body18)]
+# ---------------------------------------------------------------- run cycles (6 frames @ 9 fps, vanilla hop)
+def lean(pose, dx=1, upto=P.HEAD_ROWS - 1):
+    """Lean the head forward by dx pixels (rows 0..upto) on the 24-wide canvas (never truncates)."""
+    return [(('.' * dx) + r) if i <= upto else r for i, r in enumerate(pose)]
 
 
-def run_side(body18):
-    """Vanilla-style hop cycle: contact (legs stretched wide) -> airborne (+2px, legs tucked) -> pass,
-    then the same with the other leg leading. Body leans forward; tail streams and sways."""
-    body = lean(body18)
-    hipB, hipF, hy = 5 + BODY_DX, 12 + BODY_DX, 17
+RUN_DY = (0, -4, -3, 0, -4, -3)          # contact, airborne (4 px up), pass, and again for the other leg
+RUN_TAIL_DY = (-1, -2, -4, -1, -2, -4)   # tail lags the body by one frame
+
+
+def run_side(pose):
+    """Vanilla hop: contact (legs splayed, feet on the ground) -> airborne (+4, legs tucked)
+    -> pass (+3, legs reaching down), then the same with the other leg leading."""
+    body = pad(lean(pose), W, H, BODY_DX, 0)[:H]          # lean adds 1 col; pad keeps 24 wide
+    body = [r[:W] for r in body]
+    hipB, hipF = 5 + BODY_DX, 12 + BODY_DX
     keys = [
-        (0,  [(P.LEG_BACK, hipB - 1, hy - 1), (P.LEG_FWD, hipF, hy - 1)]),        # contact, right leg forward
-        (-2, [(P.LEG_TUCK, hipB, hy), (P.LEG_TUCK, hipF, hy)]),                    # airborne
-        (-1, [(P.SIDE_LEG, hipB + 1, hy), (P.SIDE_LEG_LONG, hipF - 1, hy - 1)]),   # pass
-        (0,  [(P.LEG_FWD, hipB, hy - 1), (P.LEG_BACK, hipF - 1, hy - 1)]),        # contact, left leg forward
-        (-2, [(P.LEG_TUCK, hipB, hy), (P.LEG_TUCK, hipF, hy)]),                    # airborne
-        (-1, [(P.SIDE_LEG_LONG, hipB, hy - 1), (P.SIDE_LEG, hipF - 1, hy)]),       # pass
+        [(P.LEG_BACK, hipB - 2, LEG_Y - 1), (P.LEG_FWD, hipF, LEG_Y - 1)],        # contact, front leg forward
+        [(P.LEG_TUCK, hipB, LEG_Y), (P.LEG_TUCK, hipF, LEG_Y)],                    # airborne
+        [(P.LEG_REACH, hipB, LEG_Y - 1), (P.LEG_REACH, hipF, LEG_Y - 1)],          # pass, reaching down
+        [(P.LEG_FWD, hipB, LEG_Y - 1), (P.LEG_BACK, hipF - 2, LEG_Y - 1)],        # contact, other leg forward
+        [(P.LEG_TUCK, hipB, LEG_Y), (P.LEG_TUCK, hipF, LEG_Y)],                    # airborne
+        [(P.LEG_REACH, hipB, LEG_Y - 1), (P.LEG_REACH, hipF, LEG_Y - 1)],          # pass
     ]
     out = []
-    for i, (dy, legs) in enumerate(keys):
-        bd = with_tail(shift(body, 0, dy), 'side', sway=(i % 2))
+    for i, legs in enumerate(keys):
+        dy = RUN_DY[i]
+        bd = with_tail(lean(pose), 'side', tail='B' if i % 3 == 2 else 'A', dy=dy, tail_dy=RUN_TAIL_DY[i])
         out.append(with_legs(bd, [(rows, x, y + dy) for rows, x, y in legs]))
     return out
 
 
-def run_front(body18, kind):
-    """Front/back hop: a leg kicks out to the side on contact, both tuck when airborne."""
-    hipL, hipR, hy = 3 + BODY_DX, 12 + BODY_DX, 17
+def run_front(pose, kind):
+    """Front/back hop: a leg steps out to the side on contact, both tuck when airborne."""
+    hipL, hipR = 3 + BODY_DX, 12 + BODY_DX
     keys = [
-        (0,  [(P.LEG_BACK, hipL - 1, hy - 1), (P.SIDE_LEG, hipR, hy)]),       # left leg steps out
-        (-2, [(P.LEG_TUCK, hipL, hy), (P.LEG_TUCK, hipR, hy)]),               # airborne
-        (-1, [(P.SIDE_LEG, hipL, hy), (P.SIDE_LEG, hipR, hy)]),               # pass
-        (0,  [(P.SIDE_LEG, hipL, hy), (P.LEG_FWD, hipR, hy - 1)]),            # right leg steps out
-        (-2, [(P.LEG_TUCK, hipL, hy), (P.LEG_TUCK, hipR, hy)]),               # airborne
-        (-1, [(P.SIDE_LEG, hipL, hy), (P.SIDE_LEG, hipR, hy)]),               # pass
+        [(P.LEG_BACK, hipL - 2, LEG_Y - 1), (P.SIDE_LEG, hipR, LEG_Y)],             # left leg steps out
+        [(P.LEG_TUCK, hipL, LEG_Y), (P.LEG_TUCK, hipR, LEG_Y)],                    # airborne
+        [(P.LEG_REACH, hipL, LEG_Y - 1), (P.LEG_REACH, hipR, LEG_Y - 1)],          # pass
+        [(P.SIDE_LEG, hipL, LEG_Y), (P.LEG_FWD, hipR, LEG_Y - 1)],                  # right leg steps out
+        [(P.LEG_TUCK, hipL, LEG_Y), (P.LEG_TUCK, hipR, LEG_Y)],                    # airborne
+        [(P.LEG_REACH, hipL, LEG_Y - 1), (P.LEG_REACH, hipR, LEG_Y - 1)],          # pass
     ]
     out = []
-    for i, (dy, legs) in enumerate(keys):
-        bd = with_tail(shift(body18, 0, dy), kind, sway=(i % 2))
+    for i, legs in enumerate(keys):
+        dy = RUN_DY[i]
+        bd = with_tail(pose, kind, tail='B' if i % 3 == 2 else 'A', dy=dy, tail_dy=RUN_TAIL_DY[i])
         out.append(with_legs(bd, [(rows, x, y + dy) for rows, x, y in legs]))
     return out
 
@@ -102,38 +131,38 @@ def run_front(body18, kind):
 RUN_SIDE = run_side(P.SIDE_BODY)
 RUN_FRONT = run_front(P.FRONT_BODY, 'front')
 RUN_BACK = run_front(P.BACK_BODY, 'back')
+for _c in ('run_right', 'run_right_bw', 'run_down', 'run_up'):
+    record(_c, RUN_DY)
 
 
 # ---------------------------------------------------------------- dodge roll (9 frames)
-def dodge(body_frames):
-    """Wind-up crouch, four crisp 90-degree tumbles (ears + tail make the spin readable),
-    a second half-turn while travelling, landing squash, back to idle."""
-    idle = body_frames[0]
-    ball = pad(X.BALL, W, H, 4, 4)
-    balls = [rotate(ball, a) for a in (0, -90, -180, -270)]
+def dodge():
+    """Crouch, four crisp 90-degree tumbles of the ball (rotated BEFORE placing, so it never
+    wobbles), a second half-turn 1 px off the ground, landing squash, back to idle."""
+    balls = [pad(rotate(X.BALL, a), W, H, BODY_DX + 1, GROUND - 14) for a in (0, -90, -180, -270)]
     crouch = with_tail(X.CROUCH, 'side')
-    land = with_tail(X.LAND, 'side', sway=1)
-    return [crouch, balls[0], balls[1], balls[2], balls[3], shift(balls[0], 0, -1), balls[1], land, idle]
+    land = with_tail(X.LAND, 'side', tail='B')
+    return [crouch, balls[0], balls[1], balls[2], balls[3], shift(balls[0], 0, -1), balls[1], land, IDLE_SIDE[0]]
 
 
-DODGE = dodge(IDLE_SIDE)
-DODGE_FRONT = dodge(IDLE_FRONT)
+DODGE = dodge()
+DODGE_FRONT = DODGE
 
 
 # ---------------------------------------------------------------- death (8) / death_shot (6)
-def death(idle):
+def death():
     """Hit (mouth open, knocked back), wobble, knees buckle, tip over, flat on his side."""
-    hit = with_tail(X.HIT, 'side')
-    kneel = with_tail(X.KNEEL, 'side', sway=1)
-    tip = with_tail(X.TIP, 'side', sway=1)
+    kneel = with_tail(X.KNEEL, 'side', tail='B')
+    kneel_low = with_tail(X.KNEEL_LOW, 'side', tail='B', tail_dy=1)
+    tip = with_tail(X.TIP, 'side', tail='B', tail_dy=2)
     lying = with_tail(X.LYING, 'lying')
-    return [shift(hit, 1, 0), shift(hit, -1, 0), kneel, shift(kneel, 0, 1), tip,
+    return [with_tail(X.HIT, 'side', dx=1), with_tail(X.HIT, 'side', dx=-1), kneel, kneel_low, tip,
             shift(lying, 0, -1), lying, lying]
 
 
-DEATH = death(IDLE_SIDE[0])
-DEATH_SHOT = [shift(with_tail(X.HIT, 'side'), 2, 0), shift(with_tail(X.HIT, 'side'), -2, 0),
-              with_tail(X.KNEEL, 'side', sway=1), with_tail(X.TIP, 'side', sway=1),
+DEATH = death()
+DEATH_SHOT = [with_tail(X.HIT, 'side', dx=2), with_tail(X.HIT, 'side', dx=-2),
+              with_tail(X.KNEEL, 'side', tail='B'), with_tail(X.TIP, 'side', tail='B', tail_dy=2),
               shift(with_tail(X.LYING, 'lying'), 0, -1), with_tail(X.LYING, 'lying')]
 
 
@@ -142,20 +171,20 @@ def pitfall(idle):
     out = []
     for i, f in enumerate((0.9, 0.75, 0.6, 0.45, 0.3)):
         fr = scale_down(idle, f)
-        fr = shift(fr, 0, i + 1)
+        fr = shift(fr, 0, i + 1, allow_drop=True)      # sinking into the pit
         out.append(fr)
     return out
 
 
 PITFALL = pitfall(IDLE_SIDE[0])
 PITFALL_DOWN = pitfall(IDLE_FRONT[0])
-PITFALL_RETURN = [shift(scale_down(IDLE_FRONT[0], f), 0, d) for f, d in
+PITFALL_RETURN = [shift(scale_down(IDLE_FRONT[0], f), 0, d, allow_drop=True) for f, d in
                   ((0.3, 5), (0.45, 4), (0.6, 3), (0.75, 2), (0.9, 1), (1.0, 0), (1.0, -1), (1.0, 0))]
 
 
 # ---------------------------------------------------------------- item get (9) / chest recover (7) / select choose
 PAWS = with_legs(with_tail(P.PAWS_UP, 'front'), FRONT_LEGS)
-PAWS_BOB = with_legs(with_tail(shift(P.PAWS_UP, 0, -1), 'front', sway=1), FRONT_LEGS)
+PAWS_BOB = with_legs(with_tail(P.PAWS_UP, 'front', tail='B', dy=-1), FRONT_LEGS)
 ITEM_GET = [IDLE_FRONT[0], squash(IDLE_FRONT[0], 0.9), PAWS_BOB, PAWS, PAWS, PAWS, PAWS, PAWS_BOB, PAWS]
 CHEST_RECOVER = [IDLE_FRONT[0], PAWS_BOB, PAWS, PAWS, PAWS, PAWS_BOB, IDLE_FRONT[0]]
 SELECT_CHOOSE = [IDLE_SIDE[0], squash(IDLE_SIDE[0], 0.9), PAWS_BOB, PAWS, PAWS, PAWS]
@@ -165,12 +194,24 @@ SELECT_CHOOSE = [IDLE_SIDE[0], squash(IDLE_SIDE[0], 0.9), PAWS_BOB, PAWS, PAWS, 
 SPIN = [IDLE_FRONT[0], IDLE_SIDE[0], IDLE_BACK[0], flip_h(IDLE_SIDE[0]), IDLE_FRONT[0], IDLE_SIDE[0]]
 TIMEFALL = [IDLE_FRONT[0], IDLE_SIDE[0], IDLE_BACK[0], flip_h(IDLE_SIDE[0]),
             squash(IDLE_FRONT[0], 0.9), squash(IDLE_SIDE[0], 0.9), squash(IDLE_BACK[0], 0.9), squash(flip_h(IDLE_SIDE[0]), 0.9)]
-SPIT_OUT = [rotate(IDLE_FRONT[0], a) for a in (0, -90, -180, -270)] + [IDLE_FRONT[0], IDLE_FRONT[1]]
+
+
+def spin_out(frame):
+    """Tumble for spit_out: rotate the frame's content about its own centre, then re-seat it."""
+    out = []
+    for a in (0, -90, -180, -270):
+        r = rotate(frame, a)
+        out.append(r)
+    return out
+
+
+SPIT_OUT = spin_out(IDLE_FRONT[0]) + [IDLE_FRONT[0], IDLE_FRONT[2]]
 DOORWAY = RUN_BACK[:5]
 
 
 # ---------------------------------------------------------------- ghost (recolour + float)
-GHOST_MAP = {'W': 'c', 'w': 'c', 'x': 'c', 'B': 'C', 'b': 'D', 'd': 'D', 'L': 'c', 'l': 'c', 'P': 'c', 'p': 'C', 'G': 'c', 'g': 'D'}
+GHOST_MAP = {'W': 'c', 'w': 'c', 'x': 'c', 'B': 'C', 'b': 'D', 'd': 'D', '9': 'D', 'L': 'c', 'l': 'c',
+             'P': 'c', 'p': 'C', 'G': 'c', 'g': 'D'}
 
 
 def ghost(frames):
@@ -180,13 +221,16 @@ def ghost(frames):
 GHOST_FRONT = ghost(IDLE_FRONT)
 GHOST_BACK = ghost(IDLE_BACK)
 GHOST_SIDE = ghost(IDLE_SIDE)
-GHOST_SNEEZE = [recolor(f, GHOST_MAP) for f in (squash(IDLE_SIDE[0], 0.9), shift(IDLE_SIDE[0], 1, 0), shift(IDLE_SIDE[0], -1, 1), IDLE_SIDE[0])]
+GHOST_SNEEZE = [recolor(f, GHOST_MAP) for f in (squash(IDLE_SIDE[0], 0.9), with_legs(with_tail(P.SIDE_BODY, 'side', dx=1), SIDE_LEGS),
+                                                with_legs(with_tail(P.SIDE_BODY, 'side', dx=-1, dy=1), [(r, x - 1, y) for r, x, y in SIDE_LEGS]), IDLE_SIDE[0])]
 
 
 # ---------------------------------------------------------------- jetpack (2), pet (2), slide (1), tablekick
 JET_SIDE = [shift(IDLE_SIDE[0], 0, -1), IDLE_SIDE[0]]
 JET_FRONT = [shift(IDLE_FRONT[0], 0, -1), IDLE_FRONT[0]]
 JET_BACK = [shift(IDLE_BACK[0], 0, -1), IDLE_BACK[0]]
+for _c in ('jetpack_right', 'jetpack_right_bw', 'jetpack_down', 'jetpack_up'):
+    record(_c, (-1, 0))
 PET = [IDLE_SIDE[0], squash(IDLE_SIDE[0], 0.92)]
 SLIDE_SIDE = [squash(IDLE_SIDE[0], 0.6)]
 SLIDE_UP = [squash(IDLE_BACK[0], 0.6)]
@@ -194,6 +238,8 @@ SLIDE_DOWN = [squash(IDLE_FRONT[0], 0.6)]
 KICK_SIDE = [RUN_SIDE[0], RUN_SIDE[3], RUN_SIDE[0], IDLE_SIDE[0]]
 KICK_FRONT = [RUN_FRONT[0], RUN_FRONT[2]]
 KICK_BACK = [RUN_BACK[0], RUN_BACK[2]]
+record('tablekick_right', (0, 0, 0, 0))
+record('tablekick_down', (0, -3))
 
 
 # ---------------------------------------------------------------- the full clip table
@@ -261,28 +307,26 @@ CLIPS = {
     'timefall': TIMEFALL,
 }
 
-# --- v2 breach idles: loaf, groom, knock a bowl off a ledge
-LOAF = [with_tail(X.LOAF, 'none'), with_tail(shift(X.LOAF, 0, 1), 'none')]
-GROOM = [overlay(IDLE_SIDE[0], X.GROOM_PAW, 14, 8), overlay(IDLE_SIDE[1], X.GROOM_PAW, 14, 10),
-         overlay(IDLE_SIDE[2], X.GROOM_PAW, 15, 9), overlay(IDLE_SIDE[3], X.GROOM_PAW, 14, 10)]
+# --- breach idles: loaf, groom, knock a bowl off a ledge
+LOAF = [with_tail(X.LOAF, 'none'), with_tail(X.LOAF_DOWN, 'none')]
+GROOM = [overlay(IDLE_SIDE[0], X.GROOM_PAW, 14, 13), overlay(IDLE_SIDE[1], X.GROOM_PAW, 14, 15),
+         overlay(IDLE_SIDE[2], X.GROOM_PAW, 15, 14), overlay(IDLE_SIDE[3], X.GROOM_PAW, 14, 15)]
 
 
 def knock():
     """Side idle next to a ledge with a bowl; a paw nudges it and it falls."""
     frames = []
-    ledge_x, ledge_y = 12, 12
-    for i, (bowl_dx, bowl_dy, paw) in enumerate(((0, 0, False), (0, 0, True), (2, 1, True), (4, 4, False), (5, 8, False), (5, 8, False))):
-        base = pad(LEDGE_CANVAS, W, H)
-        base = overlay(base, X.LEDGE, ledge_x, ledge_y)
+    ledge_x, ledge_y = 10, 17
+    for i, (bowl_dx, bowl_dy, paw) in enumerate(((0, 0, False), (0, 0, True), (1, 1, True), (2, 4, False), (3, 7, False), (3, 7, False))):
+        base = overlay(EMPTY, X.LEDGE, ledge_x, ledge_y)
         base = overlay(base, X.BOWL, ledge_x + 1 + bowl_dx, ledge_y - 6 + bowl_dy)
         f = overlay(base, IDLE_SIDE[i % 4])
         if paw:
-            f = overlay(f, X.GROOM_PAW, 15, 11)
+            f = overlay(f, X.GROOM_PAW, 15, 16)
         frames.append(f)
     return frames
 
 
-LEDGE_CANVAS = ['.' * W] * H
 KNOCK = knock()
 
 BREACH_IDLES = {
@@ -294,16 +338,21 @@ BREACH_IDLES = {
     'knock': KNOCK,
 }
 
-# --- v2.1 "_hand" / "_twohands" variants: arm(s) extended toward the gun
-def armed(frames, kind, two=False):
+
+# --- "_hand" / "_twohands" variants: arm stub(s) following the body's per-frame offset
+ARM_Y = BODY_DY + P.HEAD_ROWS + 1          # shoulder row at rest
+
+
+def armed(clip, frames, kind, two=False):
+    dys = FRAME_DY.get(clip.replace('_twohands', '').replace('_hand', ''), [0] * len(frames))
     out = []
-    for f in frames:
+    for f, dy in zip(frames, dys):
         if kind == 'side':
-            g = overlay(f, P.ARM_SIDE, 19, 11)
+            g = overlay(f, P.ARM_SIDE, 19, ARM_Y + dy)
         else:  # front
-            g = overlay(f, P.ARM_FRONT_R, 19, 12)
+            g = overlay(g := f, P.ARM_FRONT_R, 19, ARM_Y + 1 + dy)
             if two:
-                g = overlay(g, flip_h(P.ARM_FRONT_R), 1, 12)
+                g = overlay(g, flip_h(P.ARM_FRONT_R), 1, ARM_Y + 1 + dy)
         out.append(g)
     return out
 
@@ -316,23 +365,17 @@ for _clip, _src, _kind in (('idle_hand', IDLE_SIDE, 'side'), ('idle_twohands', I
                            ('run_down_hand', RUN_FRONT, 'front'), ('run_down_twohands', RUN_FRONT, 'front'),
                            ('jetpack_right_hand', JET_SIDE, 'side'), ('jetpack_down_hand', JET_FRONT, 'front'),
                            ('tablekick_right_hand', KICK_SIDE, 'side'), ('tablekick_down_hand', KICK_FRONT, 'front')):
-    CLIPS[_clip] = armed(_src, _kind, two=_clip.endswith('twohands'))
+    CLIPS[_clip] = armed(_clip, _src, _kind, two=_clip.endswith('twohands'))
 # back-facing hand variants keep the placeholder fallback (arms are hidden behind the body).
 
-# --- v2 co-op death: ghost Pluto hovering over the body
-_ghost_small = scale_down(GHOST_FRONT[0], 0.6, anchor='center')
-DEATH_COOP = [overlay(with_tail(X.LYING, 'lying'), shift(_ghost_small, 8, -8 + d), 0, 0) for d in (0, -1, 0, -1)]
+# --- co-op death: ghost Pluto hovering over the body
+_ghost_small = scale_down(GHOST_FRONT[0], 0.6, anchor='bottom')
+_gtop = next(y for y, r in enumerate(_ghost_small) if any(ch != '.' for ch in r))
+DEATH_COOP = [overlay(with_tail(X.LYING, 'lying'), shift(_ghost_small, 6, 2 - _gtop + d, allow_drop=True), 0, 0) for d in (0, -1, 0, -1)]
 CLIPS['death_coop'] = DEATH_COOP
 
-# --- shading pass (rim shadow / highlight) on every drawn body frame; ghosts stay flat and translucent
-for _k, _v in list(CLIPS.items()):
-    if _v and not _k.startswith('ghost'):
-        CLIPS[_k] = [shade(f) for f in _v]
-for _k, _v in list(BREACH_IDLES.items()):
-    BREACH_IDLES[_k] = [shade(f) for f in _v]
-
-# --- v2 alt skin: Wet Pluto (fresh out of the bath): flattened dark fur, blue-grey white, grumpy eyes
-WET_MAP = {'B': 'J', 'b': 'j', 'L': 'J', 'l': 'J', 'd': 'j', 'W': 'U', 'w': 'u', 'x': 'u', 'K': 'U'}
+# --- alt skin: Wet Pluto (fresh out of the bath): flattened dark fur, blue-grey white, grumpy eyes
+WET_MAP = {'B': 'J', 'b': 'j', 'L': 'J', 'l': 'J', 'd': 'j', '9': 'j', 'W': 'U', 'w': 'u', 'x': 'u', 'K': 'U'}
 
 
 def wet(frames):

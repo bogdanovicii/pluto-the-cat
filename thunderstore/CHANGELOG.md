@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.9.0
+- Art pass A. Pluto's body frames no longer carry a baked outline: the game draws the black outline itself, so he had a double outline before. He now matches the Gungeoneers' line weight.
+- New palette from the photos: grey-brown taupe fur with hue-shifted shading, near-black mackerel stripes and tail rings that read at 1x, hazel-green eyes.
+- One head for every pose: tabby mask around the eyes, white blaze down to the muzzle, the white head spot as a clean oval on the crown, bigger pink ears, forehead M; front pose no longer wall-eyed.
+- Taller canvas (24x26) with headroom: the run is the vanilla 4-px hop (contact, airborne, pass) and the ear tips are never clipped; the tail lags the body by a frame instead of flickering; the dodge ball no longer wobbles; the death tail lies beside the body; idle gets an ear flick.
+- Removed the automatic rim shading (it was banding); shadows are hand-placed.
+- Tooling: strict canvas checks, an art lint in the build, game-like previews (runtime outline, floor, Pilot-size box, animated clips).
+
 ## 2.8.1
 - Fix: bullets passed through Coco. His companion body ignores all collisions by design; a separate bullet-blocker body now rides on him.
 - Pluto now has two active-item slots, so he starts with both the Wet Food Can and the Squeaky Toy (swap with the active-swap key).

@@ -68,8 +68,17 @@ for clip in REQUIRED_CLIPS:
     if not all(re.match(r'^[a-z0-9_]+_\d{3}\.png$', f) for f in files):
         err(f'{clip}: bad frame names {files}')
     sizes = {Image.open(os.path.join(d, f)).size for f in files}
-    if sizes != {(24, 20)}:
-        err(f'{clip}: frame sizes {sizes} != 24x20')
+    if sizes != {(24, 26)}:
+        err(f'{clip}: frame sizes {sizes} != 24x26')
+
+# body frames ship without the outline colour (the game draws it): no #1E1614 pixels allowed
+OUTLINE = (0x1E, 0x16, 0x14, 255)
+for clip in ('idle', 'run_right', 'dodge'):
+    d = os.path.join(NSS, clip)
+    for f in sorted(os.listdir(d))[:1]:
+        if OUTLINE in set(Image.open(os.path.join(d, f)).convert('RGBA').getdata()):
+            err(f'{clip}/{f}: body frame contains the baked outline colour')
+ok('body frames carry no baked outline')
 
 # breach idles must include select_idle and select_choose
 for b in ('select_idle', 'select_choose'):

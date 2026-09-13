@@ -11,11 +11,11 @@ PALETTE = {
     '.': None,
     'o': (0x1E, 0x16, 0x14, 255),  # outline
     'W': (0xFA, 0xF6, 0xEE, 255),  # white fur
-    'w': (0xD8, 0xD0, 0xC4, 255),  # white fur shade
-    'B': (0x8E, 0x71, 0x50, 255),  # tabby base
-    'b': (0x5A, 0x40, 0x28, 255),  # tabby dark stripe
-    'L': (0xB3, 0x94, 0x73, 255),  # tabby light
-    'G': (0x7D, 0xB4, 0x47, 255),  # eye green
+    'w': (0xD6, 0xCE, 0xC6, 255),  # white fur shade (cooler)
+    'B': (0x8B, 0x7A, 0x66, 255),  # tabby base: grey-brown taupe (h32 s27 v55)
+    'b': (0x3B, 0x2C, 0x24, 255),  # tabby stripe: near-black warm (v23, 20 points under the shadow)
+    'L': (0xB4, 0xA1, 0x80, 255),  # tabby light: warmer, yellower (h38 v71)
+    'G': (0x9C, 0xB6, 0x4E, 255),  # eye: hazel green (h75)
     'g': (0x1B, 0x2A, 0x1B, 255),  # pupil
     'P': (0xE8, 0xA0, 0xB0, 255),  # pink nose / ear
     'p': (0xD4, 0x6A, 0x7A, 255),  # tongue / dark pink
@@ -50,12 +50,12 @@ PALETTE = {
     'U': (0xD6, 0xDC, 0xE6, 255),  # wet white (blue-grey)
     'u': (0xA9, 0xB2, 0xC0, 255),  # wet white shade
     'F': (0x7F, 0xB4, 0xD8, 255),  # bath water
-    'd': (0x6E, 0x52, 0x38, 255),  # tabby shadow (hue-shifted toward red)
-    'l': (0xCD, 0xB2, 0x8E, 255),  # tabby highlight
-    'x': (0xBF, 0xB2, 0xA2, 255),  # white deep shade (chin / under-jaw)
-    'e': (0xA9, 0xD6, 0x62, 255),  # eye light green
+    'd': (0x66, 0x52, 0x4A, 255),  # tabby shadow: cooler, greyer (h17 s27 v40)
+    'l': (0xCB, 0xB9, 0x9A, 255),  # tabby highlight (cards only)
+    'x': (0xB9, 0xB0, 0xA8, 255),  # white deep shade (chin / under-jaw)
+    'e': (0xC3, 0xD3, 0x7A, 255),  # eye light (cards only)
     'q': (0xF5, 0xC6, 0xD0, 255),  # pink light (inner ear, nose highlight)
-    '9': (0x3A, 0x2A, 0x20, 255),  # deep shadow line (folds)
+    '9': (0x2A, 0x1F, 0x1A, 255),  # deep shadow line (folds), darker than the stripe
     '1': (0xB3, 0xD4, 0xF2, 255),  # plush blue light
     '2': (0x86, 0xB6, 0xE6, 255),  # plush blue base
     '3': (0x5C, 0x8E, 0xC2, 255),  # plush blue dark
@@ -89,21 +89,32 @@ def rows_from_img(im, palette=PALETTE):
     return out
 
 
-def pad(rows, w, h, dx=0, dy=0):
-    """Place rows on a w x h transparent canvas, offset by (dx, dy)."""
-    rw = max(len(r) for r in rows)
+class DroppedPixels(ValueError):
+    """A transform pushed drawn pixels off the canvas (the ear-clipping bug class)."""
+
+
+def pad(rows, w, h, dx=0, dy=0, allow_drop=False):
+    """Place rows on a w x h transparent canvas, offset by (dx, dy). Raises DroppedPixels if a
+    drawn pixel would fall outside the canvas, unless allow_drop=True (sinking into a pit, etc.)."""
     canvas = [['.'] * w for _ in range(h)]
+    dropped = 0
     for y, row in enumerate(rows):
         for x, ch in enumerate(row):
+            if ch == '.':
+                continue
             X, Y = x + dx, y + dy
-            if ch != '.' and 0 <= X < w and 0 <= Y < h:
+            if 0 <= X < w and 0 <= Y < h:
                 canvas[Y][X] = ch
+            else:
+                dropped += 1
+    if dropped and not allow_drop:
+        raise DroppedPixels(f'pad: {dropped} drawn pixel(s) fell off the {w}x{h} canvas at offset ({dx},{dy})')
     return [''.join(r) for r in canvas]
 
 
-def shift(rows, dx=0, dy=0):
+def shift(rows, dx=0, dy=0, allow_drop=False):
     h = len(rows); w = max(len(r) for r in rows)
-    return pad(rows, w, h, dx, dy)
+    return pad(rows, w, h, dx, dy, allow_drop=allow_drop)
 
 
 def flip_h(rows):
@@ -114,16 +125,37 @@ def flip_v(rows):
     return rows[::-1]
 
 
-def overlay(base, top, dx=0, dy=0):
-    """Draw non-transparent pixels of top onto base at offset."""
+def overlay(base, top, dx=0, dy=0, allow_drop=False):
+    """Draw non-transparent pixels of top onto base at offset. Raises DroppedPixels if part of
+    top falls outside base (a part placed off the canvas), unless allow_drop=True."""
     h = len(base); w = max(len(r) for r in base)
     canvas = [list(r.ljust(w, '.')) for r in base]
+    dropped = 0
     for y, row in enumerate(top):
         for x, ch in enumerate(row):
+            if ch == '.':
+                continue
             X, Y = x + dx, y + dy
-            if ch != '.' and 0 <= X < w and 0 <= Y < h:
+            if 0 <= X < w and 0 <= Y < h:
                 canvas[Y][X] = ch
+            else:
+                dropped += 1
+    if dropped and not allow_drop:
+        raise DroppedPixels(f'overlay: {dropped} pixel(s) of the part fell off the {w}x{h} canvas at ({dx},{dy})')
     return [''.join(r) for r in canvas]
+
+
+def overlay_clip(base, top, dx=0, dy=0):
+    """overlay() that clips silently: for item/VFX/card art where parts may leave the canvas."""
+    return overlay(base, top, dx, dy, allow_drop=True)
+
+
+def pad_clip(rows, w, h, dx=0, dy=0):
+    return pad(rows, w, h, dx, dy, allow_drop=True)
+
+
+def shift_clip(rows, dx=0, dy=0):
+    return shift(rows, dx, dy, allow_drop=True)
 
 
 def erase(base, top, dx=0, dy=0):
@@ -142,32 +174,52 @@ def recolor(rows, mapping):
     return [''.join(mapping.get(ch, ch) for ch in r) for r in rows]
 
 
+def _content_rows(rows):
+    ys = [y for y, r in enumerate(rows) if any(ch != '.' for ch in r)]
+    return (ys[0], ys[-1]) if ys else (None, None)
+
+
 def squash(rows, factor_h):
-    """Vertically squash sprite toward its bottom (nearest-neighbour row resample)."""
-    h = len(rows)
-    nh = max(1, round(h * factor_h))
-    out = []
+    """Vertically squash the drawn content toward its bottom row (nearest-neighbour, sampled from the
+    bottom so the bottom row - the feet outline - is always kept and never moves)."""
+    top, bottom = _content_rows(rows)
+    if top is None:
+        return rows
+    n = bottom - top + 1
+    nh = max(1, round(n * factor_h))
+    w = max(len(r) for r in rows)
+    out = ['.' * w] * len(rows)
     for y in range(nh):
-        src = min(h - 1, int(y / factor_h))
-        out.append(rows[src])
-    return pad(out, max(len(r) for r in rows), h, 0, h - nh)
+        src = bottom - int((nh - 1 - y) / factor_h)
+        out[bottom - (nh - 1 - y)] = rows[max(top, src)]
+    return out
 
 
 def scale_down(rows, factor, anchor='bottom'):
-    """Shrink the whole sprite (both axes) and keep it bottom-centred on the same canvas."""
-    im = img_from_rows(rows)
-    bbox = im.getbbox()
-    if not bbox:
+    """Shrink the drawn content on both axes (nearest-neighbour). anchor='bottom' keeps the bottom row
+    and the horizontal centre; 'center' keeps the centre of the content box."""
+    top, bottom = _content_rows(rows)
+    if top is None:
         return rows
-    crop = im.crop(bbox)
-    nw, nh = max(1, round(crop.width * factor)), max(1, round(crop.height * factor))
-    small = crop.resize((nw, nh), Image.NEAREST)
-    out = Image.new('RGBA', im.size, (0, 0, 0, 0))
-    cx = (bbox[0] + bbox[2]) // 2
-    x = cx - nw // 2
-    y = bbox[3] - nh if anchor == 'bottom' else (bbox[1] + bbox[3]) // 2 - nh // 2
-    out.paste(small, (x, y))
-    return rows_from_img(out)
+    w = max(len(r) for r in rows)
+    xs = [x for r in rows for x, ch in enumerate(r) if ch != '.']
+    left, right = min(xs), max(xs)
+    n, m = bottom - top + 1, right - left + 1
+    nh, nw = max(1, round(n * factor)), max(1, round(m * factor))
+    out = [['.'] * w for _ in rows]
+    cx = (left + right) // 2
+    x0 = cx - nw // 2
+    y0 = bottom - nh + 1 if anchor == 'bottom' else (top + bottom) // 2 - nh // 2
+    for y in range(nh):
+        sy = bottom - int((nh - 1 - y) / factor)
+        sy = max(top, sy)
+        for x in range(nw):
+            sx = left + min(m - 1, int(x / factor))
+            ch = rows[sy][sx] if sx < len(rows[sy]) else '.'
+            X, Y = x0 + x, y0 + y
+            if 0 <= X < w and 0 <= Y < len(rows):
+                out[Y][X] = ch
+    return [''.join(r) for r in out]
 
 
 def rotate(rows, angle):
@@ -218,40 +270,31 @@ def check_rect(rows):
     return rows
 
 
-def shade(rows, protect='GgPpe', bottom_x_from=0.6):
-    """Rim-shading pass: shadow tone on pixels whose bottom or right neighbour is outline/transparent,
-    highlight tone on tabby pixels whose top or left neighbour is outline/transparent.
-    Pixels next to eyes/nose (protect) are left alone. Bottom white rim in the lower part of the
-    sprite uses the deep shade ('x'), elsewhere the light shade ('w')."""
-    h = len(rows); w = max(len(r) for r in rows)
-    g = [list(r.ljust(w, '.')) for r in rows]
-    out = [row[:] for row in g]
+def strip_outline(rows):
+    """Body frames ship WITHOUT an outline: Enter the Gungeon draws a 1-px black outline around the
+    player sprite (and hands) at runtime (SpriteOutlineManager in PlayerController.Start). A baked
+    outline would double it. 'o' becomes transparent; interior 'o' lines render black in game."""
+    return [''.join('.' if ch == 'o' else ch for ch in r) for r in rows]
 
-    def at(x, y):
-        return g[y][x] if 0 <= x < w and 0 <= y < h else '.'
 
-    def edge(ch):
-        return ch in 'o.'
-
+def outline_img(im, color=(0, 0, 0, 255), threshold=12):
+    """Preview-only: add a 1-px 4-neighbour outline around opaque pixels, like the game does."""
+    im = im.convert('RGBA')
+    w, h = im.size
+    src = im.load()
+    out = Image.new('RGBA', (w + 2, h + 2), (0, 0, 0, 0))
+    dst = out.load()
     for y in range(h):
         for x in range(w):
-            ch = g[y][x]
-            if ch not in 'BWL':
+            if src[x, y][3] > threshold:
+                dst[x + 1, y + 1] = src[x, y]
+    for y in range(h + 2):
+        for x in range(w + 2):
+            if dst[x, y][3] > threshold:
                 continue
-            if any(at(x + dx, y + dy) in protect for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
-                continue
-            below, right, above, left = at(x, y + 1), at(x + 1, y), at(x, y - 1), at(x - 1, y)
-            if ch == 'B':
-                if edge(below) or edge(right):
-                    out[y][x] = 'd'
-                elif edge(above) or edge(left):
-                    out[y][x] = 'L'
-            elif ch == 'L':
-                if edge(below) or edge(right):
-                    out[y][x] = 'd'
-            elif ch == 'W':
-                if edge(below):
-                    out[y][x] = 'x' if y >= h * bottom_x_from else 'w'
-                elif edge(right):
-                    out[y][x] = 'w'
-    return [''.join(r) for r in out]
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < w + 2 and 0 <= ny < h + 2 and dst[nx, ny][3] > threshold and dst[nx, ny] != color:
+                    dst[x, y] = color
+                    break
+    return out

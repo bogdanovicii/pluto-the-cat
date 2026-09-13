@@ -7,7 +7,7 @@ Pixel-art craft rules applied here (the same ones vanilla Gungeon sprites follow
 - eyes get a light iris tone, a dark pupil and a single white glint;
 - folds and seams are drawn as 1-px lines of the shade tone, not as outlines.
 """
-from pixel import check_rect as R, overlay, pad, rotate, shift, flip_h
+from pixel import check_rect as R, overlay_clip as overlay, pad_clip as pad, rotate, shift_clip as shift, flip_h
 
 # ---------------------------------------------------------------- face card 34x34: cropped, zoomed head like vanilla portraits
 FACE_34 = R([

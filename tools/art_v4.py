@@ -3,7 +3,7 @@ pop-in select card.
 
 Palette keys added in pixel.py for this file: 1/2/3 plush blue (light/base/dark).
 """
-from pixel import check_rect as R, overlay, pad, shift, flip_h, scale_down, squash
+from pixel import check_rect as R, overlay_clip as overlay, pad_clip as pad, shift_clip as shift, flip_h, scale_down, squash
 from art_v3 import CROWN, blank, put, row, col
 
 # ---------------------------------------------------------------- Coco Blue: round blue plush cat, 16 x 13
