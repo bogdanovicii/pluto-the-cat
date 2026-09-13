@@ -10,30 +10,30 @@ Separate project in `PlutoVetVisit/`; never touch `PlutoTheCat/`, `tools/`, `thu
 - [x] Draft design spec written
 
 ## Awaiting user approval of the design
-- [ ] User approves spec (story, attack set, room tiles, integration path)
-- [ ] Write implementation plan (writing-plans skill)
+- [x] User approves spec (story, attack set, room tiles, integration path)
+- [x] Write implementation plan (writing-plans skill)
 
 ## Milestone 1 — plumbing
-- [ ] `PlutoVetVisit/` csproj, packages, build.sh, validate.py, thunderstore test manifest
-- [ ] PastPlugin attaches past to Pluto via `CharacterBuilder.storedCharacters["playerpluto"]`
-- [ ] PastLevel: GameLevelDefinition `tt_pluto_past`, Harmony patches, Soldier template + hygiene
-- [ ] VetFlow one-node flow, empty placeholder room
-- [ ] VetVisitController: fade-in + timed ending (flag, credits, win page, pastWinPic)
-- [ ] In-game test 1 (Steam machine): bullet from Blacksmith, `load_level tt_pluto_past`, ending, Breach card
+- [x] `PlutoVetVisit/` csproj, packages, build.sh, validate.py, thunderstore test manifest
+- [x] PastPlugin attaches past to Pluto via `CharacterBuilder.storedCharacters["playerpluto"]`
+- [x] PastLevel: GameLevelDefinition `tt_pluto_past`, Harmony patches, Soldier template + hygiene
+- [x] VetFlow one-node flow, empty placeholder room
+- [x] VetVisitController: fade-in + timed ending (flag, credits, win page, pastWinPic)
+- [ ] In-game test 1 (Steam machine): bullet from Blacksmith, `load_level tt_pluto_past`, ending, Breach card — result: pending
 
 ## Milestone 2 — clinic room
-- [ ] clinic_room.py ASCII map -> vet_clinic.newroom + preview
-- [ ] ClinicObjects (carrier, table, cabinets, scale) + player start + intro dialogue
-- [ ] In-game test 2
+- [x] clinic_room.py ASCII map -> vet_clinic.newroom + preview
+- [x] ClinicObjects (carrier, table, cabinets, scale) + player start + intro dialogue
+- [ ] In-game test 2 — result: pending
 
 ## Milestone 3 — The Vet
-- [ ] vet_poses.py clips (idle, move, tell, fire, intro, die), boss card
-- [ ] VetBoss prefab + Booster Shot + Spray Bottle + intro + health bar + death -> ending
-- [ ] In-game test 3
+- [x] vet_poses.py clips (idle, move, tell, fire, intro, die), boss card
+- [x] VetBoss prefab + Booster Shot + Spray Bottle + intro + health bar + death -> ending
+- [ ] In-game test 3 — result: pending
 
 ## Milestone 4 — polish
-- [ ] Pill Time, Cone of Shame, phase-2 tempo, projectile sprites, win picture, music, balance
-- [ ] Mid-game save hygiene verified, KILLED_PAST persistence verified
+- [x] Pill Time, Cone of Shame, phase-2 tempo, projectile sprites, win picture, music, balance
+- [ ] Mid-game save hygiene verified, KILLED_PAST persistence verified — result: pending
 
 ## Milestone 5 — integration (separate approval)
 - [ ] Merge into PlutoTheCat (or ship second DLL), version bump, changelog

@@ -250,3 +250,62 @@ ARM_FRONT_R = R([  # front view: right arm out to the side
 "oBBo",
 ".oo.",
 ])
+
+
+# ---------------------------------------------------------------- back-view side ("_bw": aiming up-diagonal)
+# The player sees Pluto from behind at an angle: back of the head, one pink ear, no eyes, a sliver of
+# muzzle and chest on the near side, more stripes on the flank.
+HEAD_BW = R([
+"......oo.....oo...",  # 0
+".....oBBo...oBBo..",  # 1
+".....oBBBoooPPBo..",  # 2  far ear shows its back, near ear shows pink
+"....oBBBBBBBBPBBo.",  # 3
+"...oBbBBBBBBBBbddo",  # 4
+"...oBBbBBWWWBbBddo",  # 5  spot
+"...oBBBBBWWWBBBddo",  # 6
+"...oBBBBBBBBBBBBBo",  # 7  looking away: no eyes
+"...oBBbBBbBBBBBBBo",  # 8  neck stripes
+"...oBBBBBBBBBBWWBo",  # 9  a bit of cheek
+"...oBBBBBBBBBWWWwo",  # 10 muzzle peeking out
+"....oBBBBBBBWWWwo.",  # 11
+])
+BODY_BW = R([
+"....oBBBBBBWWWBBo.",  # 12
+"...oBbBBbBBBWWWBo.",  # 13
+"...oBbBBbBBBWWWBo.",  # 14
+"...oBBbBBbBBWWWBo.",  # 15
+"...oBBbBBbBBBWWBo.",  # 16
+"...oBBBBBBBBBwwBo.",  # 17
+"....oBddBBBBwwBo..",  # 18
+])
+BW_BODY = stack(HEAD_BW, BODY_BW, EMPTY_LEGS)
+
+# Free paw resting on the chest for the "_hand" (one-handed gun: the other paw is the game's hand
+# sprite on the gun) and "_twohands" (no gun: both paws) body variants. A 'w' rim keeps it readable
+# on the white chest.
+PAW = R([
+".xx.",
+"xWWx",
+"xWWx",
+".xx.",
+])
+
+
+def ears_back(rows, tips=((6, 7), (13, 14))):
+    """Airborne run frames: both ear tips (rows 0-1, columns x0..x1) blow back one pixel (to the left)."""
+    g = [list(r) for r in rows]
+    for y in (0, 1):
+        for x0, x1 in tips:
+            seg = g[y][x0 - 1:x1 + 2]                 # one extra column on each side
+            if seg[0] == '.':
+                g[y][x0 - 1:x1 + 1] = seg[1:]         # shift the tip left by one
+                g[y][x1 + 1] = '.'
+    return [''.join(r) for r in g]
+
+
+def squashed(head, body, legs, head_dy=1):
+    """Idle squash: the head sinks head_dy rows into the shoulders while the belly and feet stay put."""
+    rows = pad(head, W, H, 0, head_dy)
+    rows = overlay(rows, body, 0, HEAD_ROWS)
+    rows = overlay(rows, legs, 0, HEAD_ROWS + BODY_ROWS)
+    return R(rows)

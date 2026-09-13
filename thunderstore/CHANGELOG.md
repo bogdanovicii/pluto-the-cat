@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.10.0
+- Art pass B, animation keys. Idle is a real squash (head sinks into the shoulders, feet and belly stay put) with an ear flick; in the run the head lags a row and the ears blow back on the airborne frames.
+- Dodge roll: crouch, stretched leap, three tumbles, low ball, landing squash, 1-px overshoot, idle.
+- Death: the flat tail drops last. Pit fall: crouch, two shrinks, then the two single-colour blips like vanilla; climbing out mirrors it with an overshoot. Table slide is a hand-drawn low pose with wide eyes.
+- New back-view side poses for aiming up-diagonally (idle_bw, run_right_bw, jetpack_right_bw): back of the head, one pink ear, striped flank.
+- Hand variants follow the game's meaning: with a one-handed gun the body shows the free paw on the chest (the paw on the gun is the game's hand sprite); with no gun both paws show.
+
 ## 2.9.0
 - Art pass A. Pluto's body frames no longer carry a baked outline: the game draws the black outline itself, so he had a double outline before. He now matches the Gungeoneers' line weight.
 - New palette from the photos: grey-brown taupe fur with hue-shifted shading, near-black mackerel stripes and tail rings that read at 1x, hazel-green eyes.

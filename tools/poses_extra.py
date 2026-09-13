@@ -214,3 +214,34 @@ LEDGE = R([
 "oXXXXXXXXXXo",
 "oooooooooooo",
 ])
+
+
+# ---------------------------------------------------------------- dodge: stretched leap ball (14 x 18) derived from BALL
+def stretch_v(rows, dup_rows=(5, 10), drop_cols=(1, 14)):
+    out = []
+    for y, r in enumerate(rows):
+        r2 = ''.join(ch for x, ch in enumerate(r) if x not in drop_cols)
+        out.append(r2)
+        if y in dup_rows:
+            out.append(r2)
+    return R(out)
+
+
+BALL_STRETCH = stretch_v(BALL)
+
+# Belly slide over a table: low, eyes wide, ears back.
+SLIDE = low_pose(3, 'wide')
+
+# Pitfall blips (vanilla ends the pit fall with two single-colour crosses).
+CROSS5 = R([
+"..b..",
+"..b..",
+"bbbbb",
+"..b..",
+"..b..",
+])
+CROSS3 = R([
+".b.",
+"bbb",
+".b.",
+])

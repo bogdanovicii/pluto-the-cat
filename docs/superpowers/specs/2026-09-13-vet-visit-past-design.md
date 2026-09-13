@@ -213,10 +213,14 @@ Two sources, one rule: every in-game PNG is produced by a script from a checked-
 1. **Plumbing.** Project builds. Blacksmith gives Pluto the Bullet. `load_level tt_pluto_past` loads an empty lab-tiled
    room, fades in, and a timer triggers the full ending: flag, credits tube, win page with Pluto's win picture, Breach
    card says Past Killed. This retires the three biggest unknowns (Ark hook, level loading, ending) before any art exists.
+   *(2026-09-14: built and reviewed; in-game result pending.)*
 2. **Clinic.** ASCII room, custom objects, player start beside the carrier, intro dialogue.
+   *(2026-09-14: built and reviewed; in-game result pending.)*
 3. **The Vet.** Boss with Booster Shot and Spray Bottle, intro card, health bar, death triggers the ending.
+   *(2026-09-14: built and reviewed; in-game result pending.)*
 4. **Polish.** Pill Time, Cone of Shame and the phase-2 tempo, projectile sprites, final boss card and win picture,
    music choice, balance pass, mid-game save hygiene verified, README/CHANGELOG.
+   *(2026-09-14: built and reviewed; in-game result pending.)*
 5. **Integration** (decided: merge into one DLL, done only when milestones 1-4 pass in game and the other session is
    not mid-edit): move `src/` into `PlutoTheCat/src/Past/` and `Resources/` under `PlutoTheCat/Resources/Past/`
    (namespace `PlutoTheCat`, resource roots re-pointed), add `Step("past", VetVisit.Init)` after the character build in
