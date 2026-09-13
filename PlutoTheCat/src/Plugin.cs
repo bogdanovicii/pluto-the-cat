@@ -17,7 +17,7 @@ namespace PlutoTheCat
     {
         public const string GUID = "bogdan.etg.plutothecat";
         public const string NAME = "Pluto The Cat";
-        public const string VERSION = "2.5.0";
+        public const string VERSION = "2.6.0";
 
         // Embedded-resource roots (RootNamespace + folder path, '/' separated).
         public const string SPRITE_ROOT = "PlutoTheCat/Resources/SpriteRoot";
@@ -56,6 +56,7 @@ namespace PlutoTheCat
             Step("active", WetFoodCanItem.Init);
             Step("passive", NineLivesItem.Init);
             Step("coco blue", CocoBlueItem.Init);
+            Step("squeaky toy", SqueakyToyItem.Init);
             Step("puffed up", PuffedUpItem.Init);
             Step("kibble bowl", KibbleBowlPickup.Init);
 

@@ -1,6 +1,6 @@
-# The Vet Visit — Pluto's custom past (design spec, DRAFT awaiting approval)
+# The Vet Visit — Pluto's custom past (design spec)
 
-Status: draft, 2026-09-13. Nothing is built yet. Research behind every claim: `docs/research/03-alexandria-custom-past.md`,
+Status: approved by the user on 2026-09-13 (story, white vet-lab room with cat toys and syringes, custom art, merge into one DLL). Research behind every claim: `docs/research/03-alexandria-custom-past.md`,
 `04-past-level-and-dungeonapi.md`, `05-custom-boss-research.md`.
 
 ## 1. Goal
@@ -16,10 +16,11 @@ only when it is finished and verified in game (section 12).
 
 ## 2. Story
 
-Pluto's regret is the day he was taken to the clinic as a kitten. He has eaten "Sterilised 37" ever since. In the past
-he arrives in his carrier, The Vet greets him ("Just a little snip. You won't feel a thing."), and Pluto refuses.
-Boss card: **THE VET — Doctor's Orders**. Win picture: Pluto sitting on the exam table, the Vet on the floor, the cone of
-shame kicked into a corner. The dialogue lines are placeholders; they are the user's to rewrite (section 13).
+Pluto's regret is the day he was taken to the vet to be neutered. He has eaten "Sterilised 37" ever since. In the past
+he arrives in his carrier, The Vet greets him ("Right on time, Pluto. Just a little snip. You won't feel a thing."),
+Pluto hisses, and the fight is Pluto stopping the operation. Boss card: **THE VET — Doctor's Orders**. Win picture:
+Pluto, intact and smug, sitting on the exam table; the Vet flat on the floor; the cone of shame kicked into a corner.
+The win page uses the vanilla "past killed" text. Lines live in the config file so they can be rewritten without a rebuild.
 
 ## 3. How a custom past works (verified against the shipped Alexandria 0.5.10 DLL)
 
@@ -102,18 +103,21 @@ is a second sealed node using the stock `exit_room_basic` room.
 
 - Drawn as an ASCII cell map in Python (top row first, flipped on export because the loader indexes `tileInfo[x + y*width]`
   with y = 0 at the bottom). Legend follows Alexandria's `.newroom` reader: `2` wall, `1` floor, `3` pit, `X` floor with
-  no pickups, `6-9` diagonal walls. About 26 x 18 cells: waiting area with the carrier at the south, exam table in the
-  middle, cabinets along the north wall, a scale and a poster as decor.
+  no pickups, `6-9` diagonal walls. About 26 x 18 cells. The look is a white veterinary lab: white tiled floor and walls
+  (Marine lab tileset), a steel exam table in the middle, glass cabinets with jars and syringe boxes along the north wall,
+  a syringe tray on a cart beside the table, a sink counter, a pet scale, Pluto's carrier in the waiting corner at the
+  south, and cat toys scattered on the floor (a toy mouse, a ball, a feather wand, a small scratching post) plus an
+  anatomy poster and the cone of shame. Toys and small props are decorative (no collider); furniture blocks movement.
 - Exported to `Resources/Rooms/vet_clinic.newroom` with `category "ENTRANCE"`, `floors []` (so `DungeonHandler.Register`
   does not push it into any vanilla room table), `visualSubtype` from config, one south exit (unused, harmless) and
   the placeables list referencing custom object names.
 - Loaded with `RoomFactory.BuildNewRoomFromResource(...)`, then `room.category = ENTRANCE` is forced in code (the guide's
   warning) and `room.name = "pluto_vet_clinic"`.
-- Custom objects (`ClinicObjects`): GameObjects with a `tk2dSprite` from an embedded PNG and a `SpeculativeRigidbody`
-  with one manual `PixelCollider`: cabinets and carrier on `HighObstacle` (block everything), exam table on `LowObstacle`
-  (blocks walking, bullets fly over it, so the Vet shoots across it). Registered in `StaticReferences.customObjects`
-  under `pluto_carrier`, `pluto_exam_table`, `pluto_cabinet`, `pluto_scale`; made fake prefabs with
-  `FakePrefab.MakeFakePrefab` so they do not run until placed.
+- Custom objects (`ClinicObjects`): GameObjects with a `tk2dSprite` from an embedded PNG and, for furniture, a
+  `SpeculativeRigidbody` with one manual `PixelCollider`: cabinets, sink counter and carrier on `HighObstacle` (block
+  everything), exam table and cart on `LowObstacle` (block walking, bullets fly over, so the Vet shoots across the table).
+  Decor (toys, poster, cone, tray) has no collider. Registered in `StaticReferences.customObjects` under `pluto_<name>`;
+  made fake prefabs with `FakePrefab.MakeFakePrefab` so they do not run until placed.
 - The past controller is also a placed custom object (`pluto_past_controller`, empty GameObject + component), so it starts
   with the room and needs no extra hook.
 - The boss is NOT placed by the room. The controller spawns it after the dialogue (section 9), which avoids a dormant
@@ -187,12 +191,22 @@ extended enum is a checklist item, not assumed.
 jumps straight into the past from the Breach; `spawn pluto:the_vet` tests the boss anywhere. `vet_check.sh` greps the
 log for `[VetVisit]` lines and prints a verdict.
 
-## 11. Art (all ASCII maps, regenerated by `tools/make_art.py`)
+## 11. Art: Gemini plus the pixel pipeline (all custom, regenerated by `tools/make_art.py`)
 
-The Vet (6 clips, ~34 frames at 32 x 40), boss card 427 x 240 (composed with PIL from a large face + text, like the
-existing `boss_card()`), win picture 115 x 71, room objects (carrier 32 x 24, exam table 48 x 32, cabinet 32 x 40,
-scale 16 x 16, poster 16 x 24), projectiles (syringe 8 x 4, droplet 4 x 4, pill 6 x 4) for the polish milestone, and a
-room preview PNG rendered from the cell map in `PlutoVetVisit/docs/preview/`.
+Two sources, one rule: every in-game PNG is produced by a script from a checked-in input, never hand-edited.
+
+- **Gemini (image-generation skill, `GEMINI_API_KEY` from the environment or `PlutoVetVisit/.env`)** for the painted
+  pieces and for references: the boss card (427 x 240, generated 16:9 and cropped), the win picture (115 x 71, generated
+  3:2, downscaled, optionally palette-quantised), a character sheet of The Vet and a clinic concept used as references
+  for the pixel sprites, and an experiment lane for sprite frames (generate large, chroma-key the background, downscale
+  with nearest, quantise to the palette, inspect; keep only if they read well at 32 x 40). `tools/gemini_art.py` runs
+  the prompts from a table, skips files that already exist, and writes to `PlutoVetVisit/reference/gemini/`; the key is
+  never logged. Without a key the script prints what it would generate and the pixel fallbacks are used.
+- **ASCII pixel maps** (same toolkit as the main mod: `tools/pixel.py` imported read-only) for everything animated or
+  collision-sensitive: The Vet's 6 clips (~34 frames at 32 x 40, feet on one row), room objects (carrier 32 x 24,
+  exam table 48 x 32, cabinet 32 x 40, cart 24 x 24, sink 32 x 32, scale 16 x 16, poster 16 x 24, cone 12 x 10,
+  toys 8-16 px), projectiles (syringe 8 x 4, droplet 4 x 4, pill 6 x 4), and the room preview PNG rendered from the cell
+  map into `PlutoVetVisit/docs/preview/`.
 
 ## 12. Milestones (each ends with a test zip for the Steam machine and a checklist)
 
@@ -203,17 +217,19 @@ room preview PNG rendered from the cell map in `PlutoVetVisit/docs/preview/`.
 3. **The Vet.** Boss with Booster Shot and Spray Bottle, intro card, health bar, death triggers the ending.
 4. **Polish.** Pill Time, Cone of Shame and the phase-2 tempo, projectile sprites, final boss card and win picture,
    music choice, balance pass, mid-game save hygiene verified, README/CHANGELOG.
-5. **Integration** (separate approval): either move `src/` and `Resources/` into `PlutoTheCat/` (namespace change, one
-   `Step("past", ...)` in `GMStart`, `hasCustomPast: true, customPast: "tt_pluto_past"`) or ship `PlutoVetVisit.dll` as a
-   second plugin in the same package. Recommendation: merge, one DLL.
+5. **Integration** (decided: merge into one DLL, done only when milestones 1-4 pass in game and the other session is
+   not mid-edit): move `src/` into `PlutoTheCat/src/Past/` and `Resources/` under `PlutoTheCat/Resources/Past/`
+   (namespace `PlutoTheCat`, resource roots re-pointed), add `Step("past", VetVisit.Init)` after the character build in
+   `GMStart`, pass `hasCustomPast: true, customPast: "tt_pluto_past"` to `BuildCharacter`, merge the art tools into
+   `tools/make_art.py`, extend `validate.py`, bump the version and changelog. The standalone project is then deleted.
 
-## 13. Decisions for the user (defaults in bold)
+## 13. Decisions (settled 2026-09-13)
 
-1. Story and lines: **the snip** premise and the placeholder dialogue, or something else.
-2. Attack set: **the four above**, or swap one (e.g. a thermometer, a towel-burrito grab).
-3. Room look: **Marine lab tiles** (`FinalScenario_Soldier`) or the R&G Department office tiles (`Base_Nakatomi`).
-4. Where the user wants to write code themselves (optional): the `Top()` of one bullet script, the room ASCII map, the lines.
-5. Integration path at the end: **merge into one DLL** or second DLL.
+1. Story: the neutering visit; Pluto wants to stop it. Lines are config strings.
+2. Attacks: Booster Shot, Spray Bottle, Pill Time, Cone of Shame (phase 2).
+3. Room look: white vet lab on the Marine lab tiles, dressed with cat toys, syringes, cabinets, exam table.
+4. Art: custom, Gemini for painted pieces and references, pixel pipeline for sprites (section 11).
+5. Integration: merge into one DLL at the end (section 12, milestone 5).
 
 ## 14. Risks (from the research, with the mitigation in the plan)
 

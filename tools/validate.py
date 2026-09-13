@@ -141,7 +141,7 @@ for f in ['wet_food_can_icon.png'] + [f'wet_food_can_toss_00{i}.png' for i in ra
 for f in ['coco_blue_icon.png', 'kibble_bowl_001.png', 'kibble_bowl_002.png']:
     if not os.path.exists(os.path.join(items, f)):
         err(f'item art missing: {f}')
-for sub, n in (('idle', 4), ('move', 6), ('pet', 4)):
+for sub, n in (('idle', 4), ('move', 6), ('pet', 4), ('block', 3)):
     d = os.path.join(RES, 'Companions', 'coco', sub)
     if not os.path.isdir(d) or len([f for f in os.listdir(d) if f.endswith('.png')]) != n:
         err(f'companion clip {sub} should have {n} frames')
@@ -152,6 +152,10 @@ fur_root = os.path.join(RES, 'Fur')
 fur_n = sum(len(fs) for _, _, fs in os.walk(fur_root)) if os.path.isdir(fur_root) else 0
 if fur_n < 100:
     err(f'fur layers missing or too few ({fur_n})')
+if not os.path.exists(os.path.join(items, 'squeaker_icon.png')):
+    err('item art missing: squeaker_icon.png')
+if len([f for f in os.listdir(os.path.join(RES, 'VFX')) if f.startswith('spark')]) != 3:
+    err('VFX spark should have 3 frames')
 for prefix in ('furpuff', 'loveburst', 'anger'):
     if len([f for f in os.listdir(os.path.join(RES, 'VFX')) if f.startswith(prefix)]) != 4:
         err(f'VFX {prefix} should have 4 frames')

@@ -33,7 +33,8 @@
 - [x] 2.4.0: Coco Blue pettable (CanBePet + pet clip), hearts + 3 s speed on pet
 - [x] 2.4.1: rim-shading pass on all body frames, Nine Lives mid-run save, capped speed boosts, guarded Puffed Up trigger
 - [x] 2.5.0: frame-following fur for Puffed Up (552 layers), bathtub unlock flag fix, git repo
-- [ ] 2.6: Punch-Out sprites once the Steam machine logs the Pilot's punchout sprite names
+- [x] 2.6.0: Coco blocks enemy bullets (BulletBlocker layer + squish + spark), Squeaky Toy decoy mode (OverrideTarget + flee pathing)
+- [ ] 2.7: Punch-Out sprites once the Steam machine logs the Pilot's punchout sprite names
 - [ ] git init + tag releases (user has not asked yet)
 - [ ] v2 later: custom sounds (Alexandria SoundAPI needs Wwise soundbanks), custom past, Hegemony unlock cost
 

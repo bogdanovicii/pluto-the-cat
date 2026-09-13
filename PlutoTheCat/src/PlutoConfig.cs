@@ -30,6 +30,9 @@ namespace PlutoTheCat
         public static float AngryFireRateMultiplier = 1.3f;
         public static float AngryScale = 1.0f;
         public static float MaxSpeedBonus = 4f;
+        public static bool CocoBlocksBullets = true;
+        public static float DecoySeconds = 8f;
+        public static float DecoyCooldownDamage = 150f;
 
         public static void Bind(ConfigFile cfg)
         {
@@ -53,6 +56,9 @@ namespace PlutoTheCat
             AngryFireRateMultiplier = cfg.Bind("Balance", "AngryFireRateMultiplier", AngryFireRateMultiplier, "Rate-of-fire multiplier while puffed up.").Value;
             AngryScale = cfg.Bind("Balance", "AngryScale", AngryScale, "Extra body scale while puffed up (1 = normal; the standing fur already makes him look bigger; values above 1 may misalign the fur).").Value;
             MaxSpeedBonus = cfg.Bind("Balance", "MaxSpeedBonus", MaxSpeedBonus, "Cap on the total movement speed Pluto's own boosts (zoomies, anger, petting) can add at once.").Value;
+            CocoBlocksBullets = cfg.Bind("Balance", "CocoBlocksBullets", CocoBlocksBullets, "Enemy bullets that touch Coco Blue are stopped.").Value;
+            DecoySeconds = cfg.Bind("Balance", "DecoySeconds", DecoySeconds, "How long Coco stays in decoy mode after the Squeaky Toy is used.").Value;
+            DecoyCooldownDamage = cfg.Bind("Balance", "DecoyCooldownDamage", DecoyCooldownDamage, "Damage dealt to recharge the Squeaky Toy.").Value;
             LogPunchoutNames = cfg.Bind("Debug", "LogPunchoutNames", LogPunchoutNames, "Write the Pilot's Punch-Out sprite names to the log at startup.").Value;
         }
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.6.0
+- Coco Blue blocks enemy bullets that touch him (squish animation and a spark); Pluto's own shots pass through.
+- New starting active **Squeaky Toy**: Coco goes decoy for 8 s: every enemy in the room targets him while he runs around dodging bullets and enemies. He cannot be hurt.
+- Petting uses the proper "other" animation slot (no more chance of the idle showing the pet wiggle).
+
 ## 2.5.0
 - Puffed Up rebuilt: the fur now follows Pluto's own outline frame by frame in every direction (idle, run, roll, item get, table kick, jetpack, slide), bristles up over the first frames, shivers with a shudder and drifting fur while angry, and settles back down. Tail goes bottlebrush.
 - Fix: the Wet Pluto bathtub never appeared in the Breach because the alt-costume unlock flag was never set; it is set at load now.

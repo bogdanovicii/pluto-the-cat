@@ -227,3 +227,72 @@ COCO_PET_1 = R([
 "..oo.oooooo.oo..",
 ])
 COCO_PET = [COCO_PET_1, squash(COCO_PET_1, 0.92), COCO_PET_1, shift(COCO_PET_1, 1, 0)]
+
+
+# ---------------------------------------------------------------- Coco blocking a bullet: squish flat with ">.<" eyes and a spark, 3 frames
+COCO_BLOCK_1 = R([
+"................",
+"................",
+"................",
+"..oo........oo..",
+".o1Ro......oR2o.",
+"o1122ooooo2223o.",
+"o12222222222233o",
+"o12o2o2222o2oW3o",
+"o122o22WWWW22W3o",
+"o1222WWWPqWW2W3o",
+"o22222WWWWW22W3o",
+".oo3322222233oo.",
+"..oo.oooooo.oo..",
+])
+COCO_BLOCK = [squash(COCO_BLOCK_1, 0.9), COCO_BLOCK_1, shift(COCO_BLOCK_1, 0, -1)]
+
+# Decoy mode: Coco with a determined face, running (used as the move clip while decoying)
+COCO_DECOY_1 = R([
+"..oo........oo..",
+".o1Ro......oR2o.",
+".o122ooooo222o..",
+"o1122222222223o.",
+"o12222222222233o",
+"o1222oo2o2o22W3o",
+"o1222o2222o22W3o",
+"o12o2WWWW2o22W3o",
+"o1222WPqW2222W3o",
+"o22222WW22222W3o",
+".o32222222222Wo.",
+".oo3322222233oo.",
+"..oo.oooooo.oo..",
+])
+COCO_DECOY = [squash(COCO_DECOY_1, 0.85), shift(COCO_DECOY_1, 0, -3), shift(COCO_DECOY_1, 0, -1), COCO_DECOY_1]
+
+# Squeaker active item icon 16 x 14: a red rubber squeaker with a white burst
+SQUEAKER_ICON = R([
+"......o.........",
+".....oKo...o....",
+"....oKKKo.oKo...",
+".....oKo.oKKKo..",
+"..ooooooooKo....",
+".oRRRRRRRRo.....",
+"oRqRRRRRRRRo....",
+"oRRRRRRRRRRo....",
+"oRRRRrRRRRRo....",
+".oRRRRRRRRo.....",
+"..oooooooo......",
+"....oSSSo.......",
+"....osssoo......",
+".....ooo........",
+])
+
+# Bullet-pop spark VFX for the block, 3 frames 12 x 12
+def _spark(stage):
+    c = blank(12, 12)
+    if stage == 0:
+        c = put(c, R([".K.", "KKK", ".K."]), 4, 4)
+    elif stage == 1:
+        c = put(c, R(["K...K", ".K.K.", "..K..", ".K.K.", "K...K"]), 3, 3)
+    else:
+        c = put(c, R(["K.....K", ".......", "..K.K..", ".......", "..K.K..", ".......", "K.....K"]), 2, 2)
+    return c
+
+
+BLOCK_SPARK = [_spark(i) for i in range(3)]

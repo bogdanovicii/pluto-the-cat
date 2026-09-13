@@ -10,6 +10,7 @@ armor: 0
 <loadout>
 	pluto:kibble_sack infinite
 	pluto:wet_food_can
+	pluto:squeaky_toy
 	pluto:nine_lives
 	pluto:coco_blue
 	pluto:puffed_up

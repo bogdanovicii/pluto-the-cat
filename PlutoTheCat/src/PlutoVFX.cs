@@ -10,6 +10,7 @@ namespace PlutoTheCat
         public static VFXPool FurPuff;
         public static VFXPool LoveBurst;
         public static VFXPool AngerMarks;
+        public static VFXPool BlockSpark;
 
         public static void Init()
         {
@@ -18,6 +19,8 @@ namespace PlutoTheCat
             LoveBurst = VFXBuilder.CreateVFXPool("PlutoLoveBurst", Frames("loveburst", 4), 8, new IntVector2(16, 16),
                 tk2dBaseSprite.Anchor.MiddleCenter, false, 0f);
             AngerMarks = VFXBuilder.CreateVFXPool("PlutoAngerMarks", Frames("anger", 4), 10, new IntVector2(12, 12),
+                tk2dBaseSprite.Anchor.MiddleCenter, false, 0f);
+            BlockSpark = VFXBuilder.CreateVFXPool("PlutoBlockSpark", Frames("spark", 3), 16, new IntVector2(12, 12),
                 tk2dBaseSprite.Anchor.MiddleCenter, false, 0f);
         }
 
