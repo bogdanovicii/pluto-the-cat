@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.5.0
+- Puffed Up rebuilt: the fur now follows Pluto's own outline frame by frame in every direction (idle, run, roll, item get, table kick, jetpack, slide), bristles up over the first frames, shivers with a shudder and drifting fur while angry, and settles back down. Tail goes bottlebrush.
+- Fix: the Wet Pluto bathtub never appeared in the Breach because the alt-costume unlock flag was never set; it is set at load now.
+
 ## 2.4.1
 - Art: rim shading on every body frame (shadow bottom/right, highlight top-left, shaded chin), matching the face card; Wet Pluto shaded too.
 - Nine Lives keeps its count across save-and-continue.

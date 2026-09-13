@@ -12,7 +12,6 @@ namespace PlutoTheCat
     public class PuffedUpItem : PassiveItem
     {
         public const string ID = "pluto:puffed_up";
-        public static int HaloSpriteA = -1, HaloSpriteB = -1;
 
         public static void Init()
         {
@@ -28,8 +27,6 @@ namespace PlutoTheCat
             item.quality = PickupObject.ItemQuality.EXCLUDED;
             item.CanBeDropped = false;
 
-            HaloSpriteA = SpriteBuilder.AddSpriteToCollection(Plugin.ITEM_ROOT + "/fur_halo_001.png", SpriteBuilder.itemCollection);
-            HaloSpriteB = SpriteBuilder.AddSpriteToCollection(Plugin.ITEM_ROOT + "/fur_halo_002.png", SpriteBuilder.itemCollection);
         }
 
         public override void Pickup(PlayerController player)
@@ -70,15 +67,14 @@ namespace PlutoTheCat
             catch (System.Exception e) { Plugin.Log("Puffed Up trigger failed: " + e.Message); }
         }
 
-        /// <summary>Per-player anger state: scale, fur halo, stat modifiers, timer.</summary>
+        /// <summary>Per-player anger state: stat modifiers, timer, and the fur overlay that follows every frame.</summary>
         public class AngerDoer : MonoBehaviour
         {
             private PlayerController player;
-            private float timeLeft;
+            private float timeLeft, elapsed, shudderTimer, particleTimer;
             private bool angry;
-            private GameObject halo;
-            private tk2dSprite haloSprite;
-            private float flicker;
+            private GameObject furObj;
+            private tk2dSprite fur;
             private StatModifier damageMod, fireMod;
 
             private void Start() { player = GetComponent<PlayerController>(); }
@@ -90,6 +86,7 @@ namespace PlutoTheCat
                 timeLeft = PlutoConfig.AngrySeconds;
                 if (angry) return;   // refresh only
                 angry = true;
+                elapsed = 0f; shudderTimer = 1.2f; particleTimer = 0.8f;
 
                 damageMod = new StatModifier { statToBoost = PlayerStats.StatType.Damage, modifyType = StatModifier.ModifyMethod.MULTIPLICATIVE, amount = PlutoConfig.AngryDamageMultiplier, ignoredForSaveData = true };
                 fireMod = new StatModifier { statToBoost = PlayerStats.StatType.RateOfFire, modifyType = StatModifier.ModifyMethod.MULTIPLICATIVE, amount = PlutoConfig.AngryFireRateMultiplier, ignoredForSaveData = true };
@@ -98,8 +95,9 @@ namespace PlutoTheCat
                 player.stats.RecalculateStats(player, false, false);
                 StartCoroutine(CatTricks.TimedSpeed(player, 1f, PlutoConfig.AngrySeconds));
 
-                if (player.sprite != null) player.sprite.scale = new Vector3(PlutoConfig.AngryScale, PlutoConfig.AngryScale, 1f);
-                ShowHalo(true);
+                if (player.sprite != null && PlutoConfig.AngryScale != 1f)
+                    player.sprite.scale = new Vector3(PlutoConfig.AngryScale, PlutoConfig.AngryScale, 1f);
+                ShowFur(true);
                 PlutoVFX.Spawn(PlutoVFX.AngerMarks, player.CenterPosition + new Vector2(0f, 1.2f));
                 PlutoVFX.Spawn(PlutoVFX.FurPuff, player.CenterPosition);
                 AkSoundEngine.PostEvent("Play_OBJ_dice_bless_01", player.gameObject);
@@ -115,50 +113,82 @@ namespace PlutoTheCat
                     player.stats.RecalculateStats(player, false, false);
                     if (player.sprite != null) player.sprite.scale = Vector3.one;
                 }
-                ShowHalo(false);
+                ShowFur(false);
             }
 
-            private void ShowHalo(bool on)
+            private void ShowFur(bool on)
             {
                 if (!on)
                 {
-                    if (halo != null) Destroy(halo);
-                    halo = null; haloSprite = null;
+                    if (furObj != null) Destroy(furObj);
+                    furObj = null; fur = null;
                     return;
                 }
-                if (HaloSpriteA < 0 || player == null || player.sprite == null) return;
-                halo = new GameObject("pluto_fur_halo");
-                halo.transform.parent = player.transform;
-                haloSprite = halo.AddComponent<tk2dSprite>();
-                haloSprite.SetSprite(SpriteBuilder.itemCollection, HaloSpriteA);
-                haloSprite.HeightOffGround = -0.6f;              // behind the body, like a hat set to "always behind"
-                player.sprite.AttachRenderer(haloSprite);
-                PositionHalo();
+                if (PlutoFur.Collection == null || PlutoFur.Count == 0 || player == null || player.sprite == null) return;
+                furObj = new GameObject("pluto_fur");
+                furObj.transform.parent = player.transform;
+                fur = furObj.AddComponent<tk2dSprite>();
+                int first = PlutoFur.Lookup("idle", 0, 0);
+                if (first >= 0) fur.SetSprite(PlutoFur.Collection, first);
+                fur.HeightOffGround = -0.6f;      // behind the body, like a hat set to "always behind"
+                player.sprite.AttachRenderer(fur);
+                fur.renderer.enabled = false;
             }
 
-            private void PositionHalo()
+            /// <summary>Which of the four fur variants to show right now: bristle up, shiver, settle.</summary>
+            private int Variant()
             {
-                if (halo == null || player == null || player.sprite == null) return;
-                Vector2 c = player.sprite.WorldCenter;
-                halo.transform.position = new Vector3(c.x - 1.125f, c.y - 1.125f, halo.transform.position.z);   // 36 px halo centred on the body
-                haloSprite.UpdateZDepth();
+                if (elapsed < 0.10f) return 0;
+                if (elapsed < 0.20f) return 1;
+                if (timeLeft < 0.15f) return 0;
+                if (timeLeft < 0.30f) return 1;
+                return ((int)(elapsed * 8f) % 2 == 0) ? 2 : 3;
             }
 
-            private void Update()
+            private void LateUpdate()
             {
                 if (!angry) return;
-                timeLeft -= BraveTime.DeltaTime;
+                float dt = BraveTime.DeltaTime;
+                timeLeft -= dt; elapsed += dt; shudderTimer -= dt; particleTimer -= dt;
                 if (timeLeft <= 0f || player == null || player.healthHaver == null || player.healthHaver.IsDead)
                 {
                     CalmDown();
                     return;
                 }
-                flicker += BraveTime.DeltaTime;
-                if (haloSprite != null)
+                if (particleTimer <= 0f)
                 {
-                    haloSprite.SetSprite(SpriteBuilder.itemCollection, ((int)(flicker * 8f) % 2 == 0) ? HaloSpriteA : HaloSpriteB);
-                    PositionHalo();
+                    particleTimer = 1.5f;
+                    PlutoVFX.Spawn(PlutoVFX.FurPuff, player.CenterPosition + Random.insideUnitCircle * 0.5f);
                 }
+                if (fur == null || player.sprite == null || player.spriteAnimator == null) return;
+
+                tk2dSpriteAnimationClip clip = player.spriteAnimator.CurrentClip;
+                int id = clip == null ? -1 : PlutoFur.Lookup(clip.name, player.spriteAnimator.CurrentFrame, Variant());
+                if (id < 0)
+                {
+                    fur.renderer.enabled = false;     // pits, deaths, ghosts: no fur layer
+                    return;
+                }
+                fur.renderer.enabled = true;
+                if (fur.spriteId != id || fur.Collection != PlutoFur.Collection) fur.SetSprite(PlutoFur.Collection, id);
+                fur.FlipX = player.sprite.FlipX;
+
+                // Align the fur canvas to the body frame (works for any anchor: match lower-left corners, then
+                // account for the 4 px margin on whichever side is leading after a flip).
+                tk2dSpriteDefinition bd = player.sprite.GetCurrentSpriteDef();
+                tk2dSpriteDefinition fd = fur.GetCurrentSpriteDef();
+                Vector3 bp = player.sprite.transform.position;
+                float m = PlutoFur.MarginX / 16f;
+                float x = fur.FlipX ? bp.x - bd.position0.x + fd.position0.x + m
+                                    : bp.x + bd.position0.x - fd.position0.x - m;
+                float y = bp.y + bd.position0.y - fd.position0.y;
+                if (shudderTimer <= 0f)
+                {
+                    x += (((int)(elapsed * 30f)) % 2 == 0) ? 1f / 16f : -1f / 16f;
+                    if (shudderTimer < -0.12f) shudderTimer = 1.0f + Random.value;
+                }
+                furObj.transform.position = new Vector3(x, y, bp.z);
+                fur.UpdateZDepth();
             }
 
             private void OnDestroy()

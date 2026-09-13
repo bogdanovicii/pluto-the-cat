@@ -28,7 +28,7 @@ namespace PlutoTheCat
         public static float AngrySeconds = 6f;
         public static float AngryDamageMultiplier = 1.5f;
         public static float AngryFireRateMultiplier = 1.3f;
-        public static float AngryScale = 1.25f;
+        public static float AngryScale = 1.0f;
         public static float MaxSpeedBonus = 4f;
 
         public static void Bind(ConfigFile cfg)
@@ -51,7 +51,7 @@ namespace PlutoTheCat
             AngrySeconds = cfg.Bind("Balance", "AngrySeconds", AngrySeconds, "How long Pluto stays puffed up after a hit (0 disables).").Value;
             AngryDamageMultiplier = cfg.Bind("Balance", "AngryDamageMultiplier", AngryDamageMultiplier, "Damage multiplier while puffed up.").Value;
             AngryFireRateMultiplier = cfg.Bind("Balance", "AngryFireRateMultiplier", AngryFireRateMultiplier, "Rate-of-fire multiplier while puffed up.").Value;
-            AngryScale = cfg.Bind("Balance", "AngryScale", AngryScale, "Sprite scale while puffed up (1 = normal size).").Value;
+            AngryScale = cfg.Bind("Balance", "AngryScale", AngryScale, "Extra body scale while puffed up (1 = normal; the standing fur already makes him look bigger; values above 1 may misalign the fur).").Value;
             MaxSpeedBonus = cfg.Bind("Balance", "MaxSpeedBonus", MaxSpeedBonus, "Cap on the total movement speed Pluto's own boosts (zoomies, anger, petting) can add at once.").Value;
             LogPunchoutNames = cfg.Bind("Debug", "LogPunchoutNames", LogPunchoutNames, "Write the Pilot's Punch-Out sprite names to the log at startup.").Value;
         }

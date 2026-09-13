@@ -148,6 +148,10 @@ for sub, n in (('idle', 4), ('move', 6), ('pet', 4)):
 for f in ['fur_halo_001.png', 'fur_halo_002.png', 'puffed_up_icon.png']:
     if not os.path.exists(os.path.join(items, f)):
         err(f'item art missing: {f}')
+fur_root = os.path.join(RES, 'Fur')
+fur_n = sum(len(fs) for _, _, fs in os.walk(fur_root)) if os.path.isdir(fur_root) else 0
+if fur_n < 100:
+    err(f'fur layers missing or too few ({fur_n})')
 for prefix in ('furpuff', 'loveburst', 'anger'):
     if len([f for f in os.listdir(os.path.join(RES, 'VFX')) if f.startswith(prefix)]) != 4:
         err(f'VFX {prefix} should have 4 frames')

@@ -18,6 +18,7 @@ import ui_and_items as U  # noqa: E402
 import poses as P  # noqa: E402
 import art_v4 as V4  # noqa: E402
 import art_v5 as V5  # noqa: E402
+import fur as FUR  # noqa: E402
 
 CHAR = os.path.join(ROOT, 'PlutoTheCat', 'Characters', 'Pluto')
 RES = os.path.join(ROOT, 'PlutoTheCat', 'Resources')
@@ -152,6 +153,16 @@ def gun_and_items():
     save(V5.FUR_HALO[1], os.path.join(items, 'fur_halo_002.png'))
     save(V5.PUFFED_ICON, os.path.join(items, 'puffed_up_icon.png'))
     write_clip(vfx, V5.ANGER_MARKS, 'anger')
+    # 2.5: frame-following fur layers for Puffed Up
+    furdir = os.path.join(RES, 'Fur')
+    clean(furdir)
+    n = 0
+    for clip, frames in FUR.all_fur().items():
+        for fi, variants in enumerate(frames, 1):
+            for v, rows in enumerate(variants):
+                save(rows, os.path.join(furdir, clip, f'fur_{clip}_{fi:03d}_{v}.png'))
+                n += 1
+    print(f'fur layers: {n}')
 
 
 def thunderstore():

@@ -17,7 +17,7 @@ namespace PlutoTheCat
     {
         public const string GUID = "bogdan.etg.plutothecat";
         public const string NAME = "Pluto The Cat";
-        public const string VERSION = "2.4.1";
+        public const string VERSION = "2.5.0";
 
         // Embedded-resource roots (RootNamespace + folder path, '/' separated).
         public const string SPRITE_ROOT = "PlutoTheCat/Resources/SpriteRoot";
@@ -50,6 +50,7 @@ namespace PlutoTheCat
             // Essentials, each isolated. The character needs the items registered first (loadout ids).
             Step("sprites", () => ETGMod.Assets.SetupSpritesFromAssembly(typeof(Plugin).Assembly, SPRITE_ROOT));
             Step("vfx", PlutoVFX.Init);
+            Step("fur", PlutoFur.Init);
             Step("gun", KibbleSackGun.Add);
             Step("gravy pouch", GravyPouchGun.Add);
             Step("active", WetFoodCanItem.Init);
@@ -84,6 +85,12 @@ namespace PlutoTheCat
 
             // Polish, each optional.
             Step("reflexes", () => CatReflexes(built));
+            // The Breach costume swapper (the bathtub) only appears once the character's past counts as beaten.
+            Step("alt costume unlock", () =>
+            {
+                GameStatsManager.Instance.SetCharacterSpecificFlag(built.identity, CharacterSpecificGungeonFlags.KILLED_PAST, true);
+                GameStatsManager.Instance.SetCharacterSpecificFlag(built.identity, CharacterSpecificGungeonFlags.KILLED_PAST_ALTERNATE_COSTUME, true);
+            });
             if (PlutoConfig.LogPunchoutNames) Step("punchout dump", DumpPunchoutNames);
             Step("cat tricks", CatTricks.Init);
             Step("synergies", PlutoSynergies.Init);

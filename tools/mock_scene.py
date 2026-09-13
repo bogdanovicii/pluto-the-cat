@@ -16,6 +16,7 @@ import art_v3 as V3  # noqa: E402
 import art_v4 as V4  # noqa: E402
 import art_v5 as V5  # noqa: E402
 import poses as P  # noqa: E402
+import fur as FUR  # noqa: E402
 
 SCALE = 5
 W, H = 300, 170                      # logical pixels
@@ -76,11 +77,11 @@ for gxx, gyy in ((wx + 46, wy + 8), (wx + 58, wy + 10)):
 
 # ---------------------------------------------------------------- 3. Puffed Up Pluto: halo behind, body scaled 1.25, anger marks above
 ax, ay = 228, 62
-shadow(ax + 4, ay + 25, 22)
-paste(V5.FUR_HALO[0], ax - 6, ay - 6)
-paste(A.IDLE_SIDE[0], ax, ay, scale=1.25)
-paste(V5.ANGER_MARKS[2], ax + 14, ay - 12)
-paste(V4.FUR_PUFF[1], ax - 6, ay + 4)
+shadow(ax + 4, ay + 19, 18)
+paste(FUR.fur_layer(A.CLIPS['idle'][0], 2), ax - FUR.MARGIN_X, ay - FUR.MARGIN_TOP)
+paste(A.CLIPS['idle'][0], ax, ay)
+paste(V5.ANGER_MARKS[2], ax + 12, ay - 12)
+paste(V4.FUR_PUFF[1], ax - 8, ay + 2)
 
 # ---------------------------------------------------------------- 4. Wet Food Can thrown + splash with hearts, kibble bowl
 cx, cy = 118, 122
