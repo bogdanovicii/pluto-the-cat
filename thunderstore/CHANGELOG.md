@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.12.0
+- Pluto lands on his feet: falling into a pit costs no health (config `NoFallDamage`), and Nine Lives never spends a life on a pit.
+- The Royal Kibble Sack cracks secret-room walls: shoot a suspicious wall and each kibble bites 15 extra damage out of it (walls have 100), so the crack shows after a few pawfuls and the wall opens soon after. Config key `SecretDoorDamage`.
+
 ## 2.11.0
 - Nine Lives rewritten as lore: Pluto has already spent six of his nine lives (balcony railing, washing machine, the neighbour's dog, a rubber band, the bathtub, the Gungeon's elevator door) and starts every run on his **seventh**. A lethal hit ends the current life and starts the next; the ninth is the last one, with no save. That is two saves per run instead of nine.
 - Banner now names the life ("Eighth life.", "Ninth life. The last one."). Config key `NineLives` replaced by `StartingLife` (default 7).

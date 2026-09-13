@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
 using Alexandria.Misc;
@@ -69,12 +70,26 @@ namespace PlutoTheCat
         {
             private PlayerController player;
 
+            // Lands on his feet: the game fires OnPitfall when the player drops into a pit and, after the
+            // respawn, applies a fixed half heart ("#PITFALL", DamageCategory.Environment). Pluto is
+            // invulnerable while falling, so the first damage event after OnPitfall is that pit damage;
+            // it is cancelled (within a generous window) and no life is spent on it.
+            private static readonly Dictionary<PlayerController, float> landingUntil = new Dictionary<PlayerController, float>();
+
+            public static bool IsLandingOnFeet(PlayerController p)
+            {
+                float until;
+                return p != null && landingUntil.TryGetValue(p, out until) && Time.time < until;
+            }
+
             private void Start()
             {
                 player = GetComponent<PlayerController>();
                 if (player == null) return;
                 player.OnRolledIntoEnemy += TailWhip;
                 player.OnRoomClearEvent += Zoomies;
+                player.OnPitfall += Pitfall;
+                if (player.healthHaver != null) player.healthHaver.ModifyDamage += LandOnFeet;
             }
 
             private void OnDestroy()
@@ -82,6 +97,25 @@ namespace PlutoTheCat
                 if (player == null) return;
                 player.OnRolledIntoEnemy -= TailWhip;
                 player.OnRoomClearEvent -= Zoomies;
+                player.OnPitfall -= Pitfall;
+                if (player.healthHaver != null) player.healthHaver.ModifyDamage -= LandOnFeet;
+                landingUntil.Remove(player);
+            }
+
+            private void Pitfall()
+            {
+                if (!IsPluto(player) || !PlutoConfig.NoFallDamage) return;
+                landingUntil[player] = Time.time + 8f;
+            }
+
+            private void LandOnFeet(HealthHaver hh, HealthHaver.ModifyDamageEventArgs args)
+            {
+                if (!IsLandingOnFeet(player) || args.ModifiedDamage <= 0f) return;
+                if (args.InitialDamage > 0.51f) return;            // pit damage is exactly half a heart
+                landingUntil.Remove(player);
+                args.ModifiedDamage = 0f;
+                PlutoVFX.Spawn(PlutoVFX.FurPuff, player.CenterPosition);
+                Plugin.Log("landed on his feet: pit damage cancelled");
             }
 
             private void TailWhip(PlayerController p, AIActor enemy)

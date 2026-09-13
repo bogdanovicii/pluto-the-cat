@@ -78,6 +78,7 @@ namespace PlutoTheCat
             PlayerController player = hh.gameActor as PlayerController;
             if (player == null) return;
             if (hh.Armor > 0f) return;                                  // armor absorbs this hit; not lethal
+            if (CatTricks.CatTricksDoer.IsLandingOnFeet(player)) return;  // pit damage: cancelled by CatTricks, no life spent
             if (args.ModifiedDamage < hh.GetCurrentHealth()) return;    // survivable hit
 
             // Decline the hit: this life ends, the next one begins.

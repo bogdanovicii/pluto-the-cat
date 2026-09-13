@@ -25,3 +25,7 @@
 - Previews must render what the game renders: without the simulated runtime outline the outline-free frames look wrong and judgement drifts.
 - Verify engine claims from the decompiled source before shipping a change that depends on them: `PlayerController.Start` and `AIActor.Start` (with `procedurallyOutlined = true` by default) both add the runtime outline, which is why Pluto and Coco ship outline-free. The Re-ETG raw dump on GitHub answers such questions in one fetch.
 - Release chains: a failing check (`strings -e` does not exist on macOS) short-circuited `cp`/drop-page steps while the later `git commit` still ran, and the artifact got republished with the old zip. Keep the archive + drop-page step in its own command and verify the published sha before announcing.
+
+## 2026-09-14 — shared tooling drift (Vet Visit)
+- A sibling project that imports the main mod's `tools/pixel.py` palette live re-rendered 36 committed PNGs when the main palette changed, and `validate.py` stayed green. Snapshot shared constants (palette values) into the consumer and add a test that fails loudly on drift; never import mutable art constants across projects.
+- When two sessions work in one tree, keep every generated artifact's source of truth inside the project that ships it.

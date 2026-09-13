@@ -33,7 +33,9 @@ namespace PlutoTheCat
                 "walk over them to top up whatever else you are carrying.\n\n" +
                 "Pluto was a small, hungry tabby when the vet first handed him a sample of this stuff. " +
                 "He has defended the bag ever since: from the dog next door, from the vacuum cleaner, and now " +
-                "from the Gundead. He would much rather eat it, but the Gungeon is not going to feed itself.");
+                "from the Gundead. He would much rather eat it, but the Gungeon is not going to feed itself.\n\n" +
+                "Some walls sound hollow. A few pawfuls of kibble against a suspicious wall will crack it, and " +
+                "a few more open it.");
 
             gun.SetupSprite(null, "pluto_kibble_sack_idle_001", 10);
             gun.SetAnimationFPS(gun.shootAnimation, 14);
@@ -134,11 +136,28 @@ namespace PlutoTheCat
             }
         }
 
+        // ---- Secret walls. Only infinite-ammo guns may damage a cracked secret-room wall (Projectile
+        // .OnRigidbodyCollision), and the sack has infinite ammo; each kibble also adds a bite on top of
+        // its own damage so the wall cracks after a few pawfuls (walls have 100 hit points, cracks show
+        // at 50 % and 10 %, then it gives way).
+        private static void SecretDoorBite(SpeculativeRigidbody myBody, PixelCollider myCollider, SpeculativeRigidbody other, PixelCollider otherCollider)
+        {
+            if (other == null) return;
+            MajorBreakable wall = other.majorBreakable;
+            if (wall == null || !wall.IsSecretDoor) return;
+            Vector2 dir = myBody != null ? myBody.Velocity.normalized : Vector2.zero;
+            wall.ApplyDamage(PlutoConfig.SecretDoorDamage, dir, false, false, true);
+            AkSoundEngine.PostEvent("Play_OBJ_rock_break_01", other.gameObject);
+        }
+
         public override void PostProcessProjectile(Projectile projectile)
         {
             base.PostProcessProjectile(projectile);
             if (projectile == null) return;
             PlayerController owner = projectile.Owner as PlayerController;
+
+            if (PlutoConfig.SecretDoorDamage > 0f && projectile.specRigidbody != null)
+                projectile.specRigidbody.OnPreRigidbodyCollision += SecretDoorBite;
 
             if (Random.value < PlutoConfig.KibbleCritChance)
             {

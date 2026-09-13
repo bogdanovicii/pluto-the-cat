@@ -46,6 +46,7 @@
 - [x] 2.10.1 Art Pass C: parts library (heads/bodies/legs/paw/tails + squashed/stack helpers), tools/import_png.py, orphan + stray-flicker lint, project skill .claude/skills/pluto-pixel-art, bag silhouette
 - [x] Runtime outline verified in decompiled code (PlayerController.Start + AIActor.Start via procedurallyOutlined); 2.10.2 strips Coco too
 - [x] 2.11.0: Nine Lives lore (starts on life 7; lives 7, 8, 9; ninth is final), StartingLife config, named-life banner
+- [x] 2.12.0: kibble cracks secret-room walls (extra wall damage on hit; no passive reveal by request); no fall damage (OnPitfall + ModifyDamage cancel, Nine Lives skips it)
 - [ ] In-game checks on the Steam machine: Pluto vs Pilot screenshot, gun paw alignment, punchout log lines
 - [ ] v2 later: custom sounds (Alexandria SoundAPI needs Wwise soundbanks), custom past, Hegemony unlock cost
 

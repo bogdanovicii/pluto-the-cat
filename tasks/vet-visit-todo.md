@@ -37,3 +37,9 @@ Separate project in `PlutoVetVisit/`; never touch `PlutoTheCat/`, `tools/`, `thu
 
 ## Milestone 5 — integration (separate approval)
 - [ ] Merge into PlutoTheCat (or ship second DLL), version bump, changelog
+
+## Status 2026-09-14
+- [x] All 13 plan tasks built and reviewed; final whole-branch review clean after one fix wave; tag v0.1.0 (PlutoVetVisit repo, commit 4eec6e8)
+- [x] Test zips: PlutoVetVisit/releases/Pluto_Vet_Visit-0.1.0.zip (final), -m1 and -m3 milestone builds
+- [ ] In-game tests 1-4 on the Steam machine (docs/checklist.md in PlutoVetVisit) — results pending
+- [ ] Milestone 5 integration into PlutoTheCat after the in-game pass

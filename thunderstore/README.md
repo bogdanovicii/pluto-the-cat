@@ -5,11 +5,11 @@ Adds **Pluto the Cat** as a new playable Gungeoneer. He is a chunky brown tabby-
 ## What you get
 
 - **Pluto** in the Breach, selectable like any other Gungeoneer. Slightly faster than the Pilot with a quicker dodge roll.
-- **Royal Kibble Sack** (starter gun, infinite ammo): flings dry cat food by the pawful. Kibble bounces once, because kibble always ends up under the fridge.
+- **Royal Kibble Sack** (starter gun, infinite ammo): flings dry cat food by the pawful. Kibble bounces once, because kibble always ends up under the fridge. Shooting a secret-room wall cracks it and opens it after a few pawfuls.
 - **Wet Food Can** (starter active): lob a can of the good stuff. Every enemy near where it lands falls in love with Pluto for 10 seconds, fights on his side and takes 20 % more damage. Bosses are stunned for 3 seconds instead.
 - **Nine Lives** (starter passive): Pluto has already spent six of his nine lives and starts every run on his seventh. A hit that would kill him is cancelled and the next life begins (one full heart). The ninth life is the last one: no more saves. Configurable (`StartingLife`).
 - **Puffed Up** (starter passive): hit Pluto and he bristles for a few seconds, bigger and fuzzier, hitting harder and faster.
-- **Cat reflexes**: a longer dodge roll with more invulnerable frames.
+- **Cat reflexes**: a longer dodge roll with more invulnerable frames, and he lands on his feet: pits cost no health.
 - **Synergies**: Complete Feline Nutrition (kibble homes in with any snack item), Dinner Time (charm lasts twice as long with Charming Rounds, Charm Horn or Yellow Chamber), Laser Pointer (dodge rolls leave a red dot enemies chase, with any laser gun), Box Fort (Cardboard Box has no cooldown).
 - **Coco Blue** (starter companion): Pluto's plush cat follows him, drops a kibble crumb whenever Pluto gets hurt, and stops any enemy bullet that touches him. After eight blocks he is knocked out for a while (pet him to bring him round early). Pet him (interact next to him) for hearts and a burst of speed; pet him during a fight and he goes decoy.
 - **Squeaky Toy** (second starter active; Pluto has two active slots, swap with the active-swap key): sends Coco out as a decoy for a few seconds; enemies chase him while he dodges around the room. Pluto can never drop it. It also appears in chests and shops for every other character: pick it up and Coco follows you too, drop it and he leaves.
