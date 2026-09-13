@@ -45,7 +45,7 @@ namespace PlutoTheCat
         {
             if (prefab != null || CompanionBuilder.companionDictionary.ContainsKey(GUID)) return;
             prefab = CompanionBuilder.BuildPrefab("Coco Blue", GUID, Plugin.COMPANION_ROOT + "/idle/coco_idle_001",
-                new IntVector2(2, 1), new IntVector2(12, 8));
+                new IntVector2(3, 2), new IntVector2(12, 8));   // frames carry a 1-px margin for the runtime outline
             CocoBlueController controller = prefab.AddComponent<CocoBlueController>();
             controller.CanBePet = true;                       // interact next to Coco to pet him (the Dog's mechanic)
             prefab.GetComponent<AIActor>().MovementSpeed = 6.5f;
@@ -137,7 +137,7 @@ namespace PlutoTheCat
                         ColliderGenerationMode = PixelCollider.PixelColliderGeneration.Manual,
                         CollisionLayer = CollisionLayer.BulletBlocker,
                         IsTrigger = false,
-                        ManualOffsetX = 2, ManualOffsetY = 1,
+                        ManualOffsetX = 3, ManualOffsetY = 2,
                         ManualWidth = 12, ManualHeight = 10,
                     }
                 };

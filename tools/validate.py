@@ -73,12 +73,11 @@ for clip in REQUIRED_CLIPS:
 
 # body frames ship without the outline colour (the game draws it): no #1E1614 pixels allowed
 OUTLINE = (0x1E, 0x16, 0x14, 255)
-for clip in ('idle', 'run_right', 'dodge'):
-    d = os.path.join(NSS, clip)
+for d in [os.path.join(NSS, c) for c in ('idle', 'run_right', 'dodge')] + [os.path.join(RES, 'Companions', 'coco', c) for c in ('idle', 'ko')]:
     for f in sorted(os.listdir(d))[:1]:
         if OUTLINE in set(Image.open(os.path.join(d, f)).convert('RGBA').getdata()):
-            err(f'{clip}/{f}: body frame contains the baked outline colour')
-ok('body frames carry no baked outline')
+            err(f'{os.path.basename(d)}/{f}: actor frame contains the baked outline colour')
+ok('body and companion frames carry no baked outline')
 
 # breach idles must include select_idle and select_choose
 for b in ('select_idle', 'select_choose'):

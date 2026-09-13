@@ -25,8 +25,8 @@ and paste the rows back. Row-strings stay the source of truth.
 
 ## Hard rules (from docs/research/03a, 03b, 03c)
 
-- Body, breach and hand frames ship WITHOUT an outline: the game draws a 1-px black outline at
-  runtime around the player sprite. Keep `o` in the rows (it marks the silhouette for tools) — the
+- Body, breach, hand and Coco companion frames ship WITHOUT an outline: the game draws a 1-px black
+  outline at runtime around the player sprite and around every AIActor. Keep `o` in the rows (it marks the silhouette for tools) — the
   exporter strips it. Guns, items, VFX and cards keep their drawn outlines.
 - Canvas 24x26, pose 18x22 at (3, 4). Frames are anchored bottom-left: feet fill on row 24 for every
   grounded frame, fill never touches the canvas edge (1-px margin for the outline), hops move pixels

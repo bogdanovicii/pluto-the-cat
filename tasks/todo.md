@@ -44,7 +44,8 @@
 - [x] 2.9.0 Art Pass A: no baked outline on body/hand, 24x26 canvas + 4-px hop, lean/ball/tail/ghost fixes, grey-brown hue-shifted palette, one head per view, ear flick, strict pad/overlay, lint_art.py, game-like previews + APNG (awaiting in-game outline screenshot)
 - [x] 2.10.0 Art Pass B: squash idle + ear flick, run head lag/ears back, leap/overshoot dodge, tail-drop death, pit blips, slide pose, _bw poses, free-paw hand variants, fur regen
 - [x] 2.10.1 Art Pass C: parts library (heads/bodies/legs/paw/tails + squashed/stack helpers), tools/import_png.py, orphan + stray-flicker lint, project skill .claude/skills/pluto-pixel-art, bag silhouette
-- [ ] In-game checks on the Steam machine: Pluto vs Pilot outline screenshot, Coco outline, primaryHand offsets, punchout log lines
+- [x] Runtime outline verified in decompiled code (PlayerController.Start + AIActor.Start via procedurallyOutlined); 2.10.2 strips Coco too
+- [ ] In-game checks on the Steam machine: Pluto vs Pilot screenshot, gun paw alignment, punchout log lines
 - [ ] v2 later: custom sounds (Alexandria SoundAPI needs Wwise soundbanks), custom past, Hegemony unlock cost
 
 ## Review

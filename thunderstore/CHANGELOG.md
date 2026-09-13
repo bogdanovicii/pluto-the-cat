@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.10.2
+- Coco Blue lost his double outline: companions are AIActors and the game outlines them at runtime, so his frames ship without a drawn outline (same as Pluto since 2.9.0).
+
 ## 2.10.1
 - The Royal Canin bag has a real silhouette now: pinched sealed end at the paw, rounded belly, torn spout with kibble spilling out; the crown and cat stay on the Ammonomicon page where they fit.
 - Pipeline: PNG-to-rows importer for editor touch-ups, orphan-pixel and stray-flicker lint checks, and a project skill (.claude/skills/pluto-pixel-art) that captures the palette, specs, timing and checklist.

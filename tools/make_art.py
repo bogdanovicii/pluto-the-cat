@@ -12,7 +12,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 ROOT = os.path.dirname(HERE)
 
-from pixel import save, img_from_rows, sheet, PALETTE, strip_outline  # noqa: E402
+from pixel import save, img_from_rows, sheet, PALETTE, strip_outline, pad  # noqa: E402
 import lint_art  # noqa: E402
 import preview as V  # noqa: E402
 import character_anims as A  # noqa: E402
@@ -141,11 +141,17 @@ def gun_and_items():
     # 2.2: Coco Blue companion frames, VFX, bowl pickup, coco icon
     comp = os.path.join(RES, 'Companions', 'coco')
     clean(comp)
-    write_clip(os.path.join(comp, 'idle'), V4.COCO_IDLE, 'coco_idle')
-    write_clip(os.path.join(comp, 'move'), V4.COCO_MOVE, 'coco_move')
-    write_clip(os.path.join(comp, 'pet'), V4.COCO_PET, 'coco_pet')
-    write_clip(os.path.join(comp, 'block'), V4.COCO_BLOCK, 'coco_block')
-    write_clip(os.path.join(comp, 'ko'), V4.COCO_KO, 'coco_ko')
+    # Coco is an AIActor: AIActor.Start() adds the runtime outline (procedurallyOutlined defaults to
+    # true and Alexandria's CompanionBuilder never clears it), so his frames ship without one too.
+    # Every frame gets a 1-px margin so the runtime outline has room (canvas 18x15 / 18x18); the C#
+    # hitbox and bullet-blocker offsets are (3,2) to match.
+    def margin(frames):
+        return [pad(f, len(f[0]) + 2, len(f) + 2, 1, 1) for f in frames]
+    write_clip(os.path.join(comp, 'idle'), margin(V4.COCO_IDLE), 'coco_idle', body=True)
+    write_clip(os.path.join(comp, 'move'), margin(V4.COCO_MOVE), 'coco_move', body=True)
+    write_clip(os.path.join(comp, 'pet'), margin(V4.COCO_PET), 'coco_pet', body=True)
+    write_clip(os.path.join(comp, 'block'), margin(V4.COCO_BLOCK), 'coco_block', body=True)
+    write_clip(os.path.join(comp, 'ko'), margin(V4.COCO_KO), 'coco_ko', body=True)
     save(V4.SQUEAKER_ICON, os.path.join(items, 'squeaker_icon.png'))
     vfx = os.path.join(RES, 'VFX')
     clean(vfx)

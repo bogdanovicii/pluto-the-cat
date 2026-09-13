@@ -67,7 +67,7 @@ for i, (kx, ky) in enumerate(((gx + 34, gy + 6), (gx + 46, gy + 5), (gx + 58, gy
     paste(U.KIBBLE, kx, ky)
 # Coco Blue trailing behind, with a crumb
 shadow(px - 26, py + 25, 14)
-paste(V4.COCO_MOVE[1], px - 28, py + 14)
+paste(V4.COCO_MOVE[1], px - 28, py + 14, body=True)
 paste(U.CRUMB, px - 10, py + 26)
 
 # ---------------------------------------------------------------- 2. Wet Pluto with the gravy pouch beside the bathtub

@@ -147,6 +147,21 @@ Nine Lives passive (`pluto:nine_lives`, ModifyDamage hook cancels a lethal hit, 
 
 Coco Blue (`pluto:coco_blue`, `CompanionItem` + `CompanionBuilder` prefab, `CompanionFollowPlayerBehavior`, drops a crumb on owner damage); Royal Canin Gravy Pouch (`pluto:gravy_pouch`, the `<altGuns>` entry, 20 % charm on hit); kibble bowl pickup (20 % drop from enemies that die charmed, heals 0.5); Nine Lives banner via `UINotificationController.DoCustomNotification` + fur-puff `VFXPool` (Alexandria `VFXBuilder`); love-burst pool at the can splash; select-card pop-in frames. Art sources: `tools/art_v3.py` (face, bag, can) and `tools/art_v4.py` (Coco, pouch, bowl, VFX). No Hegemony cost.
 
+## 8d. Art passes A–C (2.9.0 – 2.10.1)
+
+Driven by `docs/research/03-hand-drawn-art-improvement-plan.md`. Body frames ship without a baked
+outline (the game adds it at runtime; verified in the decompiled `PlayerController.Start`, which calls
+`SpriteOutlineManager.AddOutlineToSprite` with the "Brave/Internal/SinglePassOutline" shader). Canvas
+24x26 with the pose at (3, 4): 4 px headroom for the vanilla 4-px run hop, feet fill on row 24, 1-px
+margin on every side for the outline. Palette re-tuned from the photos (grey-brown taupe, hue-shifted
+ramps, near-black stripes/rings, hazel eyes); one head part per view (side, front, back, back-view
+side) with the tabby mask, blaze and crown spot; hand-placed shadows instead of the rim pass.
+Animation keys: idle squash + ear flick, run with head lag and ears back, dodge with stretched leap
+and overshoot, death with the tail dropping last, vanilla pit blips, hand-drawn slide; hand variants
+show the free paw(s) per the game's `_hand`/`_twohands` semantics. Tooling: strict `pad`/`overlay`,
+`tools/lint_art.py` in the build, `tools/preview.py` with the runtime outline simulated,
+`tools/import_png.py`, project skill `.claude/skills/pluto-pixel-art/`.
+
 ## 9. Out of scope
 
 Alt skin, custom past, Punch-Out sprites, synergies, custom sounds, localisation.
