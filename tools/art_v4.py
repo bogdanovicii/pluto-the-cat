@@ -296,3 +296,36 @@ def _spark(stage):
 
 
 BLOCK_SPARK = [_spark(i) for i in range(3)]
+
+
+# ---------------------------------------------------------------- Coco knocked out: flat on his back, feet up, X eyes, stars (16 x 16, 2 frames)
+_KO_BODY = R([
+"..oo.oooooo.oo..",
+".oo3322222233oo.",
+".o32222222222Wo.",
+"o22222WW22222W3o",
+"o1222WPqW2222W3o",
+"o12o2WWWW2o22W3o",
+"o122o2o2o2o22W3o",
+"o1222o222o222W3o",
+"o122o2o2o2o22W3o",
+"o1122222222223o.",
+".o122ooooo222o..",
+".o1Ro......oR2o.",
+"..oo........oo..",
+])
+_STAR = R([".K.", "KKK", ".K."])
+_STAR_S = R(["K"])
+
+
+def _ko(stage):
+    c = blank(16, 16)
+    c = put(c, _KO_BODY, 0, 3)
+    if stage == 0:
+        c = put(c, _STAR, 2, 0); c = put(c, _STAR_S, 12, 1)
+    else:
+        c = put(c, _STAR_S, 3, 1); c = put(c, _STAR, 10, 0)
+    return c
+
+
+COCO_KO = [_ko(0), _ko(1)]

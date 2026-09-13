@@ -142,6 +142,7 @@ def gun_and_items():
     write_clip(os.path.join(comp, 'move'), V4.COCO_MOVE, 'coco_move')
     write_clip(os.path.join(comp, 'pet'), V4.COCO_PET, 'coco_pet')
     write_clip(os.path.join(comp, 'block'), V4.COCO_BLOCK, 'coco_block')
+    write_clip(os.path.join(comp, 'ko'), V4.COCO_KO, 'coco_ko')
     save(V4.SQUEAKER_ICON, os.path.join(items, 'squeaker_icon.png'))
     vfx = os.path.join(RES, 'VFX')
     clean(vfx)

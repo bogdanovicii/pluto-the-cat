@@ -33,6 +33,9 @@ namespace PlutoTheCat
         public static bool CocoBlocksBullets = true;
         public static float DecoySeconds = 8f;
         public static float DecoyCooldownDamage = 150f;
+        public static int CocoStuffing = 8;
+        public static float CocoKnockoutSeconds = 10f;
+        public static float CocoStuffingRegenSeconds = 4f;
 
         public static void Bind(ConfigFile cfg)
         {
@@ -59,6 +62,9 @@ namespace PlutoTheCat
             CocoBlocksBullets = cfg.Bind("Balance", "CocoBlocksBullets", CocoBlocksBullets, "Enemy bullets that touch Coco Blue are stopped.").Value;
             DecoySeconds = cfg.Bind("Balance", "DecoySeconds", DecoySeconds, "How long Coco stays in decoy mode after the Squeaky Toy is used.").Value;
             DecoyCooldownDamage = cfg.Bind("Balance", "DecoyCooldownDamage", DecoyCooldownDamage, "Damage dealt to recharge the Squeaky Toy.").Value;
+            CocoStuffing = cfg.Bind("Balance", "CocoStuffing", CocoStuffing, "Bullets Coco can block before he is knocked out (regenerates one every CocoStuffingRegenSeconds).").Value;
+            CocoKnockoutSeconds = cfg.Bind("Balance", "CocoKnockoutSeconds", CocoKnockoutSeconds, "How long Coco stays knocked out (petting him ends it early).").Value;
+            CocoStuffingRegenSeconds = cfg.Bind("Balance", "CocoStuffingRegenSeconds", CocoStuffingRegenSeconds, "Seconds per point of stuffing regained while not knocked out.").Value;
             LogPunchoutNames = cfg.Bind("Debug", "LogPunchoutNames", LogPunchoutNames, "Write the Pilot's Punch-Out sprite names to the log at startup.").Value;
         }
 

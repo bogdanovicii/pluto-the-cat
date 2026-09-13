@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.7.0
+- Coco Blue can be knocked out: after blocking 8 bullets he flops onto his back for 10 s, blocks nothing and cannot decoy until he recovers. Petting him brings him round early. Stuffing regenerates one point every 4 s. All configurable.
+
 ## 2.6.0
 - Coco Blue blocks enemy bullets that touch him (squish animation and a spark); Pluto's own shots pass through.
 - New starting active **Squeaky Toy**: Coco goes decoy for 8 s: every enemy in the room targets him while he runs around dodging bullets and enemies. He cannot be hurt.

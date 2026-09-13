@@ -30,7 +30,8 @@ namespace PlutoTheCat
 
         public override bool CanBeUsed(PlayerController user)
         {
-            return CocoBlueItem.CocoBlueController.For(user) != null;
+            CocoBlueItem.CocoBlueController coco = CocoBlueItem.CocoBlueController.For(user);
+            return coco != null && !coco.IsKnockedOut;
         }
 
         public override void DoEffect(PlayerController user)

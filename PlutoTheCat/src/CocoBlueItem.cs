@@ -63,6 +63,8 @@ namespace PlutoTheCat
                 DirectionalAnimation.DirectionType.Single).wrapMode = tk2dSpriteAnimationClip.WrapMode.Loop;
             prefab.AddAnimation("block", Plugin.COMPANION_ROOT + "/block", 12, CompanionBuilder.AnimationType.Other,
                 DirectionalAnimation.DirectionType.Single).wrapMode = tk2dSpriteAnimationClip.WrapMode.Once;
+            prefab.AddAnimation("ko", Plugin.COMPANION_ROOT + "/ko", 4, CompanionBuilder.AnimationType.Other,
+                DirectionalAnimation.DirectionType.Single).wrapMode = tk2dSpriteAnimationClip.WrapMode.Loop;
 
             BehaviorSpeculator bs = prefab.GetComponent<BehaviorSpeculator>();
             bs.MovementBehaviors.Add(new CompanionFollowPlayerBehavior
@@ -96,8 +98,15 @@ namespace PlutoTheCat
             private float decoyLeft, retargetTimer, fleeTimer;
             private float normalSpeed = 6.5f;
 
+            // stuffing: how many bullets he can take before he is knocked out for a while
+            private int stuffing;
+            private bool ko;
+            private float koLeft, regenTimer;
+
             public PlayerController OwnerPlayer { get { return m_owner; } }
             public bool IsDecoy { get { return decoy; } }
+            public bool IsKnockedOut { get { return ko; } }
+            public int Stuffing { get { return stuffing; } }
 
             public static CocoBlueController For(PlayerController player)
             {
@@ -120,9 +129,20 @@ namespace PlutoTheCat
                     hooked = true;
                     if (specRigidbody != null) specRigidbody.OnPreRigidbodyCollision += OnPreCollision;
                     if (aiActor != null) normalSpeed = aiActor.MovementSpeed;
+                    stuffing = PlutoConfig.CocoStuffing;
                 }
                 float dt = BraveTime.DeltaTime;
                 cooldown -= dt; blockCooldown -= dt;
+                if (ko)
+                {
+                    koLeft -= dt;
+                    if (IsBeingPet || koLeft <= 0f) Recover();     // a pet brings him round early
+                }
+                else if (stuffing < PlutoConfig.CocoStuffing)
+                {
+                    regenTimer -= dt;
+                    if (regenTimer <= 0f) { regenTimer = PlutoConfig.CocoStuffingRegenSeconds; stuffing++; }
+                }
                 if (watched == null && m_owner != null)
                 {
                     watched = m_owner;
@@ -164,9 +184,9 @@ namespace PlutoTheCat
             {
                 if (other == null || other.projectile == null) return;
                 Projectile p = other.projectile;
-                if (p.Owner is PlayerController || !PlutoConfig.CocoBlocksBullets)
+                if (p.Owner is PlayerController || !PlutoConfig.CocoBlocksBullets || ko)
                 {
-                    PhysicsEngine.SkipCollision = true;    // Pluto's own shots pass through Coco
+                    PhysicsEngine.SkipCollision = true;    // Pluto's own shots pass through; a knocked-out Coco blocks nothing
                     return;
                 }
                 // Enemy bullet: it dies against the blocker layer; Coco squishes and a spark pops.
@@ -175,12 +195,46 @@ namespace PlutoTheCat
                     blockCooldown = 0.15f;
                     if (aiAnimator != null) aiAnimator.PlayUntilFinished("block", true);
                     PlutoVFX.Spawn(PlutoVFX.BlockSpark, other.UnitCenter);
+                    stuffing--;
+                    regenTimer = PlutoConfig.CocoStuffingRegenSeconds;
+                    if (stuffing <= 0) KnockOut();
                 }
+            }
+
+            // ---------------------------------------------------------------- knocked out
+            private void KnockOut()
+            {
+                if (ko) return;
+                ko = true;
+                koLeft = PlutoConfig.CocoKnockoutSeconds;
+                if (decoy) EndDecoy();
+                CompanionFollowPlayerBehavior follow = Follow();
+                if (follow != null) follow.TemporarilyDisabled = true;
+                if (aiActor != null) aiActor.ClearPath();
+                if (aiAnimator != null) aiAnimator.PlayUntilCancelled("ko", true);
+                PlutoVFX.Spawn(PlutoVFX.FurPuff, (Vector2)transform.position + new Vector2(0.5f, 0.4f));
+                AkSoundEngine.PostEvent("Play_OBJ_item_throw_01", gameObject);
+            }
+
+            private void Recover()
+            {
+                if (!ko) return;
+                ko = false;
+                stuffing = PlutoConfig.CocoStuffing;
+                CompanionFollowPlayerBehavior follow = Follow();
+                if (follow != null) follow.TemporarilyDisabled = false;
+                if (aiAnimator != null)
+                {
+                    aiAnimator.EndAnimationIf("ko");
+                    aiAnimator.PlayUntilFinished("block", true);   // a little spring back up
+                }
+                PlutoVFX.Spawn(PlutoVFX.LoveBurst, (Vector2)transform.position + new Vector2(0.5f, 0.8f));
             }
 
             // ---------------------------------------------------------------- decoy mode
             public void StartDecoy(float seconds)
             {
+                if (ko) return;
                 decoyLeft = seconds;
                 if (decoy) return;
                 decoy = true;
