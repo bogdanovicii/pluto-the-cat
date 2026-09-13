@@ -43,3 +43,4 @@ Separate project in `PlutoVetVisit/`; never touch `PlutoTheCat/`, `tools/`, `thu
 - [x] Test zips: PlutoVetVisit/releases/Pluto_Vet_Visit-0.1.0.zip (final), -m1 and -m3 milestone builds
 - [ ] In-game tests 1-4 on the Steam machine (docs/checklist.md in PlutoVetVisit) — results pending
 - [ ] Milestone 5 integration into PlutoTheCat after the in-game pass
+- [x] Pushed to https://github.com/bogdanovicii/pluto-vet-visit (private, main + tag v0.1.0, release with the m1/m3/final zips) — 2026-09-14
