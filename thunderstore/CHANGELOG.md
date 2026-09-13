@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.8.0
+- The Squeaky Toy is now a B-quality item in chests and Trorc's shop: any Gungeoneer who picks it up gets Coco Blue as a companion, and loses him if they drop the toy. Pluto still starts with it and can never drop it.
+- New Squeaky Toy icon: a little blue Coco-shaped toy.
+
 ## 2.7.0
 - Coco Blue can be knocked out: after blocking 8 bullets he flops onto his back for 10 s, blocks nothing and cannot decoy until he recovers. Petting him brings him round early. Stuffing regenerates one point every 4 s. All configurable.
 

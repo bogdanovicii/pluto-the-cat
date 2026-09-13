@@ -265,22 +265,24 @@ COCO_DECOY_1 = R([
 ])
 COCO_DECOY = [squash(COCO_DECOY_1, 0.85), shift(COCO_DECOY_1, 0, -3), shift(COCO_DECOY_1, 0, -1), COCO_DECOY_1]
 
-# Squeaker active item icon 16 x 14: a red rubber squeaker with a white burst
+# Squeaky Toy icon 16 x 16: a little blue Coco-shaped squeaky toy with a nozzle, squeaking
 SQUEAKER_ICON = R([
-"......o.........",
-".....oKo...o....",
-"....oKKKo.oKo...",
-".....oKo.oKKKo..",
-"..ooooooooKo....",
-".oRRRRRRRRo.....",
-"oRqRRRRRRRRo....",
-"oRRRRRRRRRRo....",
-"oRRRRrRRRRRo....",
-".oRRRRRRRRo.....",
-"..oooooooo......",
-"....oSSSo.......",
-"....osssoo......",
-".....ooo........",
+"...K.......K....",
+"..KKK.....KKK...",
+"...K.......K....",
+"....oo....oo....",
+"...o12o..o22o...",
+"...o1222oo222o..",
+"..o12222222223o.",
+"..o12o22o2222Wo.",
+"..o122WWW22222o.",
+"..o122WPW2222Wo.",
+"...o32222222Wo..",
+"....oo3222oo....",
+"......oSSo......",
+"......osso......",
+".......oo.......",
+"................",
 ])
 
 # Bullet-pop spark VFX for the block, 3 frames 12 x 12
