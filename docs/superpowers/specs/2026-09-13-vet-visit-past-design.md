@@ -203,7 +203,7 @@ Two sources, one rule: every in-game PNG is produced by a script from a checked-
   the prompts from a table, skips files that already exist, and writes to `PlutoVetVisit/reference/gemini/`; the key is
   never logged. Without a key the script prints what it would generate and the pixel fallbacks are used.
 - **ASCII pixel maps** (same toolkit as the main mod: `tools/pixel.py` imported read-only) for everything animated or
-  collision-sensitive: The Vet's 6 clips (~34 frames at 32 x 40, feet on one row), room objects (carrier 32 x 24,
+  collision-sensitive: The Vet's 6 clips (32 frames at 48 x 40, feet on one row), room objects (carrier 32 x 24,
   exam table 48 x 32, cabinet 32 x 40, cart 24 x 24, sink 32 x 32, scale 16 x 16, poster 16 x 24, cone 12 x 10,
   toys 8-16 px), projectiles (syringe 8 x 4, droplet 4 x 4, pill 6 x 4), and the room preview PNG rendered from the cell
   map into `PlutoVetVisit/docs/preview/`.
