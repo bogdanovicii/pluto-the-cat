@@ -23,3 +23,4 @@
 - A strict canvas (`pad`/`overlay` raising on dropped pixels) found five silent clipping bugs on the first run. Keep transforms strict for body art; give item/VFX art explicit lenient aliases instead of loosening the rule.
 - Lint metrics must match the craft rule they encode: a "changed pixel %" flicker check flagged every legitimate hop; the rule is "a lone pixel toggling", so the check aligns frames and looks for a single-pixel difference.
 - Previews must render what the game renders: without the simulated runtime outline the outline-free frames look wrong and judgement drifts.
+- Verify engine claims from the decompiled source before shipping a change that depends on them: `PlayerController.Start` and `AIActor.Start` (with `procedurallyOutlined = true` by default) both add the runtime outline, which is why Pluto and Coco ship outline-free. The Re-ETG raw dump on GitHub answers such questions in one fetch.
