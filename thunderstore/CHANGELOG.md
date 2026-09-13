@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.10.1
+- The Royal Canin bag has a real silhouette now: pinched sealed end at the paw, rounded belly, torn spout with kibble spilling out; the crown and cat stay on the Ammonomicon page where they fit.
+- Pipeline: PNG-to-rows importer for editor touch-ups, orphan-pixel and stray-flicker lint checks, and a project skill (.claude/skills/pluto-pixel-art) that captures the palette, specs, timing and checklist.
+
 ## 2.10.0
 - Art pass B, animation keys. Idle is a real squash (head sinks into the shoulders, feet and belly stay put) with an ear flick; in the run the head lags a row and the ears blow back on the airborne frames.
 - Dodge roll: crouch, stretched leap, three tumbles, low ball, landing squash, 1-px overshoot, idle.

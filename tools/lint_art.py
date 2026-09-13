@@ -8,6 +8,8 @@ Checks encode the rules from docs/research/03a and 03b:
   colours    at most MAX_KEYS palette keys per frame (excluding '.' and 'o')
   holds      identical consecutive frames are declared holds, not accidents
   palette    every key exists (img_from_rows raises otherwise)
+  orphans    a drawn pixel with no drawn 8-neighbour (stray pixel) -> warning
+  flicker    after aligning consecutive frames by their content box, a single-pixel difference -> warning
 Errors fail the build; warnings are printed.
 """
 import sys
@@ -34,11 +36,30 @@ AIRBORNE = {
     'pet': {1}, 'slide_right': ALL, 'slide_up': ALL, 'slide_down': ALL, 'chest_recover': set(),
 }
 # clips where repeated frames are intentional holds
+# max changed-pixel fraction between consecutive frames (looping clips only)
 HOLDS = {'death', 'death_shot', 'item_get', 'chest_recover', 'select_choose', 'knock', 'loaf', 'pet', 'slide_right',
          'slide_up', 'slide_down', 'stretch', 'ghost_sneeze_left', 'ghost_sneeze_right', 'timefall', 'spinfall',
          'dodge', 'dodge_bw', 'dodge_left', 'dodge_left_bw', 'death_coop', 'tablekick_right', 'jetpack_down',
          'jetpack_right', 'jetpack_right_bw', 'jetpack_up', 'doorway', 'idle', 'idle_forward', 'idle_backward', 'idle_bw',
          'select_idle', 'groom'}
+
+
+def bbox(f):
+    ys = [y for y, r in enumerate(f) if any(ch != '.' for ch in r)]
+    xs = [x for r in f for x, ch in enumerate(r) if ch != '.']
+    return (min(xs), min(ys)) if ys else (0, 0)
+
+
+def aligned_diff(a, b, W, H):
+    (ax, ay), (bx, by) = bbox(a), bbox(b)
+    dx, dy = bx - ax, by - ay
+    n = 0
+    for y in range(H):
+        for x in range(W):
+            pa = a[y - dy][x - dx] if 0 <= y - dy < H and 0 <= x - dx < W else '.'
+            if pa != b[y][x]:
+                n += 1
+    return n
 
 
 def base_clip(name):
@@ -74,6 +95,19 @@ def lint(clips, W, H, ground, label=''):
                 warnings.append(f'{tag}: {len(keys)} colours > {MAX_KEYS}: {"".join(sorted(keys))}')
             if seen is not None and f == seen and base not in HOLDS:
                 warnings.append(f'{tag}: identical to the previous frame (declare a hold or draw a key)')
+            if seen is not None:
+                # stray-pixel flicker: after aligning the two frames by their content boxes, a change of
+                # exactly one pixel is a pixel blinking on and off, not an animation key (a 2-px ear flick is fine)
+                changed = aligned_diff(seen, f, W, H)
+                if changed == 1:
+                    warnings.append(f'{tag}: a single pixel differs from the previous frame after alignment (stray flicker?)')
+            for y in range(H):
+                for x in range(W):
+                    if f[y][x] in '.o':
+                        continue
+                    if not any(0 <= x + dx < W and 0 <= y + dy < H and f[y + dy][x + dx] != '.'
+                               for dx in (-1, 0, 1) for dy in (-1, 0, 1) if dx or dy):
+                        warnings.append(f'{tag}: orphan pixel {f[y][x]!r} at ({x},{y})')
             seen = f
     return errors, warnings
 

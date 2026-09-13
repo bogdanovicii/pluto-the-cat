@@ -123,42 +123,30 @@ GUN_W, GUN_H = 32, 18
 
 
 def gun_bag():
-    c = blank(GUN_W, GUN_H)
-    c = put(c, rrect(28, 14, 'W'), 1, 1)                 # bag body x1..28, y1..14
-    c = row(c, 2, 5, 24, 'K')                             # top highlight
-    c = row(c, 13, 5, 24, 'w')                            # bottom shade
-    c = col(c, 24, 3, 12, 'w')                            # right-side shade
-    for x in (2, 3, 4):                                   # gusset (bag bottom) silver
-        c = col(c, x, 2, 13, 'N')
-    c = col(c, 3, 3, 12, 's')                             # gusset fold
-    c = col(c, 25, 2, 13, 'N')                            # zip strip
-    c = col(c, 26, 2, 13, 'N')
-    c = col(c, 27, 2, 13, 's')
-    for y in (3, 5, 7, 9, 11):                            # zip teeth
-        c = put(c, ['o'], 26, y)
-    c = col(c, 8, 5, 10, 'w')                             # wrinkle
-    c = col(c, 21, 4, 9, 'w')                             # wrinkle
-    c = put(c, CROWN, 9, 3)                               # crown
-    c = put(c, KIBBLE_PIC, 9, 9)                          # kibble picture under the crown
-    c = col(c, 14, 2, 13, 'R')                            # red ROYAL CANIN band (vertical because the bag lies down)
-    c = col(c, 15, 2, 13, 'R')
-    c = col(c, 16, 2, 13, 'r')
-    for y in (4, 6, 8, 10):                               # white letter hints on the band
-        c = put(c, ['K'], 15, y)
-    circle = R([                                          # purple label (7 x 9)
-    "..vvv..",
-    ".vVVVv.",
-    "vVVVVVv",
-    "vVVVVVv",
-    "vVVVVVv",
-    "vVVVVVv",
-    "vVVVVVv",
-    ".vVVVv.",
-    "..vvv..",
+    """Royal Canin bag held sideways like a gun, 32 x 18. Silhouette first: a pinched, sealed grip end on
+    the left (where the paw holds it), a rounded belly, and a torn-open spout on the right with kibble
+    spilling out. Only the red band and the purple label survive at gun scale; the crown and the cat
+    live on the Ammonomicon sprite."""
+    return R([
+    "................................",  # 0
+    ".......oooooooooooooooooooo.....",  # 1
+    "......oNKKKKKKKRRrWWvvvWWWWo....",  # 2  top highlight, red band, purple label
+    ".....oNsWWWWWWWRRrWvVVVvWWWWo...",  # 3
+    "....oNsWWWWWWWWRRrvVVVVVvWWWoo..",  # 4  torn spout starts
+    "...oNsWWWWWWWWWRRrvVVVVVvWWWWWo.",  # 5
+    "..oNNsWWWWWWWWWRRrvVVVVVvWWWWWWo",  # 6  flap open
+    "..oNsWWWWWWWWWWRRrvVVVVVvWWWWwWo",  # 7
+    "..oNsWWWWWWWWWWRRrvVVVVVvWWWwoo.",  # 8  spout lip
+    "...oNsWWWWWWWWWRRrWvVVVvWWWwoMM.",  # 9  kibble spilling
+    "....oNsWWWWWWWWRRrWWvvvWWwwo.M..",  # 10
+    ".....oNswWWWWWWRRrWWWWWWwwwo....",  # 11
+    "......oNswwwwwwRRrwwwwwwwwo.....",  # 12 bottom shade
+    ".......oooooooooooooooooooo.....",  # 13
+    "................................",  # 14
+    "................................",  # 15
+    "................................",  # 16
+    "................................",  # 17
     ])
-    c = put(c, circle, 17, 3)
-    c = put(c, CAT_SIT, 18, 4)
-    return c
 
 
 GUN_IDLE = gun_bag()
