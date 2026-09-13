@@ -1,0 +1,30 @@
+#Pluto the Cat - Alexandria CharacterAPI definition
+#Lines starting with # and empty lines are ignored by the loader.
+
+base: Pilot
+name: Pluto the Cat
+name short: Pluto
+nickname: Pluto
+armor: 0
+
+<loadout>
+	pluto:kibble_sack infinite
+	pluto:wet_food_can
+	pluto:nine_lives
+	pluto:coco_blue
+	pluto:puffed_up
+</loadout>
+
+#Alexandria 0.5.10 requires this block even without an alt skin (HandleLoadout iterates it without a null check).
+<altGuns>
+	pluto:gravy_pouch
+</altGuns>
+
+<stats>
+	Health: 3
+	MovementSpeed: 7.5
+	DodgeRollSpeedMultiplier: 1.1
+	DodgeRollDistanceMultiplier: 1.15
+	DodgeRollDamage: 3
+	Coolness: 1
+</stats>

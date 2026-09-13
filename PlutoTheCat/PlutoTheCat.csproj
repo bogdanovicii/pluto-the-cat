@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{5B1C0B62-7C9B-4C1E-9C3F-2B5A9E1F0C11}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>PlutoTheCat</RootNamespace>
+    <AssemblyName>PlutoTheCat</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <LangVersion>latest</LangVersion>
+    <FileAlignment>512</FileAlignment>
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <DebugType>portable</DebugType>
+    <Optimize>true</Optimize>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>MSB3277</NoWarn>
+  </PropertyGroup>
+
+  <!-- Reference assemblies restored from nuget.bepinex.dev (see packages.config / nuget.config). -->
+  <PropertyGroup>
+    <Pkg>packages</Pkg>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp"><HintPath>$(Pkg)\EtG.GameLibs.2.1.9.1\lib\net35\Assembly-CSharp.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="Assembly-CSharp-firstpass"><HintPath>$(Pkg)\EtG.GameLibs.2.1.9.1\lib\net35\Assembly-CSharp-firstpass.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="PlayMaker"><HintPath>$(Pkg)\EtG.GameLibs.2.1.9.1\lib\net35\PlayMaker.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="BepInEx"><HintPath>$(Pkg)\BepInEx.BaseLib.5.4.21\lib\net35\BepInEx.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="ModTheGungeonAPI"><HintPath>$(Pkg)\EtG.ModTheGungeonAPI.1.9.2\lib\net35\ModTheGungeonAPI.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="Alexandria"><HintPath>$(Pkg)\EtG.Alexandria.0.5.10\lib\net35\Alexandria.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="0Harmony"><HintPath>$(Pkg)\HarmonyX.2.7.0\lib\net35\0Harmony.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="MonoMod.RuntimeDetour"><HintPath>$(Pkg)\MonoMod.RuntimeDetour.21.12.13.1\lib\net35\MonoMod.RuntimeDetour.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="MonoMod.Utils"><HintPath>$(Pkg)\MonoMod.Utils.21.12.13.1\lib\net35\MonoMod.Utils.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="Newtonsoft.Json"><HintPath>$(Pkg)\Newtonsoft.Json.13.0.1\lib\net35\Newtonsoft.Json.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="UnityEngine"><HintPath>$(Pkg)\EtG.UnityEngine.1.0.0\lib\UnityEngine.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="UnityEngine.CoreModule"><HintPath>$(Pkg)\EtG.UnityEngine.1.0.0\lib\UnityEngine.CoreModule.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="UnityEngine.Physics2DModule"><HintPath>$(Pkg)\EtG.UnityEngine.1.0.0\lib\UnityEngine.Physics2DModule.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="UnityEngine.ImageConversionModule"><HintPath>$(Pkg)\EtG.UnityEngine.1.0.0\lib\UnityEngine.ImageConversionModule.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="UnityEngine.AudioModule"><HintPath>$(Pkg)\EtG.UnityEngine.1.0.0\lib\UnityEngine.AudioModule.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="UnityEngine.ParticleSystemModule"><HintPath>$(Pkg)\EtG.UnityEngine.1.0.0\lib\UnityEngine.ParticleSystemModule.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="UnityEngine.TextRenderingModule"><HintPath>$(Pkg)\EtG.UnityEngine.1.0.0\lib\UnityEngine.TextRenderingModule.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="UnityEngine.UIModule"><HintPath>$(Pkg)\EtG.UnityEngine.1.0.0\lib\UnityEngine.UIModule.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="UnityEngine.AnimationModule"><HintPath>$(Pkg)\EtG.UnityEngine.1.0.0\lib\UnityEngine.AnimationModule.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="UnityEngine.IMGUIModule"><HintPath>$(Pkg)\EtG.UnityEngine.1.0.0\lib\UnityEngine.IMGUIModule.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="src\*.cs" />
+  </ItemGroup>
+
+  <!-- All art is embedded. Manifest names become RootNamespace.Folder.Sub.file.ext, which is what
+       Alexandria's CharacterAPI and the MtG API sprite loader expect. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Characters\**\*.png" />
+    <EmbeddedResource Include="Characters\**\characterdata.txt" />
+    <EmbeddedResource Include="Resources\**\*.png" />
+    <EmbeddedResource Include="Resources\**\*.jtk2d" />
+  </ItemGroup>
+
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

@@ -1,0 +1,9 @@
+# build outputs
+PlutoTheCat/bin/
+PlutoTheCat/obj/
+PlutoTheCat/packages/
+dist/
+# generated previews are kept (docs/art-preview), but not scratch
+*.pyc
+__pycache__/
+.DS_Store
