@@ -18,3 +18,8 @@
 - Enter the Gungeon adds the 1-px black outline to player and hand sprites at runtime; vanilla body frames have no outline. A baked outline gives a double outline in game. Check the renderer's decompiled code (outline, anchor, hand semantics) before an art pass, not after.
 - `_bw` clips are the back-view side sprite (aiming up-diagonal), `_hand` means the body draws its free hand (one-handed gun), `_twohands` means no gun. Names in the Alexandria table are not self-explanatory; look them up in `PlayerController.GetBaseAnimationName`.
 - Frames are anchored bottom-left: hops are drawn inside the canvas, so the canvas needs headroom (24x24, not 24x20).
+
+## 2026-09-14 — art passes A-C
+- A strict canvas (`pad`/`overlay` raising on dropped pixels) found five silent clipping bugs on the first run. Keep transforms strict for body art; give item/VFX art explicit lenient aliases instead of loosening the rule.
+- Lint metrics must match the craft rule they encode: a "changed pixel %" flicker check flagged every legitimate hop; the rule is "a lone pixel toggling", so the check aligns frames and looks for a single-pixel difference.
+- Previews must render what the game renders: without the simulated runtime outline the outline-free frames look wrong and judgement drifts.
