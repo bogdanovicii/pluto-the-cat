@@ -10,3 +10,6 @@ __pycache__/
 
 # separate project living in this folder (its own git repo)
 PlutoVetVisit/
+
+# Gemini raw generations (large, regenerable with tools/gen_art.py)
+docs/gen/raw/

@@ -39,6 +39,12 @@
 - [x] 2.8.1: two active slots (AdditionalItemCapacity), pet-in-combat decoy, bathtub above Pluto via BathtubOffset
 - [ ] 2.9: Punch-Out sprites once the Steam machine logs the Pilot's punchout sprite names
 - [ ] git init + tag releases (user has not asked yet)
+- [x] Gemini pipeline set up (tools/gen_art.py, key in settings env); 7 references generated to docs/gen; AI-vs-hand comparison → user chose hand-drawn
+- [x] Art research: 4 reports in docs/research/03a-03d (craft rules, vanilla EtG conventions, pipeline critique, tooling) → synthesis in 03-hand-drawn-art-improvement-plan.md
+- [ ] Art Pass A (2.9.0, needs approval): no baked outline on body/hand, 24x24 canvas, lean/ball/tail/ghost fixes, grey-brown hue-shifted palette, canonical head, floor previews + APNG, minimal lint
+- [ ] Art Pass B (2.10.0): vanilla hop run, squash idle, hand-drawn dodge/death/slide/pitfall keys, hand-variant + _bw semantics, fur regen
+- [ ] Art Pass C: parts library + offset tables, import_png round trip, full lint gate, project skill .claude/skills/pluto-pixel-art, bag silhouette
+- [ ] In-game checks on the Steam machine: Pluto vs Pilot outline screenshot, Coco outline, primaryHand offsets, punchout log lines
 - [ ] v2 later: custom sounds (Alexandria SoundAPI needs Wwise soundbanks), custom past, Hegemony unlock cost
 
 ## Review

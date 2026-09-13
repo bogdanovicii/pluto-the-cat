@@ -8,3 +8,13 @@
 ## 2026-09-13 — vanilla item ids
 - Never guess a vanilla console id. Every id must be looked up in `docs/research/gungeon_items_idmap.txt` (Cardboard Box is `box`, the cheese is `partially_eaten_cheese`). `tools/validate.py` now enforces this for synergy ids.
 - Optional features (synergies) register last and each in its own try/catch, so one bad id costs a synergy, not the character.
+
+## 2026-09-13 — AI art vs hand-drawn sprites
+- Gemini-generated sprites pixelized to 16-34 px lost to the hand-authored row-string art in a side-by-side; the user chose hand-drawn. Do not replace sprites with generated images; at most use generations as colour/shape references.
+- Before spending API calls on sprite-sized art, show a comparison sheet (AI vs current) at 7x and let the user decide. Large painted pieces (boss card, win pic, icon) are a separate decision.
+- "Better graphics" now means raising the craft of the hand-drawn pipeline (palette ramps, outlines, animation timing), not swapping the source of the art.
+
+## 2026-09-14 — read the engine before drawing for it
+- Enter the Gungeon adds the 1-px black outline to player and hand sprites at runtime; vanilla body frames have no outline. A baked outline gives a double outline in game. Check the renderer's decompiled code (outline, anchor, hand semantics) before an art pass, not after.
+- `_bw` clips are the back-view side sprite (aiming up-diagonal), `_hand` means the body draws its free hand (one-handed gun), `_twohands` means no gun. Names in the Alexandria table are not self-explanatory; look them up in `PlayerController.GetBaseAnimationName`.
+- Frames are anchored bottom-left: hops are drawn inside the canvas, so the canvas needs headroom (24x24, not 24x20).
