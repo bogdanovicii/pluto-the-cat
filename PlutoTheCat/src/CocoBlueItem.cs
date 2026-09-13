@@ -50,10 +50,9 @@ namespace PlutoTheCat
             controller.CanBePet = true;                       // interact next to Coco to pet him (the Dog's mechanic)
             prefab.GetComponent<AIActor>().MovementSpeed = 6.5f;
 
-            // Bullets treat Coco as a blocker (same trick the Doug NPC uses); player bullets are let through in code.
-            SpeculativeRigidbody body = prefab.GetComponent<SpeculativeRigidbody>();
-            if (body != null && PlutoConfig.CocoBlocksBullets)
-                body.AddCollisionLayerOverride(CollisionMask.LayerToMask(CollisionLayer.BulletBlocker));
+            // Bullet blocking is done by a separate shield body created at runtime (see CocoBlueController):
+            // the companion's own body has CollideWithOthers off so everyone can walk through him, and that
+            // flag also makes the physics engine ignore projectiles against it.
 
             prefab.AddAnimation("idle", Plugin.COMPANION_ROOT + "/idle", 4, CompanionBuilder.AnimationType.Idle,
                 DirectionalAnimation.DirectionType.Single).wrapMode = tk2dSpriteAnimationClip.WrapMode.Loop;
@@ -119,6 +118,32 @@ namespace PlutoTheCat
             private void OnDisable() { Instances.Remove(this); }
 
             private bool hooked;
+            private SpeculativeRigidbody shield;
+
+            /// <summary>A bullet-blocker body that rides on Coco. Only projectiles interact with that layer.</summary>
+            private void BuildShield()
+            {
+                if (!PlutoConfig.CocoBlocksBullets || shield != null) return;
+                GameObject go = new GameObject("coco_shield");
+                go.transform.parent = transform;
+                go.transform.localPosition = Vector3.zero;
+                shield = go.AddComponent<SpeculativeRigidbody>();
+                shield.CollideWithTileMap = false;
+                shield.CollideWithOthers = true;
+                shield.PixelColliders = new List<PixelCollider>
+                {
+                    new PixelCollider
+                    {
+                        ColliderGenerationMode = PixelCollider.PixelColliderGeneration.Manual,
+                        CollisionLayer = CollisionLayer.BulletBlocker,
+                        IsTrigger = false,
+                        ManualOffsetX = 2, ManualOffsetY = 1,
+                        ManualWidth = 12, ManualHeight = 10,
+                    }
+                };
+                shield.Reinitialize();
+                shield.OnPreRigidbodyCollision += OnPreCollision;
+            }
 
             public override void Update()
             {
@@ -127,9 +152,14 @@ namespace PlutoTheCat
                 {
                     // CompanionController's own Start is not virtual, so hook up on the first frame instead.
                     hooked = true;
-                    if (specRigidbody != null) specRigidbody.OnPreRigidbodyCollision += OnPreCollision;
                     if (aiActor != null) normalSpeed = aiActor.MovementSpeed;
                     stuffing = PlutoConfig.CocoStuffing;
+                    BuildShield();
+                }
+                if (shield != null)
+                {
+                    shield.transform.position = transform.position;   // keep the shield on Coco
+                    shield.Reinitialize();
                 }
                 float dt = BraveTime.DeltaTime;
                 cooldown -= dt; blockCooldown -= dt;
@@ -156,6 +186,8 @@ namespace PlutoTheCat
                     AkSoundEngine.PostEvent("Play_OBJ_item_throw_01", gameObject);
                     PlayerController petter = m_pettingDoer != null ? m_pettingDoer : m_owner;
                     if (petter != null) StartCoroutine(CatTricks.TimedSpeed(petter, 2f, 3f));
+                    // A pet in the middle of a fight is the "go get them" signal: same as the Squeaky Toy.
+                    if (petter != null && petter.IsInCombat && !ko) StartDecoy(PlutoConfig.DecoySeconds);
                 }
                 wasBeingPet = petting;
 
@@ -165,7 +197,7 @@ namespace PlutoTheCat
             public override void OnDestroy()
             {
                 if (watched != null && watched.healthHaver != null) watched.healthHaver.OnDamaged -= OnOwnerDamaged;
-                if (specRigidbody != null) specRigidbody.OnPreRigidbodyCollision -= OnPreCollision;
+                if (shield != null) { shield.OnPreRigidbodyCollision -= OnPreCollision; Destroy(shield.gameObject); shield = null; }
                 if (decoy) EndDecoy();
                 Instances.Remove(this);
                 base.OnDestroy();

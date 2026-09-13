@@ -28,4 +28,5 @@ armor: 0
 	DodgeRollDistanceMultiplier: 1.15
 	DodgeRollDamage: 3
 	Coolness: 1
+	AdditionalItemCapacity: 1
 </stats>

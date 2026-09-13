@@ -11,9 +11,9 @@ Adds **Pluto the Cat** as a new playable Gungeoneer. He is a chunky brown tabby-
 - **Puffed Up** (starter passive): hit Pluto and he bristles for a few seconds, bigger and fuzzier, hitting harder and faster.
 - **Cat reflexes**: a longer dodge roll with more invulnerable frames.
 - **Synergies**: Complete Feline Nutrition (kibble homes in with any snack item), Dinner Time (charm lasts twice as long with Charming Rounds, Charm Horn or Yellow Chamber), Laser Pointer (dodge rolls leave a red dot enemies chase, with any laser gun), Box Fort (Cardboard Box has no cooldown).
-- **Coco Blue** (starter companion): Pluto's plush cat follows him, drops a kibble crumb whenever Pluto gets hurt, and stops any enemy bullet that touches him. After eight blocks he is knocked out for a while (pet him to bring him round early). Pet him (interact next to him) for hearts and a burst of speed.
-- **Squeaky Toy** (second starter active, swap actives to reach it): sends Coco out as a decoy for a few seconds; enemies chase him while he dodges around the room. Pluto can never drop it. It also appears in chests and shops for every other character: pick it up and Coco follows you too, drop it and he leaves.
-- **Wet Pluto** alt skin: touch the bathtub next to him in the Breach. Wet Pluto carries the Royal Canin Gravy Pouch instead of the kibble bag.
+- **Coco Blue** (starter companion): Pluto's plush cat follows him, drops a kibble crumb whenever Pluto gets hurt, and stops any enemy bullet that touches him. After eight blocks he is knocked out for a while (pet him to bring him round early). Pet him (interact next to him) for hearts and a burst of speed; pet him during a fight and he goes decoy.
+- **Squeaky Toy** (second starter active; Pluto has two active slots, swap with the active-swap key): sends Coco out as a decoy for a few seconds; enemies chase him while he dodges around the room. Pluto can never drop it. It also appears in chests and shops for every other character: pick it up and Coco follows you too, drop it and he leaves.
+- **Wet Pluto** alt skin: touch the bathtub just above him in the Breach. Wet Pluto carries the Royal Canin Gravy Pouch instead of the kibble bag.
 - Enemies that die while in love sometimes drop a kibble bowl that heals half a heart.
 
 ## Install (r2modman)

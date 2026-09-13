@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.8.1
+- Fix: bullets passed through Coco. His companion body ignores all collisions by design; a separate bullet-blocker body now rides on him.
+- Pluto now has two active-item slots, so he starts with both the Wet Food Can and the Squeaky Toy (swap with the active-swap key).
+- Petting Coco during a fight also sends him out as a decoy.
+- Bathtub moved: it now stands two tiles above Pluto in the Breach (new config key `BathtubOffset`, relative to him).
+
 ## 2.8.0
 - The Squeaky Toy is now a B-quality item in chests and Trorc's shop: any Gungeoneer who picks it up gets Coco Blue as a companion, and loses him if they drop the toy. Pluto still starts with it and can never drop it.
 - New Squeaky Toy icon: a little blue Coco-shaped toy.

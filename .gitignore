@@ -7,3 +7,6 @@ dist/
 *.pyc
 __pycache__/
 .DS_Store
+
+# separate project living in this folder (its own git repo)
+PlutoVetVisit/

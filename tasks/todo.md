@@ -36,6 +36,7 @@
 - [x] 2.6.0: Coco blocks enemy bullets (BulletBlocker layer + squish + spark), Squeaky Toy decoy mode (OverrideTarget + flee pathing)
 - [x] 2.7.0: Coco knocked-out state (stuffing counter, KO animation, pet to revive, regen)
 - [x] 2.8.0: Squeaky Toy in the loot pool (grants/removes Coco), Coco-shaped icon, Pluto cannot drop it
+- [x] 2.8.1: two active slots (AdditionalItemCapacity), pet-in-combat decoy, bathtub above Pluto via BathtubOffset
 - [ ] 2.9: Punch-Out sprites once the Steam machine logs the Pilot's punchout sprite names
 - [ ] git init + tag releases (user has not asked yet)
 - [ ] v2 later: custom sounds (Alexandria SoundAPI needs Wwise soundbanks), custom past, Hegemony unlock cost
