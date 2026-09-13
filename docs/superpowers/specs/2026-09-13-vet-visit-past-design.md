@@ -135,7 +135,7 @@ the fixes the research found are mandatory in 0.5.10:
 - `bs.AttackBehaviors` replaced wholesale (the Fungun template's attacks survive otherwise).
 
 Clips, one folder per clip, zero-padded, right-facing only, left = `FlipType.Flip` (TwoWayHorizontal):
-`idle` 4f, `move` 6f, `tell` 3f, `fire` 3f, `intro` 8f, `die` 10f. Canvas 32 x 40 px, feet on the same row.
+`idle` 4f, `move` 6f, `tell` 3f, `fire` 3f, `intro` 8f, `die` 8f. Canvas 48 x 40 px, feet on the same row.
 `HitReactChance = 0`, `overrideDeathAnimation = "die"`.
 
 Bullet bank: `CopyBulletBankEntry(BulletKin "default", "syringe", "DNC")`, same for `droplet`, `pill`. Custom projectile
@@ -154,7 +154,7 @@ Below 50 % HP every cooldown is scaled by 0.7 (a second group item with a lower 
 
 Intro: `GenericIntroDoer` with `triggerType = BossTriggerZone` (never auto-triggers), `introAnim = "vet_intro"`,
 `BossMusicEvent` from config (default `Play_MUS_Boss_Theme_Beholster`), `portraitSlideSettings` with the 427 x 240 card,
-`HideGunAndHand = true`. `OnIntroFinished` re-enables the AI.
+`HideGunAndHand = false`. `OnIntroFinished` re-enables the AI.
 
 Death: `ExplodeOnDeath` with a harmless force-only explosion, `die` clip, and `VetDeathHandler` (`healthHaver.OnPreDeath`
 subscribed on the instance) that calls `VetVisitController.OnBossDied()`.
@@ -175,7 +175,7 @@ Start():  wait Dungeon.IsGenerating; SaveManager.DeleteCurrentSlotMidGameSave() 
           PastCameraUtility.UnlockConversation(); ClearInputOverride;
           vet.GenericIntroDoer.TriggerSequence(player)  -> walk-in, card, health bar; OnIntroFinished enables the AI.
 OnBossDied(): SetCharacterSpecificFlag(plutoIdentity, KILLED_PAST, true); RegisterStatChange(TIMES_KILLED_PAST, 1);
-          wait 3.5 s (death clip + kill cam); lock camera on Pluto; one line; Pixelator.FreezeFrame + time scale 0
+          wait 3.5 s (death clip + kill cam); lock camera on Pluto; Pixelator.FreezeFrame + time scale 0
           for ConvictPastController.FREEZE_FRAME_DURATION; new TimeTubeCreditsController().ClearDebris();
           HandleTimeTubeCredits(player.sprite.WorldCenter, false, null, -1); AmmonomiconController.OpenAmmonomicon(true, true).
 ```
