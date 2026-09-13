@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.11.0
+- Nine Lives rewritten as lore: Pluto has already spent six of his nine lives (balcony railing, washing machine, the neighbour's dog, a rubber band, the bathtub, the Gungeon's elevator door) and starts every run on his **seventh**. A lethal hit ends the current life and starts the next; the ninth is the last one, with no save. That is two saves per run instead of nine.
+- Banner now names the life ("Eighth life.", "Ninth life. The last one."). Config key `NineLives` replaced by `StartingLife` (default 7).
+
 ## 2.10.2
 - Coco Blue lost his double outline: companions are AIActors and the game outlines them at runtime, so his frames ship without a drawn outline (same as Pluto since 2.9.0).
 

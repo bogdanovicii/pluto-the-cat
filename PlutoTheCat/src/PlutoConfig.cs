@@ -9,7 +9,7 @@ namespace PlutoTheCat
     /// </summary>
     public static class PlutoConfig
     {
-        public static int NineLives = 9;
+        public static int StartingLife = 7;
         public static float KibbleDamage = 3.5f;
         public static int KibbleClip = 10;
         public static float KibbleCritChance = 0.05f;
@@ -40,7 +40,7 @@ namespace PlutoTheCat
 
         public static void Bind(ConfigFile cfg)
         {
-            NineLives = cfg.Bind("Balance", "NineLives", NineLives, "Lives per run for the Nine Lives passive (0 disables it).").Value;
+            StartingLife = cfg.Bind("Balance", "StartingLife", StartingLife, "Which of his nine lives Pluto starts a run on (7 = two saves left; 9 = no saves; 1 = eight saves).").Value;
             KibbleDamage = cfg.Bind("Balance", "KibbleDamage", KibbleDamage, "Damage per kibble (two kibble per shot).").Value;
             KibbleClip = cfg.Bind("Balance", "KibbleClip", KibbleClip, "Shots per clip for the Royal Kibble Sack.").Value;
             KibbleCritChance = cfg.Bind("Balance", "KibbleCritChance", KibbleCritChance, "Chance (0-1) that a kibble is a big chunk (3.5x damage).").Value;

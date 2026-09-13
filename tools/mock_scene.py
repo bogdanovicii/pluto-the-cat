@@ -126,7 +126,7 @@ try:
 except TypeError:
     font = ImageFont.load_default()
 d.text((120, 5), "NINE LIVES", fill=(245, 235, 255, 255), font=font)
-d.text((120, 12), "8 left", fill=(210, 190, 230, 255), font=font)
+d.text((120, 12), "Eighth life.", fill=(210, 190, 230, 255), font=font)
 
 out = im.resize((W * SCALE, H * SCALE), Image.NEAREST)
 os.makedirs(os.path.join(ROOT, 'docs', 'art-preview'), exist_ok=True)

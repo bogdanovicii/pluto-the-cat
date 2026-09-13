@@ -7,7 +7,7 @@ Adds **Pluto the Cat** as a new playable Gungeoneer. He is a chunky brown tabby-
 - **Pluto** in the Breach, selectable like any other Gungeoneer. Slightly faster than the Pilot with a quicker dodge roll.
 - **Royal Kibble Sack** (starter gun, infinite ammo): flings dry cat food by the pawful. Kibble bounces once, because kibble always ends up under the fridge.
 - **Wet Food Can** (starter active): lob a can of the good stuff. Every enemy near where it lands falls in love with Pluto for 10 seconds, fights on his side and takes 20 % more damage. Bosses are stunned for 3 seconds instead.
-- **Nine Lives** (starter passive): the first time a hit would kill Pluto it is cancelled, he stands back up with one heart and one of his nine lives is spent. Lives do not refill during a run.
+- **Nine Lives** (starter passive): Pluto has already spent six of his nine lives and starts every run on his seventh. A hit that would kill him is cancelled and the next life begins (one full heart). The ninth life is the last one: no more saves. Configurable (`StartingLife`).
 - **Puffed Up** (starter passive): hit Pluto and he bristles for a few seconds, bigger and fuzzier, hitting harder and faster.
 - **Cat reflexes**: a longer dodge roll with more invulnerable frames.
 - **Synergies**: Complete Feline Nutrition (kibble homes in with any snack item), Dinner Time (charm lasts twice as long with Charming Rounds, Charm Horn or Yellow Chamber), Laser Pointer (dodge rolls leave a red dot enemies chase, with any laser gun), Box Fort (Cardboard Box has no cooldown).
