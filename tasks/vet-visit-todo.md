@@ -69,4 +69,11 @@ Feedback: Pluto had no weapon, the Vet never attacked / had no weapon, the boss 
       two config-driven waves of rat/parrot/mutant kin at side-door and kennel cells, timeout guard) -> theatre (Vet spawns on entry,
       dialogue, fight). 46 unit tests; build + validate green; dist/Pluto_Vet_Visit-0.5.0.zip — 2026-09-14
 - [ ] In-game test 5 (docs/checklist.md milestone 5): doors render and block, waves spawn and clear, wall segments draw as walls — pending
-- [ ] 0.6.0 Vet Tech/Nurse; 0.7.0 intro cutscene + NPCs; 0.8.0 dressing + balance; 1.0 merge
+- [x] 0.6.0 cast: tools/tech_poses.py (32x32, 5 clips) + tools/nurse_poses.py (48x40, 6 clips); src/VetTech.cs (Tech + Nurse via
+      EnemyBuilder, Bullet-Kin brain, syringe/droplet/net bank); waves use Techs; Vet calls Nurse + 2 Techs at half health — 2026-09-14
+- [x] 0.7.0 story: tools/npc_poses.py (owner, receptionist, rex, grandma), src/ClinicNpc.cs placeables with comments, intro cutscene
+      (skippable lines, intercom, Owner walks out), critters, epilogue line — 2026-09-14
+- [x] 0.8.0 dressing: 8 new props placed, hearts on the nurse station, door sounds, [Cast] health config; CastLayout.cs generated;
+      72 unit tests; build + validate green; releases/Pluto_Vet_Visit-0.8.0.zip — 2026-09-14
+- [ ] Steam hand-off of 0.8.0 (GitHub release v0.8.0 + drop page + message to plutosm-unified-hearth) — in-game results pending
+- [ ] 1.0 merge into PlutoTheCat (separate approval)
