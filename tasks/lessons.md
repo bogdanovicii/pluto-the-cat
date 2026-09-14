@@ -83,3 +83,7 @@
 - Rule: commit in one step with explicit paths, `git commit -m ... -- <paths>` (it commits only those paths, whatever
   else is staged), and never leave files staged between commands. If a commit fails, `git restore --staged <paths>`
   before doing anything else.
+
+## Shared git index (2026-09-14, commit ebdebfc)
+- Two sessions share the parent repo's index. A plain `git add X && git commit` records everything the other session has staged too: ebdebfc (a one-line spec edit) carried 342 files of the character session's 2.16.0 work.
+- Rule: in the parent repo, commit only with explicit paths in one step, `git commit -m "..." -- <paths>`, and never leave files staged between commands. Check `git show --stat` after committing.
