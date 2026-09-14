@@ -16,6 +16,11 @@ namespace PlutoTheCat
         public const string DinnerTime = "Dinner Time";
         public const string LaserPointer = "Laser Pointer";
         public const string BoxFort = "Box Fort";
+        public const string Playdate = "Playdate";
+        public const string Squire = "Squire";
+        // Knighted is a tier of Squire, not a registered synergy: Alexandria cannot require six junk, so CocoFriends
+        // turns it on while Squire is active and Ser Junkan is a Holy (or Angelic) Knight.
+        public const string Knighted = "Knighted";
 
         // Vanilla console ids below are verified against docs/research/gungeon_items_idmap.txt (tools/validate.py checks them).
         public static void Init()
@@ -27,6 +32,8 @@ namespace PlutoTheCat
             Register(LaserPointer, new List<string> { KibbleSackGun.ID },
                 new List<string> { "laser_rifle", "science_cannon", "laser_lotus", "prototype_railgun" });
             Register(BoxFort, new List<string> { NineLivesItem.ID, "box" });   // "box" is the Cardboard Box
+            Register(Playdate, new List<string> { CocoBlueItem.ID, "dog" });  // effects in CocoFriends
+            Register(Squire, new List<string> { CocoBlueItem.ID, "junkan" }); // "junkan" is Ser Junkan
 
             CustomActions.OnNewPlayercontrollerSpawned += OnPlayerSpawned;
         }

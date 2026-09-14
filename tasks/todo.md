@@ -67,3 +67,29 @@ Risks / notes:
 - `PlutoCharmEffect` derives from `GameActorEffect` (not `GameActorCharmEffect`) to bypass the boss gate. Some boss AIs may ignore `CanTargetPlayers = false`; if a boss just idles, that is expected vanilla behaviour of charm on non-standard AI.
 - Punch-Out (Rat fight) uses the base Pilot body sprites; only the face cards are Pluto's.
 - Foyer position (14.6, 22.1) is a guess; tune in `Plugin.cs`.
+
+## 2.15.0 — Coco Blue synergies (Dog, Ser Junkan)
+
+Design chosen by the user 2026-09-14: Playdate (Dog), Squire +1 stuffing per Junkan form (Junkan), Knighted
+(helmet while Junkan is a Holy Knight), helmet BAKED into clips the way vanilla Junkan does it (junk_shspcg_* clip
+sets swapped by AnimNames). Version 2.15.0: the peer session enter-the-gungeon-pluto-c4 owns 2.14.0 (Wet Food Can
+projectile) and its uncommitted hunks in make_art.py / validate.py / CHANGELOG / PlutoConfig — never revert them.
+Engine facts (Re-ETG decompiled): `SackKnightController.CurrentForm` (HOLY_KNIGHT = 6 junk, rebuilt every frame),
+`AIActor.OverrideTarget` wins over `PlayerTarget`, Dog has no attack (only `DogItemFindBehavior`), one
+`m_pettingTarget` per player; Alexandria `AddAnimation` keeps clip names in `DirectionalAnimation.AnimNames`.
+
+- [x] **Playdate** (`pluto:coco_blue` + `dog`): CocoFriends — while Coco is a decoy the Dog (follow paused) paths to the
+      enemy chasing Coco and bites (6 dmg, 1.2 s); petting one wiggles the other (hearts + pet clip, Dog pet → speed burst)
+- [x] **Squire** (`pluto:coco_blue` + `junkan`): `MaxStuffing` = CocoStuffing + min(form, 6); Junkan `OverrideTarget` = chaser during decoy
+- [x] **Knighted**: Squire tier (not registered — Alexandria can't require 6 junk); `SetKnighted` swaps idle/move/pet/block/ko to knight_* clips
+- [x] Art: HELMET 9x8 + HELMET_DOWN in tools/art_v4.py, COCO_KNIGHT_* on a 16x20 canvas (KO 24x16), strict helpers; preview checked
+- [x] Swap the 3 `PlutoConfig.CocoStuffing` reads in CocoBlueController for `MaxStuffing` (+ clamp) — after the peer's build is green
+- [x] make_art.py export (knight_* folders), lint_art.py companion lint, validate.py tuple list — after the peer's build is green
+- [x] ./build.sh (log to file, check exit status), CHANGELOG 2.15.0 above 2.14.0, version bump
+- [ ] In-game check on the Steam machine: Dog pathing while follow is paused, Dog bite reach, Junkan charging the override target, helmet swap on pet/KO
+- Found in passing: plain COCO_MOVE hop frames clip Coco's ears (lenient shift) — spun off as its own task
+
+### Review (2.15.0 Coco synergies)
+Built green 2026-09-14: dist/Pluto_The_Cat-2.15.0.zip sha256 380fb7241bd1843d8ea980aee1b8a29954b2725e30851fd38482e54fbd890611 (combined release with the peer's Wet Food Can rework).
+Verified statically: compiles, lint 0/0 (knight clips included), validate ok (dog/junkan ids, knight clip counts, no baked outline), 19 knight frames embedded.
+Not verified (needs the game): Dog pathing with its follow behaviour paused (the Dog prefab's behaviour list is prefab data), Junkan's SeekTargetBehavior walking to OverrideTarget, `AIAnimator.PlayForDuration("pet")` on the Dog, the helmet clip swap mid-pet/KO.

@@ -20,7 +20,8 @@ sys.path.insert(0, HERE)
 
 MAX_KEYS = 14
 # clips whose content legitimately leaves the canvas (sinking into a pit, tumbling)
-EDGE_OK = {'pitfall', 'pitfall_down', 'pitfall_return', 'spit_out'}
+EDGE_OK = {'pitfall', 'pitfall_down', 'pitfall_return', 'spit_out',
+           'coco_knight_pet'}   # mirrors the plain Coco pet clip's 1-px sideways wiggle; make_art adds the outline margin
 ALL = 'all'
 
 # frames whose feet are legitimately off the ground (index sets) or ALL
@@ -33,6 +34,7 @@ AIRBORNE = {
     'ghost_idle_back': ALL, 'ghost_idle_back_left': ALL, 'ghost_idle_back_right': ALL, 'ghost_idle_front': ALL,
     'ghost_idle_left': ALL, 'ghost_idle_right': ALL, 'ghost_sneeze_left': ALL, 'ghost_sneeze_right': ALL,
     'death_coop': ALL, 'death': {5}, 'death_shot': {4}, 'item_get': {1}, 'select_choose': {1}, 'stretch': ALL,
+    'coco_knight_move': {1, 2, 3}, 'coco_knight_block': {2},
     'pet': {1}, 'slide_right': ALL, 'slide_up': ALL, 'slide_down': ALL, 'chest_recover': set(),
 }
 # clips where repeated frames are intentional holds
@@ -41,7 +43,7 @@ HOLDS = {'death', 'death_shot', 'item_get', 'chest_recover', 'select_choose', 'k
          'slide_up', 'slide_down', 'stretch', 'ghost_sneeze_left', 'ghost_sneeze_right', 'timefall', 'spinfall',
          'dodge', 'dodge_bw', 'dodge_left', 'dodge_left_bw', 'death_coop', 'tablekick_right', 'jetpack_down',
          'jetpack_right', 'jetpack_right_bw', 'jetpack_up', 'doorway', 'idle', 'idle_forward', 'idle_backward', 'idle_bw',
-         'select_idle', 'groom'}
+         'select_idle', 'groom', 'coco_knight_idle'}
 
 
 def bbox(f):
@@ -116,7 +118,11 @@ def main():
     import character_anims as A
     e1, w1 = lint(A.CLIPS, A.W, A.H, A.GROUND)
     e2, w2 = lint(A.BREACH_IDLES, A.W, A.H, A.GROUND, label='breach/')
-    errors, warnings = e1 + e2, w1 + w2
+    import art_v4 as V4   # 2.15 knight Coco clips (bottom 'o' row at H-1, fill ground at H-2)
+    knight = {'coco_knight_idle': V4.COCO_KNIGHT_IDLE, 'coco_knight_move': V4.COCO_KNIGHT_MOVE,
+              'coco_knight_pet': V4.COCO_KNIGHT_PET, 'coco_knight_block': V4.COCO_KNIGHT_BLOCK}
+    e3, w3 = lint(knight, V4.KNIGHT_W, V4.KNIGHT_H, V4.KNIGHT_H - 2, label='companion/')
+    errors, warnings = e1 + e2 + e3, w1 + w2 + w3
     for w in warnings:
         print('warn ', w)
     for e in errors:

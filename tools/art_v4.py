@@ -331,3 +331,60 @@ def _ko(stage):
 
 
 COCO_KO = [_ko(0), _ko(1)]
+
+
+# ---------------------------------------------------------------- 2.14 Knighted: Coco Blue + Ser Junkan at Holy Knight
+# Junkan bakes each armour level into its own clip set (junk_shspcg_* is the Holy Knight) and swaps clip names at
+# runtime; Coco does the same. The tin kettle helmet (gold band, red plume) is drawn onto every base drawing BEFORE
+# the clip's squash/shift, so it squashes and hops with him. Canvas grows to 16 x 20: 7 rows above the 13-row
+# drawing leave room for the plume on the 3-px hop. Strict pad/overlay/shift: a clipped plume raises.
+from pixel import pad as _pad_strict, overlay as _overlay_strict, shift as _shift_strict
+
+KNIGHT_W, KNIGHT_H = 16, 20
+KNIGHT_TOP = KNIGHT_H - 13
+# 9 x 8, plume swept back; the bottom row (dark gold brim edge) sits on the drawing's row 3, between the ears. Light from top-left:
+# tin S -> Z -> z, gold A -> a -> y, plume R / r.
+HELMET = R([
+"......oo.",
+".....oRRo",
+"....oRro.",
+"..oooroo.",
+".oSSSZZzo",
+"oSSZZZZzo",
+"oAAAAAAao",
+"yaaaaaaay",
+])
+# the helmet on the floor, tipped on its side with the plume flopped out (9 x 5)
+HELMET_DOWN = R([
+"..ooooo..",
+".oSSSZzo.",
+"oRoSZZZzo",
+"orAAAAAao",
+".ooooooo.",
+])
+
+
+def _knight(drawing, head_dy=0):
+    c = _pad_strict(drawing, KNIGHT_W, KNIGHT_H, 0, KNIGHT_TOP)
+    return _overlay_strict(c, HELMET, 3, KNIGHT_TOP - 4 + head_dy)
+
+
+KNIGHT_IDLE_1 = _knight(COCO_IDLE_1)
+KNIGHT_IDLE_2 = _knight(COCO_IDLE_2)
+KNIGHT_PET_1 = _knight(COCO_PET_1)
+KNIGHT_BLOCK_1 = _knight(COCO_BLOCK_1, head_dy=3)     # the block drawing's head sits 3 rows lower
+
+# same timing and transforms as the plain clips
+COCO_KNIGHT_IDLE = [KNIGHT_IDLE_1, KNIGHT_IDLE_1, KNIGHT_IDLE_2, KNIGHT_IDLE_2]
+COCO_KNIGHT_MOVE = [
+    squash(KNIGHT_IDLE_1, 0.85),
+    _shift_strict(KNIGHT_IDLE_1, 0, -2),
+    _shift_strict(KNIGHT_IDLE_2, 0, -3),
+    _shift_strict(KNIGHT_IDLE_1, 0, -1),
+    KNIGHT_IDLE_1,
+    squash(KNIGHT_IDLE_2, 0.9),
+]
+COCO_KNIGHT_PET = [KNIGHT_PET_1, squash(KNIGHT_PET_1, 0.92), KNIGHT_PET_1, shift(KNIGHT_PET_1, 1, 0)]
+COCO_KNIGHT_BLOCK = [squash(KNIGHT_BLOCK_1, 0.9), KNIGHT_BLOCK_1, _shift_strict(KNIGHT_BLOCK_1, 0, -1)]
+# knocked out: the helmet came off and lies beside him (24 x 16)
+COCO_KNIGHT_KO = [_overlay_strict(_pad_strict(COCO_KO[i], 24, 16, 0, 0), HELMET_DOWN, 15, 11) for i in range(2)]

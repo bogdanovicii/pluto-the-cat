@@ -1,0 +1,203 @@
+using UnityEngine;
+using Alexandria.ItemAPI;
+using Alexandria.Misc;
+using Dungeonator;
+
+namespace PlutoTheCat
+{
+    /// <summary>
+    /// Coco Blue's friends. Lives on the Coco companion next to CocoBlueController and only reads its state.
+    /// - Playdate (Coco + Dog): while Coco is a decoy the Dog runs at the enemy chasing him and bites it
+    ///   (vanilla Dog never attacks, so the bite is scripted); petting either one makes the other happy too.
+    /// - Squire (Coco + Ser Junkan): +1 stuffing per Junkan form (CocoBlueController.MaxStuffing); while Coco
+    ///   is a decoy, Junkan's OverrideTarget (which wins over PlayerTarget) is the enemy chasing him.
+    /// - Knighted (Squire tier): while Junkan is a Holy or Angelic Knight, Coco plays his helmeted clips.
+    /// </summary>
+    public class CocoFriends : MonoBehaviour
+    {
+        public const int DogId = 300;
+        public const int JunkanId = 580;
+        private const float BiteDamage = 6f, BiteCooldown = 1.2f, BiteReach = 1.25f;
+
+        private CocoBlueItem.CocoBlueController coco;
+        private float repathTimer, biteTimer, lookTimer;
+        private AIActor chaser;                      // the enemy the friends go after while Coco is a decoy
+        private AIActor heldDog;                     // the Dog whose follow behaviour is paused
+        private AIActor aimedJunkan;                 // the Junkan pointed at the chaser
+        private SpeculativeRigidbody aimedBody;
+        private bool cocoWasPet, dogWasPet;
+
+        /// <summary>The live companion spawned by the owner's passive item with this pickup id, or null.</summary>
+        public static AIActor CompanionFrom(PlayerController player, int itemId)
+        {
+            if (player == null || player.passiveItems == null) return null;
+            for (int i = 0; i < player.passiveItems.Count; i++)
+            {
+                CompanionItem item = player.passiveItems[i] as CompanionItem;
+                if (item == null || item.PickupObjectId != itemId || item.ExtantCompanion == null) continue;
+                return item.ExtantCompanion.GetComponent<AIActor>();
+            }
+            return null;
+        }
+
+        /// <summary>Ser Junkan's form when Squire is active, or null.</summary>
+        public static SackKnightController SquireJunkan(PlayerController player)
+        {
+            if (player == null || !player.PlayerHasActiveSynergy(PlutoSynergies.Squire)) return null;
+            AIActor junkan = CompanionFrom(player, JunkanId);
+            return junkan != null ? junkan.GetComponent<SackKnightController>() : null;
+        }
+
+        private void Start()
+        {
+            coco = GetComponent<CocoBlueItem.CocoBlueController>();
+        }
+
+        private void Update()
+        {
+            if (coco == null) return;
+            PlayerController owner = coco.OwnerPlayer;
+            if (owner == null) return;
+            float dt = BraveTime.DeltaTime;
+            repathTimer -= dt; biteTimer -= dt; lookTimer -= dt;
+
+            AIActor dog = owner.PlayerHasActiveSynergy(PlutoSynergies.Playdate) ? CompanionFrom(owner, DogId) : null;
+            SackKnightController knight = SquireJunkan(owner);
+            AIActor junkan = knight != null ? knight.aiActor : null;
+
+            coco.SetKnighted(knight != null && (knight.CurrentForm == SackKnightController.SackKnightPhase.HOLY_KNIGHT
+                                             || knight.CurrentForm == SackKnightController.SackKnightPhase.ANGELIC_KNIGHT));
+
+            if (coco.IsDecoy && (dog != null || junkan != null))
+            {
+                if (lookTimer <= 0f || !Alive(chaser)) { lookTimer = 0.5f; chaser = FindChaser(); }
+            }
+            else chaser = null;
+
+            UpdateDog(dog);
+            UpdateJunkan(junkan);
+            UpdatePets(owner, dog);
+        }
+
+        private void OnDisable()
+        {
+            ReleaseDog();
+            ReleaseJunkan();
+        }
+
+        private static bool Alive(AIActor a)
+        {
+            return a != null && a.healthHaver != null && !a.healthHaver.IsDead;
+        }
+
+        /// <summary>The nearest enemy targeting Coco; failing that, the nearest enemy to him within 8 tiles.</summary>
+        private AIActor FindChaser()
+        {
+            RoomHandler room = coco.aiActor != null ? coco.aiActor.ParentRoom : null;
+            if (room == null) return null;
+            System.Collections.Generic.List<AIActor> enemies = room.GetActiveEnemies(RoomHandler.ActiveEnemyType.All);
+            if (enemies == null) return null;
+            Vector2 me = coco.specRigidbody != null ? coco.specRigidbody.UnitCenter : (Vector2)coco.transform.position;
+            AIActor best = null, near = null;
+            float bestD = float.MaxValue, nearD = 8f;
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                AIActor e = enemies[i];
+                if (!Alive(e) || e.CompanionOwner != null) continue;
+                float d = Vector2.Distance(me, e.CenterPosition);
+                if (e.OverrideTarget == coco.specRigidbody && d < bestD) { best = e; bestD = d; }
+                if (d < nearD) { near = e; nearD = d; }
+            }
+            return best != null ? best : near;
+        }
+
+        // ---------------------------------------------------------------- Playdate
+        private void UpdateDog(AIActor dog)
+        {
+            if (dog == null || !Alive(chaser))
+            {
+                ReleaseDog();
+                return;
+            }
+            if (heldDog != dog)
+            {
+                ReleaseDog();
+                heldDog = dog;
+                SetFollow(dog, false);
+            }
+            if (repathTimer <= 0f)
+            {
+                repathTimer = 0.3f;
+                dog.PathfindToPosition(chaser.CenterPosition);
+            }
+            if (biteTimer <= 0f && Vector2.Distance(dog.CenterPosition, chaser.CenterPosition) < BiteReach)
+            {
+                biteTimer = BiteCooldown;
+                Vector2 dir = (chaser.CenterPosition - dog.CenterPosition).normalized;
+                chaser.healthHaver.ApplyDamage(BiteDamage, dir, "Playdate");
+                PlutoVFX.Spawn(PlutoVFX.BlockSpark, chaser.CenterPosition);
+                AkSoundEngine.PostEvent("Play_OBJ_item_throw_01", dog.gameObject);
+            }
+        }
+
+        private void ReleaseDog()
+        {
+            if (heldDog == null) { heldDog = null; return; }
+            SetFollow(heldDog, true);
+            heldDog.ClearPath();
+            heldDog = null;
+        }
+
+        private static void SetFollow(AIActor actor, bool on)
+        {
+            if (actor.behaviorSpeculator == null) return;
+            for (int i = 0; i < actor.behaviorSpeculator.MovementBehaviors.Count; i++)
+            {
+                CompanionFollowPlayerBehavior f = actor.behaviorSpeculator.MovementBehaviors[i] as CompanionFollowPlayerBehavior;
+                if (f != null) f.TemporarilyDisabled = !on;
+            }
+        }
+
+        /// <summary>Petting one friend makes the other wiggle with hearts; petting the Dog also gives Coco's speed burst.</summary>
+        private void UpdatePets(PlayerController owner, AIActor dog)
+        {
+            CompanionController dogCtl = dog != null ? dog.GetComponent<CompanionController>() : null;
+            bool cocoPet = coco.IsBeingPet;
+            bool dogPet = dogCtl != null && dogCtl.IsBeingPet;
+            if (dog != null && cocoPet && !cocoWasPet) Wiggle(dog);
+            if (dogPet && !dogWasPet && !coco.IsKnockedOut)
+            {
+                Wiggle(coco.aiActor);
+                PlayerController petter = dogCtl.m_pettingDoer != null ? dogCtl.m_pettingDoer : owner;
+                coco.StartCoroutine(CatTricks.TimedSpeed(petter, 2f, 3f));
+            }
+            cocoWasPet = cocoPet;
+            dogWasPet = dogPet;
+        }
+
+        private static void Wiggle(AIActor actor)
+        {
+            if (actor == null) return;
+            PlutoVFX.Spawn(PlutoVFX.LoveBurst, actor.CenterPosition + new Vector2(0f, 0.6f));
+            if (actor.aiAnimator != null) actor.aiAnimator.PlayForDuration("pet", 1.5f);
+        }
+
+        // ---------------------------------------------------------------- Squire
+        private void UpdateJunkan(AIActor junkan)
+        {
+            SpeculativeRigidbody want = junkan != null && Alive(chaser) ? chaser.specRigidbody : null;
+            if (aimedJunkan != junkan || want == null) ReleaseJunkan();
+            if (want == null) return;
+            junkan.OverrideTarget = want;
+            aimedJunkan = junkan;
+            aimedBody = want;
+        }
+
+        private void ReleaseJunkan()
+        {
+            if (aimedJunkan != null && aimedJunkan.OverrideTarget == aimedBody) aimedJunkan.OverrideTarget = null;
+            aimedJunkan = null;
+            aimedBody = null;
+        }
+    }
+}

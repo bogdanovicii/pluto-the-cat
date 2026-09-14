@@ -65,6 +65,14 @@ namespace PlutoTheCat
             prefab.AddAnimation("ko", Plugin.COMPANION_ROOT + "/ko", 4, CompanionBuilder.AnimationType.Other,
                 DirectionalAnimation.DirectionType.Single).wrapMode = tk2dSpriteAnimationClip.WrapMode.Loop;
 
+            // Knighted: the helmeted set. Like Ser Junkan's armour clips, these are swapped in by name (SetKnighted).
+            AddKnightClip("idle", 4, tk2dSpriteAnimationClip.WrapMode.Loop);
+            AddKnightClip("move", 9, tk2dSpriteAnimationClip.WrapMode.Loop);
+            AddKnightClip("pet", 6, tk2dSpriteAnimationClip.WrapMode.Loop);
+            AddKnightClip("block", 12, tk2dSpriteAnimationClip.WrapMode.Once);
+            AddKnightClip("ko", 4, tk2dSpriteAnimationClip.WrapMode.Loop);
+            prefab.AddComponent<CocoFriends>();
+
             BehaviorSpeculator bs = prefab.GetComponent<BehaviorSpeculator>();
             bs.MovementBehaviors.Add(new CompanionFollowPlayerBehavior
             {
@@ -81,6 +89,12 @@ namespace PlutoTheCat
                 CanRollOverPits = false,
                 RollAnimation = "",
             });
+        }
+
+        private static void AddKnightClip(string clip, int fps, tk2dSpriteAnimationClip.WrapMode wrap)
+        {
+            prefab.AddAnimation("knight_" + clip, Plugin.COMPANION_ROOT + "/knight_" + clip, fps, CompanionBuilder.AnimationType.Other,
+                DirectionalAnimation.DirectionType.Single).wrapMode = wrap;
         }
 
         /// <summary>Lives on the spawned companion: crumbs on owner damage, petting, bullet blocking, decoy mode.</summary>
@@ -106,6 +120,43 @@ namespace PlutoTheCat
             public bool IsDecoy { get { return decoy; } }
             public bool IsKnockedOut { get { return ko; } }
             public int Stuffing { get { return stuffing; } }
+
+            /// <summary>Squire: +1 stuffing per Ser Junkan form, capped at the Holy Knight's +6 (Mecha is form 8 from one gold junk).</summary>
+            public int MaxStuffing
+            {
+                get
+                {
+                    SackKnightController junkan = CocoFriends.SquireJunkan(m_owner);
+                    return PlutoConfig.CocoStuffing + (junkan != null ? Mathf.Min((int)junkan.CurrentForm, 6) : 0);
+                }
+            }
+
+            private bool knighted;
+
+            /// <summary>Knighted: point the idle/move/pet/block/ko slots at the helmeted clips (or back), like Junkan does.</summary>
+            public void SetKnighted(bool on)
+            {
+                if (on == knighted || aiAnimator == null) return;
+                knighted = on;
+                string prefix = on ? "knight_" : "";
+                SetClip(aiAnimator.IdleAnimation, prefix + "idle");
+                SetClip(aiAnimator.MoveAnimation, prefix + "move");
+                if (aiAnimator.OtherAnimations != null)
+                    for (int i = 0; i < aiAnimator.OtherAnimations.Count; i++)
+                    {
+                        AIAnimator.NamedDirectionalAnimation named = aiAnimator.OtherAnimations[i];
+                        if (named.name == "pet" || named.name == "block" || named.name == "ko") SetClip(named.anim, prefix + named.name);
+                    }
+                // restart a held state so the helmet appears (or comes off) right away
+                if (ko) aiAnimator.PlayUntilCancelled("ko", true);
+                else if (IsBeingPet) aiAnimator.PlayUntilCancelled("pet", true);
+                PlutoVFX.Spawn(PlutoVFX.LoveBurst, (Vector2)transform.position + new Vector2(0.5f, 1f));
+            }
+
+            private static void SetClip(DirectionalAnimation anim, string clip)
+            {
+                if (anim != null && anim.AnimNames != null && anim.AnimNames.Length > 0) anim.AnimNames[0] = clip;
+            }
 
             public static CocoBlueController For(PlayerController player)
             {
@@ -153,7 +204,7 @@ namespace PlutoTheCat
                     // CompanionController's own Start is not virtual, so hook up on the first frame instead.
                     hooked = true;
                     if (aiActor != null) normalSpeed = aiActor.MovementSpeed;
-                    stuffing = PlutoConfig.CocoStuffing;
+                    stuffing = MaxStuffing;
                     BuildShield();
                 }
                 if (shield != null)
@@ -168,10 +219,15 @@ namespace PlutoTheCat
                     koLeft -= dt;
                     if (IsBeingPet || koLeft <= 0f) Recover();     // a pet brings him round early
                 }
-                else if (stuffing < PlutoConfig.CocoStuffing)
+                else
                 {
-                    regenTimer -= dt;
-                    if (regenTimer <= 0f) { regenTimer = PlutoConfig.CocoStuffingRegenSeconds; stuffing++; }
+                    int max = MaxStuffing;                          // grows and shrinks with Squire
+                    if (stuffing > max) stuffing = max;
+                    else if (stuffing < max)
+                    {
+                        regenTimer -= dt;
+                        if (regenTimer <= 0f) { regenTimer = PlutoConfig.CocoStuffingRegenSeconds; stuffing++; }
+                    }
                 }
                 if (watched == null && m_owner != null)
                 {
@@ -252,7 +308,7 @@ namespace PlutoTheCat
             {
                 if (!ko) return;
                 ko = false;
-                stuffing = PlutoConfig.CocoStuffing;
+                stuffing = MaxStuffing;
                 CompanionFollowPlayerBehavior follow = Follow();
                 if (follow != null) follow.TemporarilyDisabled = false;
                 if (aiAnimator != null)
