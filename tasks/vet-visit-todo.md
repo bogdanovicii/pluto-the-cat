@@ -77,3 +77,13 @@ Feedback: Pluto had no weapon, the Vet never attacked / had no weapon, the boss 
       72 unit tests; build + validate green; releases/Pluto_Vet_Visit-0.8.0.zip — 2026-09-14
 - [ ] Steam hand-off of 0.8.0 (GitHub release v0.8.0 + drop page + message to plutosm-unified-hearth) — in-game results pending
 - [ ] 1.0 merge into PlutoTheCat (separate approval)
+
+## 0.9.0 2026-09-14 — feedback after the in-game 0.8.0 test (this session)
+Feedback: still no gun; ward Techs did nothing; wants greetings in the ward, dialogue in the theatre before the boss, everyone shooting with boss-like patterns, balanced; white-tile vet-lab look.
+- [x] Loadout watchdog (arrival + 1/3/6/10/20/40/60 s), AddGunToInventory then LootEngine, logged, `vet_loadout` console command
+- [x] Engage(): HasBeenEngaged + State Normal + brain on + damage on for every spawned actor; OverrideTarget fallback after 2 s; heartbeat log at 2 s / 6 s
+- [x] Tech three-round bursts (Hegemony-soldier style), cooldown 2.2 s; Vet syringes 10; phase-1 cooldowns longer; Vet 1000 / Tech 18 / Nurse 150; wave 2 = 5
+- [x] Ward greeting by a Tech (Ward1-3), intercom lines (Ward4-5), Vet half-health line + Nurse arrival line + last-fifth line (Fight1-4)
+- [x] White floor tiles as 25 strip props (HeightOffGround -4, config FloorTiles)
+- [x] Built, tests pass, tag v0.9.0, GitHub release, drop page
+- [ ] In-game: gun present? Techs move+shoot? floor under actors? difficulty (hearts lost, time to kill)
