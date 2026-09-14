@@ -199,4 +199,5 @@ Spec: docs/superpowers/specs/2026-09-14-samurai-pluto-and-clinic-life-design.md 
 
 ## 0.14.1 (user, 2026-09-14): reset the past
 - [x] vet_reset_past console command (costume off, KILLED_PAST + alt flag cleared and saved, progress file deleted, trophy and stand hidden, warns on UnlockSamuraiCostume); released v0.14.1 (sha 5620c3bc...77d0)
-- [ ] Drop page + tester message
+- [x] Drop page v44 (Vet Visit 0.14.1 merged on c4's Pluto 2.16.1 card), payload verified, tester messaged with the reset steps
+- [ ] Await tester results for vet_reset_past (log lines, stand gone after restart)
