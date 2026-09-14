@@ -189,5 +189,6 @@ Spec: docs/superpowers/specs/2026-09-14-samurai-pluto-and-clinic-life-design.md 
 - Picked: pick-up ending (Bianca carries Pluto), living kennels, theatre mood, masked last phase, built-in sounds, Breach trophy, Pluto boss card; samurai skin replaces Wet Pluto, costume-bound Taiyaki Cannon + Blasphemy-like katana, indigo/crimson kimono.
 - Owners: part A (Vet Visit 0.14.0) this session; part B (character 2.16.0) enter-the-gungeon-pluto-c4. Interface: KILLED_PAST flag, progress flag file, gun ids pluto:taiyaki_cannon / pluto:katana.
 - Art rule changed by the user: Gemini-first then converted pixel art everywhere; use .claude/skills/pluto-artist.
-- [ ] User reviews the spec
-- [ ] writing-plans for part A after approval
+- [x] User approved the spec (2026-09-14, "all good")
+- [x] Part A plan: docs/superpowers/plans/2026-09-14-vet-visit-0.14.0-clinic-life.md (15 tasks: art sources, sounds, loadout, trophy, mood, kennels, mask, ending, 6 art tasks, release)
+- [ ] Execute part A (character session c4 has its own part B plan: docs/superpowers/plans/2026-09-14-samurai-pluto-2160.md)
