@@ -1,0 +1,84 @@
+using UnityEngine;
+using Gungeon;
+using Alexandria.ItemAPI;
+using Alexandria.Misc;
+
+namespace PlutoTheCat
+{
+    /// <summary>
+    /// Taiyaki Cannon: the samurai costume's starter gun (2.16.0). A golden taiyaki held like a pistol fires mini taiyaki
+    /// from its bean-filled mouth; every hit puffs bonito flakes. Reload squeezes a Churu tube into the tail.
+    /// Sprites: reference/art/taiyaki_cannon (pluto-artist, Gemini first), copied by tools/make_art.py.
+    /// </summary>
+    public class TaiyakiCannonGun : GunBehaviour
+    {
+        public const string ID = "pluto:taiyaki_cannon";
+
+        public static void Add()
+        {
+            Gun gun = ETGMod.Databases.Items.NewGun("Taiyaki Cannon", "pluto_taiyaki_cannon");
+            Game.Items.Rename("outdated_gun_mods:taiyaki_cannon", ID);
+            gun.gameObject.AddComponent<TaiyakiCannonGun>();
+            gun.SetShortDescription("Red Bean Inside");
+            gun.SetLongDescription(
+                "A golden taiyaki, the fish-shaped cake from the festival stall, filled with sweet red bean and pressed " +
+                "into service as a sidearm. It spits mini taiyaki from its mouth, and whatever they hit is showered " +
+                "in bonito flakes.\n\n" +
+                "Samurai Pluto keeps it topped up with a Churu tube squeezed into the tail. He has been told this is " +
+                "not how taiyaki work. He does not care.");
+
+            gun.SetupSprite(null, "pluto_taiyaki_cannon_idle_001", 10);
+            gun.SetAnimationFPS(gun.shootAnimation, 12);
+            gun.SetAnimationFPS(gun.reloadAnimation, 8);
+
+            gun.AddProjectileModuleFrom("klobb", true, false);
+            gun.gunSwitchGroup = (PickupObjectDatabase.GetById(31) as Gun).gunSwitchGroup;
+            gun.DefaultModule.shootStyle = ProjectileModule.ShootStyle.SemiAutomatic;
+            gun.DefaultModule.sequenceStyle = ProjectileModule.ProjectileSequenceStyle.Random;
+            gun.DefaultModule.ammoType = GameUIAmmoType.AmmoType.SMALL_BULLET;
+            gun.DefaultModule.ammoCost = 1;
+            gun.DefaultModule.cooldownTime = 0.24f;
+            gun.DefaultModule.angleVariance = 4f;
+            gun.DefaultModule.numberOfShotsInClip = 8;
+            gun.reloadTime = 1.1f;
+            gun.SetBaseMaxAmmo(300);
+            gun.gunClass = GunClass.PISTOL;
+            gun.gunHandedness = GunHandedness.OneHanded;
+
+            // Mini taiyaki leave the bean-filled mouth: pixel (46, 15) of the 57x31 sprite, measured from the bottom-left.
+            gun.barrelOffset.transform.localPosition = new Vector3(46f / 16f, 15f / 16f, 0f);
+
+            // Starter-gun flags.
+            gun.InfiniteAmmo = true;
+            gun.PreventStartingOwnerFromDropping = true;
+            gun.quality = PickupObject.ItemQuality.EXCLUDED;
+
+            Projectile taiyaki = ProjectileUtility.SetupProjectile(56); // clone the .38 Special bullet
+            taiyaki.gameObject.name = "pluto_mini_taiyaki_projectile";
+            taiyaki.baseData.damage = 6f;
+            taiyaki.baseData.speed = 15f;
+            taiyaki.baseData.range = 18f;
+            taiyaki.baseData.force = 8f;
+            taiyaki.shouldRotate = true;
+            taiyaki.SetProjectileSpriteRight("pluto_mini_taiyaki_001", 12, 6, false, tk2dBaseSprite.Anchor.MiddleCenter, 10, 5);
+            taiyaki.gameObject.AddComponent<BonitoPuff>();
+            gun.DefaultModule.projectiles[0] = taiyaki;
+
+            ETGMod.Databases.Items.Add(gun, null, "ANY");
+        }
+
+        /// <summary>Every enemy hit puffs pale pink bonito flakes.</summary>
+        public class BonitoPuff : MonoBehaviour
+        {
+            private void Start()
+            {
+                Projectile p = GetComponent<Projectile>();
+                if (p == null) return;
+                p.OnHitEnemy += (proj, body, fatal) =>
+                {
+                    if (body != null) PlutoVFX.Spawn(PlutoVFX.Bonito, body.UnitCenter);
+                };
+            }
+        }
+    }
+}

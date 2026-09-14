@@ -53,6 +53,8 @@ namespace PlutoTheCat
             Step("fur", PlutoFur.Init);
             Step("gun", KibbleSackGun.Add);
             Step("gravy pouch", GravyPouchGun.Add);
+            Step("taiyaki cannon", TaiyakiCannonGun.Add);   // samurai costume loadout (<altGuns>)
+            Step("katana", KatanaGun.Add);
             Step("active", WetFoodCanItem.Init);
             Step("passive", NineLivesItem.Init);
             Step("coco blue", CocoBlueItem.Init);

@@ -1,0 +1,12 @@
+{
+  "model": "gemini-3-pro-image",
+  "prompt": "Pixel-art character sprite sheet for the video game Enter the Gungeon. The first attached image shows the character's current in-game sprites (Pluto the cat, at 12x zoom on green: side view, front view, back view, running): keep EXACTLY that body shape, head size, proportions, pixel size, outline and shading style, and his markings (grey-brown tabby, white muzzle, chest and paws, white spot on the head, pink ears, green eyes, ringed tail). The second attached image shows his face and markings in detail.\n\nDress him in a SAMURAI COSTUME and draw the same four poses in the same order, each large with clear big square pixels:\n- an indigo haori jacket #2b3a67 with a small white paw-print crest #f0ece0 on the back and chest,\n- an open V collar so his white chest shows,\n- charcoal-grey hakama trousers #3a3a44 over short legs, white paws still visible,\n- a crimson obi sash #b3202a around the waist with a knot,\n- a crimson hachimaki headband #b3202a tied around the forehead below the ears, with two short tails trailing behind the head,\n- no helmet, ears fully visible, ringed tail still visible behind.\n\nKeep the silhouette readable at a tiny size: the costume adds colour and a few folds, not bulk. Crisp 1-pixel dark outline, flat cel shading with 3 tones per colour, top-left light, no gradients, no anti-aliasing. Background: one flat solid chroma green (#00B140), no scenery, no text.\n",
+  "refs": [
+    "reference/gemini/samurai_costume/ref_pluto_sprites_12x.png",
+    "reference/art/bosscard/normal.png"
+  ],
+  "ratio": "16:9",
+  "size": "2K",
+  "seconds": 23.0,
+  "time": "2026-09-14 20:43:56"
+}

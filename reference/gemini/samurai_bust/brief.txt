@@ -1,0 +1,9 @@
+Create the PLAYER PORTRAIT for a boss-intro card in the video game Enter the Gungeon.
+
+Copy the FIRST attached image exactly: the same cat (Pluto), the same pose, framing, camera, size, bust crop cut off by the bottom and left edges, the same crisp pixel-art rendering, bold dark outline, cel shading, colours and the same flat chroma-green background. Keep his face, markings and expression identical.
+
+Change only two things:
+1. His outfit is the samurai costume from the SECOND attached image: an indigo haori jacket (#2b3a67) with a small white paw-print crest on the chest, an open V collar showing his white chest, and a crimson hachimaki headband (#b3202a) tied around his forehead below the ears with two short tails flying behind his head. Ears fully visible, no helmet.
+2. Instead of the food pouch he holds the katana from the THIRD attached image (gently curved steel blade, round gold guard, black-and-white diamond-wrapped handle) in his white front paw, held close to his chest, the blade pointing up and to the right like a ready stance, the whole sword staying close to his body.
+
+COMPOSITION (strict): everything stays in the left part of the frame exactly as in the first image; the right half of the frame and the top area stay completely empty chroma green (#00B140). No text, no scenery, no shadows on the background.

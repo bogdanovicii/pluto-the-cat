@@ -1,0 +1,9 @@
+Pixel-art sprite sheet for the video game Enter the Gungeon, in exactly the same pixel style, pixel size, outline weight and shading as the attached reference sprite (a gun sprite shown at 16x zoom on green): chunky square pixels, a crisp 1-pixel dark outline around every object, flat cel shading with 3 tones per material, top-left light, no gradients, no anti-aliasing, no blur.
+
+Draw these separate objects on one sheet, spaced apart, each drawn LARGE so every pixel is a clear big square:
+1. "KATANA" melee weapon held pointing RIGHT (like Blasphemy, the sword gun in Enter the Gungeon): a gently curved single-edged steel blade with a pale steel edge highlight and a darker spine, a round gold disc guard (tsuba), and a handle wrapped in black cord over white in a diamond pattern, with a small gold pommel cap on the left. Proportions of a 32x12 pixel sprite.
+2. Three swing frames: the katana in the same pose with a white arc slash trail growing and fading in front of the blade.
+3. Reload: the katana with a quick bright white sheen flashing along the blade (2 frames).
+4. A projectile: a white-cyan crescent energy wave pointing right, with two or three tiny 2x2-pixel sakura petals in pink #f7b7c8 and #e98aa6 trailing behind it, proportions of a 16x16 sprite.
+
+Background: one flat solid chroma green (#00B140), no scenery, no text, no labels, no shadows on the background.

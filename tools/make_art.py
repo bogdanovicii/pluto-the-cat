@@ -132,6 +132,19 @@ def gun_and_items():
             with open(os.path.join(wc, name + '.jtk2d'), 'w') as fh:
                 json.dump(jtk2d(U.GUN_W, U.GUN_H, (4, 5), (29, 9)), fh, indent=2)
     save(U.KIBBLE, os.path.join(pc, 'pluto_kibble_001.png'))
+    # 2.16.0 samurai costume weapons: approved pluto-artist frames live in reference/art/<weapon>/ and are copied as-is.
+    # (hand, casing) in pixels from the bottom-left: taiyaki grip/mouth, katana handle/blade tip.
+    for gun_name, folder, hand, casing in (('pluto_taiyaki_cannon', 'taiyaki_cannon', (21, 4), (46, 15)),
+                                           ('pluto_katana', 'katana', (6, 13), (41, 13))):
+        src = os.path.join(ROOT, 'reference', 'art', folder)
+        for f in sorted(os.listdir(src)):
+            if f.startswith(gun_name + '_') and f.endswith('.png') and '_wave' not in f:
+                shutil.copy(os.path.join(src, f), os.path.join(wc, f))
+                w, h = Image.open(os.path.join(src, f)).size
+                with open(os.path.join(wc, f[:-4] + '.jtk2d'), 'w') as fh:
+                    json.dump(jtk2d(w, h, hand, casing), fh, indent=2)
+    shutil.copy(os.path.join(ROOT, 'reference', 'art', 'taiyaki_cannon', 'pluto_mini_taiyaki_001.png'), os.path.join(pc, 'pluto_mini_taiyaki_001.png'))
+    shutil.copy(os.path.join(ROOT, 'reference', 'art', 'katana', 'pluto_katana_wave_001.png'), os.path.join(pc, 'pluto_katana_wave_001.png'))
     # Same sprite name in the Ammonomicon collection = the picture shown on the gun's Ammonomicon page.
     save(U.GUN_AMMONOMICON, os.path.join(SPRITE_ROOT, 'Ammonomicon Encounter Icon Collection', 'pluto_kibble_sack_idle_001.png'))
 
@@ -174,6 +187,8 @@ def gun_and_items():
     write_clip(vfx, V4.FUR_PUFF, 'furpuff')
     write_clip(vfx, V4.LOVE_BURST, 'loveburst')
     write_clip(vfx, U.GRAVY_BURST, 'gravyburst')   # wet food can burst
+    for i in range(1, 5):   # 2.16.0 Taiyaki Cannon hit puff (approved pluto-artist frames)
+        shutil.copy(os.path.join(ROOT, 'reference', 'art', 'taiyaki_cannon', f'bonito_{i:03d}.png'), os.path.join(vfx, f'bonito_{i:03d}.png'))
     write_clip(vfx, V4.BLOCK_SPARK, 'spark')
     save(V4.BOWL_PICKUP, os.path.join(items, 'kibble_bowl_001.png'))
     save(V4.BOWL_PICKUP_2, os.path.join(items, 'kibble_bowl_002.png'))

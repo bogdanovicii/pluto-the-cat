@@ -1,0 +1,11 @@
+{
+  "model": "gemini-3-pro-image",
+  "prompt": "Pixel-art sprite sheet for the video game Enter the Gungeon, in exactly the same pixel style, pixel size, outline weight and shading as the attached reference sprite (the Royal Kibble Sack gun, shown at 16x zoom on green): chunky square pixels, a crisp 1-pixel dark outline around every object, flat cel shading with 3 tones per material, top-left light, no gradients, no anti-aliasing, no blur.\n\nDraw these separate objects on one sheet, spaced apart, each drawn LARGE so every pixel is a clear big square:\n1. \"TAIYAKI CANNON\" gun, held sideways and pointing RIGHT: a golden fish-shaped Japanese taiyaki cake used as a gun. Its open fish mouth on the right is the muzzle, with dark red bean paste visible inside the mouth. Crosshatch waffle scale pattern on the body, a fin on top, the tail on the left where a paw would hold it. Colours: outline #5a3514, body #b8742a, highlight #e8b04a, bean paste #6b1f24. Proportions of a 32x14 pixel gun sprite.\n2. The same gun firing: the mouth wide open with a tiny taiyaki shooting out and a small puff.\n3. A tiny \"mini taiyaki\" bullet, the same golden fish shape, pointing right, proportions of a 6x6 pixel sprite.\n4. Reload: a white-and-pink cat treat squeeze tube (Churu style) being squeezed into the gun's tail, beige puree.\n5. A hit effect: a small puff of pale pink bonito flakes, 4 frames from small burst to fading wisps.\n\nBackground: one flat solid chroma green (#00B140), no scenery, no text, no labels, no shadows on the background.\n",
+  "refs": [
+    "reference/gemini/taiyaki_cannon/ref_kibble_sack_16x.png"
+  ],
+  "ratio": "1:1",
+  "size": "2K",
+  "seconds": 25.5,
+  "time": "2026-09-14 20:41:54"
+}
