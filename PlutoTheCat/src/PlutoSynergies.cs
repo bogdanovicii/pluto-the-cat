@@ -32,7 +32,7 @@ namespace PlutoTheCat
             Register(LaserPointer, new List<string> { KibbleSackGun.ID },
                 new List<string> { "laser_rifle", "science_cannon", "laser_lotus", "prototype_railgun" });
             Register(BoxFort, new List<string> { NineLivesItem.ID, "box" });   // "box" is the Cardboard Box
-            Register(Playdate, new List<string> { CocoBlueItem.ID, "dog" });  // effects in CocoFriends
+            Register(Playdate, new List<string> { SqueakyToyItem.ID, "dog" }); // the toy sends Coco out; effects in CocoFriends
             Register(Squire, new List<string> { CocoBlueItem.ID, "junkan" }); // "junkan" is Ser Junkan
 
             CustomActions.OnNewPlayercontrollerSpawned += OnPlayerSpawned;

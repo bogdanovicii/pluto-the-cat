@@ -7,7 +7,7 @@ namespace PlutoTheCat
 {
     /// <summary>
     /// Coco Blue's friends. Lives on the Coco companion next to CocoBlueController and only reads its state.
-    /// - Playdate (Coco + Dog): while Coco is a decoy the Dog runs at the enemy chasing him and bites it
+    /// - Playdate (Squeaky Toy + Dog): while Coco is a decoy the Dog runs at the enemy chasing him and bites it
     ///   (vanilla Dog never attacks, so the bite is scripted); petting either one makes the other happy too.
     /// - Squire (Coco + Ser Junkan): +1 stuffing per Junkan form (CocoBlueController.MaxStuffing); while Coco
     ///   is a decoy, Junkan's OverrideTarget (which wins over PlayerTarget) is the enemy chasing him.
@@ -17,7 +17,7 @@ namespace PlutoTheCat
     {
         public const int DogId = 300;
         public const int JunkanId = 580;
-        private const float BiteDamage = 6f, BiteCooldown = 1.2f, BiteReach = 1.25f;
+        private const float BiteDamage = 6f, BiteCooldown = 1.2f, BiteReach = 1.25f;   // reach is measured from the enemy's edge
 
         private CocoBlueItem.CocoBlueController coco;
         private float repathTimer, biteTimer, lookTimer;
@@ -25,7 +25,7 @@ namespace PlutoTheCat
         private AIActor heldDog;                     // the Dog whose follow behaviour is paused
         private AIActor aimedJunkan;                 // the Junkan pointed at the chaser
         private SpeculativeRigidbody aimedBody;
-        private bool cocoWasPet, dogWasPet;
+        private bool cocoWasPet, dogWasPet, wasDecoy;
 
         /// <summary>The live companion spawned by the owner's passive item with this pickup id, or null.</summary>
         public static AIActor CompanionFrom(PlayerController player, int itemId)
@@ -70,9 +70,13 @@ namespace PlutoTheCat
 
             if (coco.IsDecoy && (dog != null || junkan != null))
             {
-                if (lookTimer <= 0f || !Alive(chaser)) { lookTimer = 0.5f; chaser = FindChaser(); }
+                if (lookTimer <= 0f || !Alive(chaser)) { lookTimer = 0.5f; chaser = FindChaser(owner); }
             }
             else chaser = null;
+            if (coco.IsDecoy && !wasDecoy)
+                Plugin.Log("Coco decoy: Playdate " + owner.PlayerHasActiveSynergy(PlutoSynergies.Playdate) + " (dog " + (dog != null) +
+                    "), Squire " + (knight != null) + ", chaser " + (chaser != null ? chaser.GetActorName() : "none"));
+            wasDecoy = coco.IsDecoy;
 
             UpdateDog(dog);
             UpdateJunkan(junkan);
@@ -91,9 +95,11 @@ namespace PlutoTheCat
         }
 
         /// <summary>The nearest enemy targeting Coco; failing that, the nearest enemy to him within 8 tiles.</summary>
-        private AIActor FindChaser()
+        private AIActor FindChaser(PlayerController owner)
         {
-            RoomHandler room = coco.aiActor != null ? coco.aiActor.ParentRoom : null;
+            // A companion's ParentRoom is never set (CompanionItem.CreateCompanion instantiates it without
+            // ConfigureOnPlacement), so look the room up like vanilla TargetEnemiesBehavior does.
+            RoomHandler room = owner.CurrentRoom != null ? owner.CurrentRoom : ((Vector2)coco.transform.position).GetAbsoluteRoom();
             if (room == null) return null;
             System.Collections.Generic.List<AIActor> enemies = room.GetActiveEnemies(RoomHandler.ActiveEnemyType.All);
             if (enemies == null) return null;
@@ -130,7 +136,8 @@ namespace PlutoTheCat
                 repathTimer = 0.3f;
                 dog.PathfindToPosition(chaser.CenterPosition);
             }
-            if (biteTimer <= 0f && Vector2.Distance(dog.CenterPosition, chaser.CenterPosition) < BiteReach)
+            float edge = chaser.specRigidbody != null ? 0.5f * Mathf.Max(chaser.specRigidbody.UnitDimensions.x, chaser.specRigidbody.UnitDimensions.y) : 0f;
+            if (biteTimer <= 0f && Vector2.Distance(dog.CenterPosition, chaser.CenterPosition) < BiteReach + edge)
             {
                 biteTimer = BiteCooldown;
                 Vector2 dir = (chaser.CenterPosition - dog.CenterPosition).normalized;

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.15.3
+- Playdate works: squeeze the Squeaky Toy while carrying the Dog and the Dog runs at the enemy chasing Coco and bites it (6 damage every 1.2 s). It did nothing before, because Coco looked for enemies in a room companions never have. The same fix makes Ser Junkan (Squire) charge the enemy chasing Coco.
+- Playdate is now Squeaky Toy + Dog (was Coco Blue + Dog). Petting either friend still makes the other wiggle.
+- Boss intros show the boss again: Pluto's boss card was a fully opaque 427x240 panel drawn over the boss art; it is now a transparent cut-out with Pluto in the bottom-left corner.
+- Squeezing the toy logs the synergy state, e.g. `[Pluto] Coco decoy: Playdate True (dog True), Squire False, chaser Bullet Kin`.
+
 ## 2.15.1
 - Coco Blue keeps his ears when he hops: the move frames used to cut off the top of his head (up to 25 pixels on the highest hop), and the last frame of the pet wiggle lost his right edge. His frames now have room above and to the side.
 
