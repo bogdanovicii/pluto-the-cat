@@ -167,11 +167,12 @@ dialogue incl. side characters; room nicer, more engaging, hand-drawn, structure
 
 ## 0.12.0 (user, 2026-09-14, after the 0.11.1 + 2.15.3 Steam run)
 Tester: past runs start to finish, bullets hit for half a heart, 0 bank errors, Pluto's gun works, Vet killed in 30-60 s with Pluto at 0.5 hearts.
-- [ ] Vet boss card portrait redrawn like vanilla boss art (bleeds off the card edges, no hard rectangle); agent on tools/vet_card.py
+- [x] Vet boss card portrait redrawn like vanilla boss art (bleeds off the card edges, no hard rectangle); agent on tools/vet_card.py
 - [x] Card title font drops some lowercase glyphs ("Te Vet", "Doc?or's"): name and subtitle now in capitals (VetBoss.cs)
-- [ ] Enemy projectiles: distinct readable sprites per attack family, speed/spread retune, knobs + checklist 0.12.0; agent on projectiles.py / VetAttacks.cs
-- [ ] The Vet buried under the operating table and lamp at his theatre spawn: investigate depth + spawn clearance for the 48x40 sprite; agent on clinic_room.py
-- [ ] Rooms a little bigger, vet-clinic wall art (X-ray, anatomy poster, vaccination chart, diplomas); same agent
+- [x] Enemy projectiles: distinct readable sprites per attack family, speed/spread retune, knobs + checklist 0.12.0; agent on projectiles.py / VetAttacks.cs
+- [x] The Vet buried under the operating table and lamp at his theatre spawn: investigate depth + spawn clearance for the 48x40 sprite; agent on clinic_room.py
+- [x] Rooms a little bigger, vet-clinic wall art (X-ray, anatomy poster, vaccination chart, diplomas); same agent
 - [ ] Pluto's boss card portrait looks blocky: forwarded to the character session (enter-the-gungeon-pluto-c4), not ours
 - [ ] Notes from the log: last-reinforcement Fungun shows the odd display name "Your own slow reflexes" (vanilla actor name, GUID verified earlier); Poisbulon has no bullet bank (goop enemy)
-- [ ] Build, tests, release 0.12.0, drop page, tester message
+- [x] Build, tests (132), review clean, released v0.12.0 (sha 76ee03f8...001f), drop page Pluto 2.15.3 + Vet Visit 0.12.0, tester messaged
+- [ ] Await Steam results for 0.12.0
