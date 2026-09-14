@@ -82,20 +82,20 @@ def character():
     write_clip(os.path.join(CHAR, 'foyercard'), U.FOYER_APPEAR, 'pluto_facecard_appear')
     save(U.ICON_9, os.path.join(CHAR, 'icon.png'))
     save(U.COOP_DEATH, os.path.join(CHAR, 'coop_page_death.png'))
-    # Boss intro card: the game draws the player's card OVER the boss art (BossCardUIController.playerSprite),
-    # so it is a cut-out on transparency like vanilla cards: Pluto's idle breathing, 5x, bottom-left corner.
-    # The card gets no runtime outline, so the outline is baked in here.
-    import character_anims as _A
+    # Boss intro card: the game draws the player's card OVER the boss art (BossCardUIController.playerSprite), so it
+    # is a cut-out on transparency. The art is the approved pluto-artist bust (Gemini, pixelized, reviewed); the source
+    # of truth is reference/art/bosscard/. The samurai costume card is samuraicard_* (never "bosscard_", or Alexandria
+    # appends it to this list); PlutoPatches picks the set by costume when the card shows.
+    card_dir = os.path.join(ROOT, 'reference', 'art', 'bosscard')
+    normal_src = os.path.join(card_dir, 'normal.png')
+    if not os.path.exists(normal_src):
+        raise FileNotFoundError(normal_src)          # check the source before removing the old cards
     for f in os.listdir(CHAR):
-        if f.startswith('bosscard_') and f.endswith('.png'):
+        if (f.startswith('bosscard_') or f.startswith('samuraicard_')) and f.endswith('.png'):
             os.remove(os.path.join(CHAR, f))
-    for i, frame in enumerate(_A.IDLE_SIDE, 1):
-        body = outline_img(img_from_rows(strip_outline(frame)))
-        body = body.crop((0, 0, body.width, body.getbbox()[3]))   # feet stand on the card's bottom edge
-        body = body.resize((body.width * 5, body.height * 5), Image.NEAREST)
-        card = Image.new('RGBA', (427, 240), (0, 0, 0, 0))
-        card.alpha_composite(body, (2, 240 - body.height))
-        card.save(os.path.join(CHAR, f'bosscard_{i:03d}.png'))
+    shutil.copy(normal_src, os.path.join(CHAR, 'bosscard_001.png'))
+    if os.path.exists(os.path.join(card_dir, 'samurai.png')):
+        shutil.copy(os.path.join(card_dir, 'samurai.png'), os.path.join(CHAR, 'samuraicard_001.png'))
     U.win_pic().save(os.path.join(CHAR, 'win_pic_001.png'))
     U.win_pic().save(os.path.join(CHAR, 'win_pic_junkan.png'))
     save(U.GUN_AMMONOMICON, os.path.join(CHAR, 'loadoutsprites', 'a_kibblesack.png'))

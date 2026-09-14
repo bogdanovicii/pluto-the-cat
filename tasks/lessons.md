@@ -71,3 +71,7 @@
 - BossCardUIController sets nameLabel.Text straight from the enemies string table, and its title font lacks some lowercase glyphs: "The Vet" rendered "Te Vet". Write boss card name and subtitle strings in capitals, like vanilla ("THE EVIL EYE!", "BEHOLSTER").
 - Boss card art must bleed off the card edges; a portrait that ends in a straight line mid-card reads as a pasted rectangle.
 - When a boss sprite grows, re-check its spawn cell against surrounding props: the 48x40 Vet spawned behind the exam table and under the lamp.
+
+## 2026-09-14 — boss-card bust: generated first, then pixel-perfect (user correction)
+- A procedural "hand-drawn" bust (ellipses, auto outline, cel bands at 2x) was rejected: "does not look good". For large art next to vanilla painted cards, start from a Gemini generation that matches the reference style, copy it as faithfully as possible, then make it pixel-perfect (palette, outline, no anti-aliasing, integer scale).
+- Never show a stand-in draft for art the user judges by look alone; run the artist skill's review rubric first and show only what passes.

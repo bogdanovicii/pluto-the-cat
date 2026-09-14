@@ -127,7 +127,13 @@ for f in pngs:
         err(f'{f}: jtk2d lacks PrimaryHand')
 if 'pluto_kibble_sack_idle_001.png' not in pngs:
     err('gun idle sprite missing')
-for prefix in ('pluto_kibble_sack', 'pluto_gravy_pouch'):
+for need in ('pluto_taiyaki_cannon_idle_001.png', 'pluto_katana_idle_001.png'):
+    if need not in pngs:
+        err(f'samurai gun sprite missing: {need}')
+for need in ('pluto_mini_taiyaki_001.png', 'pluto_katana_wave_001.png'):
+    if not os.path.exists(os.path.join(RES, 'SpriteRoot', 'ProjectileCollection', need)):
+        err(f'samurai projectile sprite missing: {need}')
+for prefix in ('pluto_kibble_sack', 'pluto_taiyaki_cannon', 'pluto_katana'):
     gun_sizes = {Image.open(os.path.join(wc, f)).size for f in pngs if f.startswith(prefix)}
     if len(gun_sizes) != 1:
         err(f'{prefix} frames must share one canvas size, got {gun_sizes}')
@@ -193,6 +199,15 @@ for f in _cards:
         err(f'{f}: boss card must be 427x240, got {_im.size}')
     if _opaque > 0.30:
         err(f'{f}: boss card is {_opaque:.0%} opaque; it would cover the boss art (keep it a cut-out, <= 30 %)')
+# Samurai costume card (2.16.0): own file names (never "bosscard_"), same frame count, same cut-out rules.
+_samurai = sorted(f for f in os.listdir(CHAR) if f.startswith('samuraicard_') and f.endswith('.png'))
+if len(_samurai) != len(_cards):
+    err(f'samurai card frames ({len(_samurai)}) must match the boss card frames ({len(_cards)})')
+for f in _samurai:
+    _im = Image.open(os.path.join(CHAR, f)).convert('RGBA')
+    _a = _im.getchannel('A').tobytes()
+    if _im.size != (427, 240) or sum(1 for v in _a if v) / len(_a) > 0.30:
+        err(f'{f}: samurai card must be a 427x240 cut-out (<= 30 % opaque)')
 ok(f'boss card: {len(_cards)} frame(s), cut-out')
 
 # 5. characterdata ids match the C# ids
@@ -204,6 +219,19 @@ for cid in re.findall(r'^\s*(pluto:[a-z_]+)', cd, re.M):
 if 'pluto:wet_food_can' in cd and '"Wet Food Can"' not in src:
     err('active item GameObject name must normalise to wet_food_can')
 ok('loadout ids match registered ids')
+
+# 5a. samurai costume loadout and unlock (2.16.0)
+_alt = re.search(r'<altGuns>(.*?)</altGuns>', cd, re.S | re.I)
+_alt_ids = [l.split()[0] for l in (_alt.group(1).splitlines() if _alt else []) if l.strip() and not l.strip().startswith('#')]
+if _alt_ids != ['pluto:taiyaki_cannon', 'pluto:katana']:
+    err(f'<altGuns> must be pluto:taiyaki_cannon, pluto:katana (got {_alt_ids})')
+_plugin = open(os.path.join(ROOT, 'PlutoTheCat', 'src', 'Plugin.cs')).read().splitlines()
+if any('KILLED_PAST_ALTERNATE_COSTUME' in l for l in _plugin):
+    err('Plugin.cs still forces KILLED_PAST_ALTERNATE_COSTUME (the costume must unlock by beating the past)')
+for i, l in enumerate(_plugin):
+    if 'SetCharacterSpecificFlag' in l and not any('UnlockSamuraiCostume' in x for x in _plugin[max(0, i - 3):i + 1]):
+        err(f'Plugin.cs:{i + 1} sets a character flag outside the UnlockSamuraiCostume debug key')
+ok('samurai loadout and unlock gate')
 
 # 5b. vanilla console ids used by synergies exist in the game's id map
 idmap = set(l.split()[1] for l in open(os.path.join(ROOT, 'docs', 'research', 'gungeon_items_idmap.txt')) if l[:1].isdigit())
