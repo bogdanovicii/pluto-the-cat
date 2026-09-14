@@ -75,3 +75,11 @@
 ## 2026-09-14 — boss-card bust: generated first, then pixel-perfect (user correction)
 - A procedural "hand-drawn" bust (ellipses, auto outline, cel bands at 2x) was rejected: "does not look good". For large art next to vanilla painted cards, start from a Gemini generation that matches the reference style, copy it as faithfully as possible, then make it pixel-perfect (palette, outline, no anti-aliasing, integer scale).
 - Never show a stand-in draft for art the user judges by look alone; run the artist skill's review rubric first and show only what passes.
+
+## 2026-09-14 — shared index sweeps (2.16.0)
+- Twice today a plain `git commit` in the shared tree recorded another session's staged files: f1's knight art in my
+  490fb03, and my 342 staged task 6-8 files in the Vet Visit session's ebdebfc (my own commit had just failed on
+  `.git/index.lock`, leaving the paths staged). A path guard on `git diff --cached` doesn't protect the other sessions.
+- Rule: commit in one step with explicit paths, `git commit -m ... -- <paths>` (it commits only those paths, whatever
+  else is staged), and never leave files staged between commands. If a commit fails, `git restore --staged <paths>`
+  before doing anything else.

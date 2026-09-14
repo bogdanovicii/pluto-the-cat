@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.16.0
+- **Samurai Pluto**: a new alternate costume replaces Wet Pluto. Crimson hachimaki with trailing tails, indigo haori with a white paw crest and an open collar, crimson obi, charcoal hakama, on every animation (rolls and death included).
+- The costume unlocks the vanilla way: beat Pluto's past (the Vet Visit) and a kimono stand appears in the Breach next to him. The old forced unlock is gone. Testing key `UnlockSamuraiCostume` (Debug, default false) shows the stand anyway.
+- The costume decides the loadout: Samurai Pluto starts with the **Taiyaki Cannon** (mini taiyaki from a bean-filled mouth, bonito flakes on hit, a Churu tube squeezed in on reload) and the **Katana** (Blasphemy's rules with a longer reach: the swing cuts bullets, a sakura crescent flies out at full health, reloading knocks nearby bullets away). Normal Pluto keeps the Royal Kibble Sack. The Breach alt-gun shrine does nothing for Pluto; the costume is the switch.
+- New boss-intro cards: a detailed bust of Pluto with the kibble sack, and a samurai bust with the katana while the costume is worn. Both are transparent cut-outs, so the boss art stays visible.
+- Puffed Up shows no fur while the kimono is worn.
+- Retired: Wet Pluto, the bathtub and the Royal Canin Gravy Pouch. Config key `BathtubOffset` keeps its name and now places the kimono stand.
+- Art: every new picture is generated with Gemini first and converted into pixel-perfect art with the project's pluto-artist skill.
+
 ## 2.15.3
 - Playdate works: squeeze the Squeaky Toy while carrying the Dog and the Dog runs at the enemy chasing Coco and bites it (6 damage every 1.2 s). It did nothing before, because Coco looked for enemies in a room companions never have. The same fix makes Ser Junkan (Squire) charge the enemy chasing Coco.
 - Playdate is now Squeaky Toy + Dog (was Coco Blue + Dog). Petting either friend still makes the other wiggle.
