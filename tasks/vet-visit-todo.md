@@ -191,4 +191,6 @@ Spec: docs/superpowers/specs/2026-09-14-samurai-pluto-and-clinic-life-design.md 
 - Art rule changed by the user: Gemini-first then converted pixel art everywhere; use .claude/skills/pluto-artist.
 - [x] User approved the spec (2026-09-14, "all good")
 - [x] Part A plan: docs/superpowers/plans/2026-09-14-vet-visit-0.14.0-clinic-life.md (15 tasks: art sources, sounds, loadout, trophy, mood, kennels, mask, ending, 6 art tasks, release)
-- [ ] Execute part A (character session c4 has its own part B plan: docs/superpowers/plans/2026-09-14-samurai-pluto-2160.md)
+- [x] Execute part A on PlutoVetVisit branch vet-visit-0.14.0 (2026-09-14): tasks 1-8 code (art sources, sounds, costume loadout, trophy + progress file, theatre mood, kennels, masked Vet, pick-up ending); art tasks 9-14 approved (boss card, win picture, trophy Gemini-converted; ending, kennel and mask clips hand-copied from Gemini sheets because direct conversions failed review). VET_RELEASE validate 104/104, 181 tests, build green.
+- [ ] Gemini project hit its monthly spend cap (10 kennel sheets failed); the user must raise it in AI Studio before more generations
+- [ ] Code review of v0.13.0..HEAD src, then release 0.14.0 jointly with Pluto the Cat 2.16.0 (c4 holds its push/tag/drop page) after the user confirms
