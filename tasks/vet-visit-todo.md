@@ -178,8 +178,16 @@ Tester: past runs start to finish, bullets hit for half a heart, 0 bank errors, 
 - [ ] Await Steam results for 0.12.0
 
 ## 0.13.0 (user, 2026-09-14, screenshots of 0.12.0 in game)
-- [ ] Win picture looks bad (tile grid, grey box, brown blob because the main mod's Pluto art can't be imported at build): hand-drawn victory scene with Pluto, the knocked-out Vet, Bogdan and Bianca; agent on cards.win_pic
-- [ ] Pluto walks into the reception counter from the south: collider vs sprite footprint, audit all standing props, add a check; agent on clinic_objects.py
-- [ ] Two owners replace the generic Owner: Bogdan (guy) and Bianca (long brown hair, dressed in yellow); sprites, intro beats, comments; agent on npc_poses.py + VetVisitController.cs
-- [ ] Offer the user more improvement ideas
+- [x] Win picture looks bad (tile grid, grey box, brown blob because the main mod's Pluto art can't be imported at build): hand-drawn victory scene with Pluto, the knocked-out Vet, Bogdan and Bianca; agent on cards.win_pic
+- [x] Pluto walks into the reception counter from the south: collider vs sprite footprint, audit all standing props, add a check; agent on clinic_objects.py
+- [x] Two owners replace the generic Owner: Bogdan (guy) and Bianca (long brown hair, dressed in yellow); sprites, intro beats, comments; agent on npc_poses.py + VetVisitController.cs
+- [x] Offer the user more improvement ideas
 - [ ] Build, tests, review, release 0.13.0, drop page, tester message
+
+## Samurai Pluto and a living clinic (user, 2026-09-14): design first
+Spec: docs/superpowers/specs/2026-09-14-samurai-pluto-and-clinic-life-design.md (commit fb1a5c1). Waiting for the user's review.
+- Picked: pick-up ending (Bianca carries Pluto), living kennels, theatre mood, masked last phase, built-in sounds, Breach trophy, Pluto boss card; samurai skin replaces Wet Pluto, costume-bound Taiyaki Cannon + Blasphemy-like katana, indigo/crimson kimono.
+- Owners: part A (Vet Visit 0.14.0) this session; part B (character 2.16.0) enter-the-gungeon-pluto-c4. Interface: KILLED_PAST flag, progress flag file, gun ids pluto:taiyaki_cannon / pluto:katana.
+- Art rule changed by the user: Gemini-first then converted pixel art everywhere; use .claude/skills/pluto-artist.
+- [ ] User reviews the spec
+- [ ] writing-plans for part A after approval
