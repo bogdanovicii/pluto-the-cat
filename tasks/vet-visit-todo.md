@@ -58,3 +58,9 @@ Feedback: Pluto had no weapon, the Vet never attacked / had no weapon, the boss 
 - [x] 0.4.0: Vet redrawn (glasses, stethoscope, pocket, shoes, vaccine gun; outline-free export since AIActors are outlined at runtime), 16 new props, room re-dressed; tests updated; docs/preview/clinic-room-mock.png
 - [x] GitHub releases v0.3.0 and v0.4.0; drop page carries pluto_vet_visit_zip.json (0.4.0)
 - [ ] In-game: does Pluto now spawn with the sack, does the Vet shoot and move, is the name right, how does the room look
+
+## v2 — vanilla-depth past (design 2026-09-14, docs/superpowers/specs/2026-09-14-vet-visit-v2-design.md)
+- [x] Research: vanilla pasts structure (04a), Alexandria APIs for waves/enemies/NPCs/cutscenes (04b)
+- [x] Design spec drafted: one 30x52 room with three gated zones, three acts, cast (Owner, Receptionist, Rex, Grandma Cat, critters, Vet Techs, escaped patients, the Nurse, the Vet)
+- [ ] User approval of the design
+- [ ] 0.5.0 room + gates + vanilla waves; 0.6.0 Vet Tech/Nurse; 0.7.0 intro cutscene + NPCs; 0.8.0 dressing + balance; 1.0 merge
