@@ -44,3 +44,17 @@ Separate project in `PlutoVetVisit/`; never touch `PlutoTheCat/`, `tools/`, `thu
 - [ ] In-game tests 1-4 on the Steam machine (docs/checklist.md in PlutoVetVisit) — results pending
 - [ ] Milestone 5 integration into PlutoTheCat after the in-game pass
 - [x] Pushed to https://github.com/bogdanovicii/pluto-vet-visit (private, main + tag v0.1.0, release with the m1/m3/final zips) — 2026-09-14
+
+## v0.2.0 2026-09-14 — Blacksmith route
+- [x] Pluto gets the Bullet That Can Kill The Past from the Blacksmith (Alexandria hasPast registration; already wired)
+- [x] Harmony postfix on BulletThatCanKillThePast.Pickup sets BLACKSMITH_BULLET_COMPLETE for Pluto so the Ark opens the past (src/BlacksmithBullet.cs, config GuaranteePastAccess)
+- [x] Built, tagged v0.2.0, GitHub release with the zip; README trigger flow fixed (Blacksmith -> Dragun -> Ark, not 'beat the Lich')
+- [x] Sent install instructions to the Steam machine session (plutosm-twinkling-valiant): download both GitHub release zips, import in r2modman, test the Blacksmith route
+- [ ] Steam machine in-game results (Blacksmith offers bullet, Ark loads the past, room/boss look) — pending
+
+## v0.3.0 / v0.4.0 2026-09-14 — user feedback after the first in-game past
+Feedback: Pluto had no weapon, the Vet never attacked / had no weapon, the boss name showed as an error, art and room too plain.
+- [x] 0.3.0: starting loadout given in the past (ReinitializeGuns, then by console id); boss card/bar/actor names are string-table keys; fight watchdog (14 s) + directional walk-in; Vet AI: flee/seek/strafe stack, range-gated leading attacks, three phases (Droplet Wall, Vaccination Spiral, Cone of Shame, Snip Time)
+- [x] 0.4.0: Vet redrawn (glasses, stethoscope, pocket, shoes, vaccine gun; outline-free export since AIActors are outlined at runtime), 16 new props, room re-dressed; tests updated; docs/preview/clinic-room-mock.png
+- [x] GitHub releases v0.3.0 and v0.4.0; drop page carries pluto_vet_visit_zip.json (0.4.0)
+- [ ] In-game: does Pluto now spawn with the sack, does the Vet shoot and move, is the name right, how does the room look
