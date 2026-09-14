@@ -196,3 +196,7 @@ Spec: docs/superpowers/specs/2026-09-14-samurai-pluto-and-clinic-life-design.md 
 - [x] Review clean; user confirmed ("do it and send it to steam machine"); v0.14.0 merged to main, tagged, GitHub release (sha f185e46b...822f); drop page v41 carries the Vet Visit 0.14.0 card
 - [x] Pluto the Cat 2.16.0 released by c4 (GitHub v2.16.0, sha df2eea7b...a0d2); drop page carries both cards; both payloads verified; one combined tester message sent to Download [1e08e7]
 - [ ] Await Steam results for 0.14.0 + 2.16.0
+
+## 0.14.1 (user, 2026-09-14): reset the past
+- [x] vet_reset_past console command (costume off, KILLED_PAST + alt flag cleared and saved, progress file deleted, trophy and stand hidden, warns on UnlockSamuraiCostume); released v0.14.1 (sha 5620c3bc...77d0)
+- [ ] Drop page + tester message
