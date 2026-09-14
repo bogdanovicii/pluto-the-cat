@@ -52,3 +52,13 @@
 - A "did I stage someone else's paths?" check that only prints is not a guard. The other session added hunks between the check and `git add`, and the commit picked up its knight art and changelog section. Make the check abort (`grep ... && exit 1`) and run it on the staged index immediately before `git commit`, in the same command.
 - In zsh a `$VAR` holding several paths is one word; use an array (`PATHS=(...)`, `"${PATHS[@]}"`).
 - With another session live in the tree, agree on a file freeze ("tell me before you touch X") before committing, or commit only files the other session said it does not edit.
+
+## 2026-09-14 — player boss card covered the boss (2.15.1 tester report)
+- `BossCardUIController` draws `PrimaryPlayer.BosscardSprites` on its own sprite over the boss art, and Alexandria passes `bosscard_*.png` straight in. A player card must be a cut-out on transparency (known-good Kotonoha cards: 427x240, ~12 % opaque, figure in the bottom-left). Pluto's 100 % opaque panel hid the Vet. `validate.py` now fails any card above 30 % opaque.
+- The "big painted card" assumption came from the file's size in a table, not from how the game draws it. For any UI texture, read the controller that renders it and compare against a working mod's file before designing the art.
+- A generator that deletes old outputs before producing the new ones leaves the tree broken when it crashes (NameError left no boss card at all). Build the new files first, then remove stale ones.
+
+## 2026-09-14 — Vet Visit 0.10.1 in-game test (user: "their bullets go through Pluto and no hit is registered")
+- "No exception" is not "works". The bullets spawned, flew and made sound, yet every hitbox was 0x0. For anything that must collide, log the collider after it is built (generation mode, layer, manual size, `Dimensions`) and put the expected values in the tester checklist.
+- A helper written for one kind of object can silently break another. Alexandria's `SetProjectileSpriteRight` is for player projectiles: it moves the sprite into ETGMod's ProjectileCollection. Vanilla enemy bullets build a BagelCollider from a frame named in their own collection, so the lookup failed and `RegenerateEmptyCollider` produced 0x0. When re-skinning an enemy bullet, set a Manual (or Circle) collider sized to the new sprite.
+- `Duplicate prefab name` from SpawnPool means several copies share a GameObject name. It is harmless for spawning, since pools match by reference, but give every copy a unique name so the log stays clean.
