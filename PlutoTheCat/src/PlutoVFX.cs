@@ -4,13 +4,14 @@ using Alexandria.VisualAPI;
 
 namespace PlutoTheCat
 {
-    /// <summary>Custom effects: a puff of fur (Nine Lives, tail whip) and a burst of hearts (Wet Food Can).</summary>
+    /// <summary>Custom effects: a puff of fur (Nine Lives, tail whip) and a burst of hearts and a gravy splat (Wet Food Can).</summary>
     public static class PlutoVFX
     {
         public static VFXPool FurPuff;
         public static VFXPool LoveBurst;
         public static VFXPool AngerMarks;
         public static VFXPool BlockSpark;
+        public static VFXPool GravyBurst;
 
         public static void Init()
         {
@@ -21,6 +22,8 @@ namespace PlutoTheCat
             AngerMarks = VFXBuilder.CreateVFXPool("PlutoAngerMarks", Frames("anger", 4), 10, new IntVector2(12, 12),
                 tk2dBaseSprite.Anchor.MiddleCenter, false, 0f);
             BlockSpark = VFXBuilder.CreateVFXPool("PlutoBlockSpark", Frames("spark", 3), 16, new IntVector2(12, 12),
+                tk2dBaseSprite.Anchor.MiddleCenter, false, 0f);
+            GravyBurst = VFXBuilder.CreateVFXPool("PlutoGravyBurst", Frames("gravyburst", 4), 10, new IntVector2(20, 20),
                 tk2dBaseSprite.Anchor.MiddleCenter, false, 0f);
         }
 

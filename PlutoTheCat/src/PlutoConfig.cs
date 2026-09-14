@@ -15,7 +15,8 @@ namespace PlutoTheCat
         public static float KibbleCritChance = 0.05f;
         public static float SecretDoorDamage = 15f;
         public static bool NoFallDamage = true;
-        public static float CharmRadius = 4.5f;
+        public static float CanSplashRadius = 2f;
+        public static float CanDamage = 5f;
         public static float CharmDuration = 10f;
         public static float BossStunSeconds = 3f;
         public static float CanCooldownDamage = 200f;
@@ -48,7 +49,8 @@ namespace PlutoTheCat
             KibbleCritChance = cfg.Bind("Balance", "KibbleCritChance", KibbleCritChance, "Chance (0-1) that a kibble is a big chunk (3.5x damage).").Value;
             SecretDoorDamage = cfg.Bind("Kibble Sack", "SecretDoorDamage", SecretDoorDamage, "Extra damage each kibble deals to a secret-room wall on top of its own (walls have 100 hit points; 0 = normal damage only).").Value;
             NoFallDamage = cfg.Bind("Balance", "NoFallDamage", NoFallDamage, "Pluto lands on his feet: falling into a pit costs no health.").Value;
-            CharmRadius = cfg.Bind("Balance", "CharmRadius", CharmRadius, "Wet Food Can charm radius in tiles.").Value;
+            CanSplashRadius = cfg.Bind("Balance", "CanSplashRadius", CanSplashRadius, "Wet Food Can: radius in tiles of the gravy splash that charms enemies around the burst.").Value;
+            CanDamage = cfg.Bind("Balance", "CanDamage", CanDamage, "Wet Food Can: damage to the enemy the thrown can hits.").Value;
             CharmDuration = cfg.Bind("Balance", "CharmDuration", CharmDuration, "Wet Food Can charm duration in seconds.").Value;
             BossStunSeconds = cfg.Bind("Balance", "BossStunSeconds", BossStunSeconds, "How long the can stuns a boss.").Value;
             CanCooldownDamage = cfg.Bind("Balance", "CanCooldownDamage", CanCooldownDamage, "Damage dealt to recharge the Wet Food Can.").Value;

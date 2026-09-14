@@ -43,3 +43,7 @@
 - Clearing a flag is not restoring state: `ForceNoGun = false` makes `CurrentGun` non-null again but leaves the object inactive. Check the object (`activeSelf`) after every repair, and log the value you repaired, not the value you set.
 - Read the helper you wrap. Alexandria's `CopyBulletBankEntry` already makes a private inactive fake-prefab copy; cloning it again with `FakePrefab.Clone` let Alexandria's own Instantiate hook re-activate the clone, which lived in the world, died, and nulled every bank entry. The enemy NRE had the same stack since 0.3.0: a stack trace that survives several "fixes" means the fixes were aimed elsewhere; open the top frame (`AIBulletBank.CreateProjectileFromBank`) and list every dereference.
 - Depth claims from reasoning alone need an in-game check: flat sprites lose to the tileset's standing wall face. Ask for screenshots early and compare them with the concept before adding more art.
+
+## 2026-09-14 — CS0507 again (Wet Food Can 2.14.0)
+- `PlayerItem.DoEffect` is `public virtual`, like `BraveBehaviour.OnDestroy` before it. Before overriding any EtG member, grep an existing override in this repo (or the decompiled source) for its access modifier instead of assuming `protected`.
+- A new C# file that uses Alexandria helpers needs `using Alexandria.Misc;` (`ProjectileUtility`); copy the using block from the file whose pattern you are reusing.

@@ -90,7 +90,7 @@ def pluto_state(t):
         return 'idle_hand', int(t * 6) % 4, x1, True
     t -= T_IDLE1
     if t < T_DODGE:
-        return 'dodge', min(8, int(t * 13)), x1 + ROLL_SPEED * t, False
+        return 'dodge_left', min(8, int(t * 13)), x1 + ROLL_SPEED * t, False
     x2 = x1 + ROLL_SPEED * T_DODGE
     t -= T_DODGE
     return 'idle_hand', int(t * 6) % 4, x2, True

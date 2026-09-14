@@ -181,25 +181,6 @@ SIDE_LEG_LONG = R([  # leg stretched down (pass frames): fill 3 rows
 "owwo",
 ".oo.",
 ])
-LEG_REACH = R([  # leg reaching for the ground (pass frames, body 3 px up): fill 4 rows
-"oWWo",
-"oWWo",
-"oWWo",
-"owwo",
-".oo.",
-])
-LEG_FWD = R([  # contact: hip at top-left, foot 2 px ahead (short splayed stride, vanilla-like)
-"oWWo..",
-".oWWo.",
-"..owwo",
-"...oo.",
-])
-LEG_BACK = R([  # contact: hip at top-right, foot 2 px behind
-"..oWWo",
-".oWWo.",
-"owwo..",
-".oo...",
-])
 LEG_TUCK = R([  # airborne: short tucked leg
 "oWWo",
 ".oo.",

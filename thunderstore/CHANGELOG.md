@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.15.0
+- Coco Blue has friends. **Playdate** (Coco Blue + Dog): while Coco is a decoy the Dog runs at the enemy chasing him and bites it (6 damage every 1.2 s). Petting either one makes the other wiggle with hearts, and petting the Dog gives Pluto Coco's burst of speed.
+- **Squire** (Coco Blue + Ser Junkan): Coco holds one more bullet per Junkan rank (up to +6 at Holy Knight), and while Coco is a decoy Junkan charges the enemy chasing him.
+- **Knighted**: once Ser Junkan is a Holy Knight (6 junk) or Angelic, Coco wears a tin helmet with a gold band and a red plume in every animation. When he is knocked out, the helmet lies on the floor beside him.
+
+## 2.14.0
+- Wet Food Can reworked: Pluto throws the tin straight at what he aims at instead of lobbing it. The enemy it hits takes 5 damage and falls in love with him, and the tin always bursts where it stops (enemy, wall or end of range), charming every enemy in a 2-tile gravy splash. Bosses are stunned for 3 seconds instead. Still recharges after 200 damage; Dinner Time still widens the splash and doubles the charm.
+- New can art from the real Royal Canin Kitten tin: gold ring-pull lid, pink label, crown on the red band, gravy window; it tumbles end over end in flight and bursts into gravy and hearts.
+- Config: `CharmRadius` is replaced by `CanSplashRadius` (default 2); new `CanDamage` (default 5).
+
+## 2.13.0
+- Running no longer does the splits: legs stay straight under the hips on every frame (a 1-px stride instead of two diagonal legs), front and back runs plant one foot while the other lifts.
+- Dodge roll redone the way the Gungeoneers roll: four direction clips instead of one ball. Sideways Pluto dives and somersaults with his head, ears and tail visible in every tumble; rolling down he tucks his head, goes over on his back and comes round; rolling up he shows his belly and face upside down; the up-diagonal roll turns his face away.
+- The Royal Kibble Sack in Pluto's paw is now the same Royal Canin bag as its Ammonomicon page, lying on its side: purple label with the grey cat, red band with white dots, the crown, the zip seam, and a torn-open top where the kibble comes out. Firing squeezes the bag and sprays kibble from the top; reloading folds the top shut, shakes the bag and tears it open again.
+
 ## 2.12.0
 - Pluto lands on his feet: falling into a pit costs no health (config `NoFallDamage`), and Nine Lives never spends a life on a pit.
 - The Royal Kibble Sack cracks secret-room walls: shoot a suspicious wall and each kibble bites 15 extra damage out of it (walls have 100), so the crack shows after a few pawfuls and the wall opens soon after. Config key `SecretDoorDamage`.

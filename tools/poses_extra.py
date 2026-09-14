@@ -1,28 +1,98 @@
-"""Additional poses: dodge ball, crouch/land/hit/kneel (composed from parts), tip-over, lying dead,
+"""Additional poses: dodge somersault parts, crouch/land/hit/kneel (composed from parts), tip-over, lying dead,
 tails, breach-idle props. Pose canvas 18 x 22 (feet fill on row 20, outline row 21) unless noted."""
 from pixel import check_rect as R, pad, overlay
 import poses as P
 
-# ---------------------------------------------------------------- dodge roll ball (16 x 16)
-# Ears at the top, face on the white belly, tail wrapped around the bottom-left with its rings,
-# the head spot near the ear line, so the 90-degree rotations read as a real tumble.
-BALL = R([
-"..oo.......oo...",
-".oBBo.....oBBo..",
-".oBPBoooooBPBo..",
-"..oBBBBWBBBBo...",
-".oBbBBBWBBBBBo..",
-"oBBBBBBBBBBBBBo.",
-"oBBBGgBWWBGgBBBo",
-"oBbBBWWWWWWWBBbo",
-"oBBBWWWWPWWWWBBo",
-"oBBBBWWWpWWWWBBo",
-"oBBBBBWWWWWBBBBo",
-".oBbBBBBBBBBbBo.",
-"obBBBBBBBBBBBBo.",
-"obbobBBbBBBBbBo.",
-"oBBoobbBBBBoo...",
-".ooo.oooooo.....",
+# ---------------------------------------------------------------- dodge roll parts
+# Vanilla rolls (Convict, Cultist) never become an anonymous ball: the character dives and
+# somersaults, and every tumble frame still shows its head, ears, limbs and back.
+
+# Side somersault (16 x 16, facing right): curled up, head tucked to the chest, ears forward, back
+# arched with its bars, paws folded under the chin, ringed tail wrapped under the rump. Rotated in
+# 90-degree steps (square canvas, so the centre never drifts) for the tumble.
+TUCK_SIDE = R([
+"................",
+"........oo..oo..",
+"....ooooBPooPBo.",
+"..ooBbBBBBBBBBBo",
+".oBbBBBBBBWWWBdo",
+"oBbBBBBBBBBBBBdo",
+"oBBBBbBBBGgBBGgo",
+"oBBBBbBBBBBWWBBo",
+"oBbBBBBBBWWWWWWo",
+"oBbBBBBBBWWWWPPo",
+"oBBBBBBBBBWWWpwo",
+"obbBBBBBBBoWWwo.",
+"oBBbbBBoWWooWWo.",
+".obbBBBooWwooo..",
+"..oooooo.ooo....",
+"................",
+])
+# Up-diagonal side roll: the same curl seen from behind, face turned away.
+TUCK_SIDE_BW = R([
+"................",
+"........oo..oo..",
+"....ooooBBooPBo.",
+"..ooBbBBBBBBBBBo",
+".oBbBBBBBBWWWBdo",
+"oBbBBBBBBBBBBBdo",
+"oBBBBbBBbBBbBBBo",
+"oBBBBbBBBbBBBBBo",
+"oBbBBBBBBBBBBWWo",
+"oBbBBBBBBBBBWWWo",
+"oBBBBBBBBBBBWWwo",
+"obbBBBBBBBoBWwo.",
+"oBBbbBBoWWooWWo.",
+".obbBBBooWwooo..",
+"..oooooo.ooo....",
+"................",
+])
+
+# Front / back somersault parts (18 wide), seen along the roll direction.
+CROWN = R([            # head bowed toward the camera: ears, crown spot and M, paws reaching under it
+"....oo......oo....",
+"...oBBo....oBBo...",
+"...oBPPoooooPPBo..",
+"..oBBPBBBBBBBPBBo.",
+".oBbBBBBBBBBBBbBdo",
+".oBBbBBBWWWBBBbBdo",
+".oBBBBBBWWWBBBBBdo",
+".oBbBBbBBBBBbBBbdo",
+".oBBBBBbBBBbBBBBdo",
+".oBBBBBBbbbBBBBBdo",
+"..oWWoBBBBBBBoWWo.",
+"..owwooooooooowwo.",
+"...oo.........oo..",
+])
+BACK_UP = R([          # upside down, back to the camera: hind paws kicked up, tail over the top, head below
+"...oo...ooo..oo...",
+"..oWWo.obbbooWWo..",
+"..owwo.oBBBoowwo..",
+"..oBBBBobbboBBBo..",
+".oBBbBBBBBBBBbBBo.",
+".oBBBbBBBbBBbBBBdo",
+".oBBBBbBbBbBBBBBdo",
+".oBBBbBBBbBBbBBBdo",
+".oBBbBBBBBBBBbBBdo",
+".oBBBBBBBBBBBBBBdo",
+"..oBBBBWWWBBBBBo..",
+"...oBBoooooooBBo..",
+"....oo.......oo...",
+])
+BELLY_UP = R([         # upside down, belly to the camera: hind paws up, white belly, face at the bottom
+"...oo........oo...",
+"..oWWo......oWWo..",
+"..owwoooooooowwo..",
+".oBBWWWWWWWWWWBBo.",
+".oBbWWWWWWWWWWbBdo",
+".oBBbWWWWWWWWbBBdo",
+".oBBBWWWWpWWWBBBdo",
+".oBBBWWWWPPWWWBBdo",
+".oBBBgGBWWWBGgBBdo",
+".oBbBBBBBBBBBBbBdo",
+"..oBBBBBBBBBBBBBo.",
+"...oBPBoooooBPBo..",
+"....oo.......oo...",
 ])
 
 # ---------------------------------------------------------------- low body (crouch / land / kneel): 4 rows + 3 leg rows
@@ -215,19 +285,6 @@ LEDGE = R([
 "oooooooooooo",
 ])
 
-
-# ---------------------------------------------------------------- dodge: stretched leap ball (14 x 18) derived from BALL
-def stretch_v(rows, dup_rows=(5, 10), drop_cols=(1, 14)):
-    out = []
-    for y, r in enumerate(rows):
-        r2 = ''.join(ch for x, ch in enumerate(r) if x not in drop_cols)
-        out.append(r2)
-        if y in dup_rows:
-            out.append(r2)
-    return R(out)
-
-
-BALL_STRETCH = stretch_v(BALL)
 
 # Belly slide over a table: low, eyes wide, ears back.
 SLIDE = low_pose(3, 'wide')

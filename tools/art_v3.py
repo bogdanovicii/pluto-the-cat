@@ -118,49 +118,75 @@ KIBBLE_PIC = R([  # small kibble pile on the bag
 ])
 
 
-# ---------------------------------------------------------------- gun: bag held sideways, 32 x 18, opening on the right
+# ---------------------------------------------------------------- gun: the Ammonomicon bag lying on its side, 32 x 18
 GUN_W, GUN_H = 32, 18
 
 
-def gun_bag():
-    """Royal Canin bag held sideways like a gun, 32 x 18. Silhouette first: a pinched, sealed grip end on
-    the left (where the paw holds it), a rounded belly, and a torn-open spout on the right with kibble
-    spilling out. Only the red band and the purple label survive at gun scale; the crown and the cat
-    live on the Ammonomicon sprite."""
-    return R([
-    "................................",  # 0
-    ".......oooooooooooooooooooo.....",  # 1
-    "......oNKKKKKKKRRrWWvvvWWWWo....",  # 2  top highlight, red band, purple label
-    ".....oNsWWWWWWWRRrWvVVVvWWWWo...",  # 3
-    "....oNsWWWWWWWWRRrvVVVVVvWWWoo..",  # 4  torn spout starts
-    "...oNsWWWWWWWWWRRrvVVVVVvWWWWWo.",  # 5
-    "..oNNsWWWWWWWWWRRrvVVVVVvWWWWWWo",  # 6  flap open
-    "..oNsWWWWWWWWWWRRrvVVVVVvWWWWwWo",  # 7
-    "..oNsWWWWWWWWWWRRrvVVVVVvWWWwoo.",  # 8  spout lip
-    "...oNsWWWWWWWWWRRrWvVVVvWWWwoMM.",  # 9  kibble spilling
-    "....oNsWWWWWWWWRRrWWvvvWWwwo.M..",  # 10
-    ".....oNswWWWWWWRRrWWWWWWwwwo....",  # 11
-    "......oNswwwwwwRRrwwwwwwwwo.....",  # 12 bottom shade
-    ".......oooooooooooooooooooo.....",  # 13
-    "................................",  # 14
-    "................................",  # 15
-    "................................",  # 16
-    "................................",  # 17
-    ])
+def rot_cw(rows):
+    """Rotate row-strings 90 degrees clockwise (exact, no resampling)."""
+    return [''.join(r[x] for r in reversed(rows)) for x in range(len(rows[0]))]
+
+
+def gun_bag(open_lip=True):
+    """The same Royal Canin bag as the Ammonomicon page, turned on its side so the zip top points at the
+    target: bottom gusset in the paw on the left, purple label with the grey cat, red band with its white
+    dots, the crown, the zip seam, and the torn-open top on the right where the kibble comes out."""
+    c = blank(GUN_W, GUN_H)
+    c = put(c, rrect(28, 14, 'W'), 1, 2)                 # body x1..28, y2..15
+    c = col(c, 2, 3, 14, 'N'); c = col(c, 3, 4, 13, 's')  # bottom gusset (grip end)
+    c = row(c, 3, 4, 24, 'K')                             # top highlight
+    c = row(c, 14, 4, 24, 'w')                            # bottom shade
+    c = put(c, [
+    "...vvvv...",
+    ".vvVVVVvv.",
+    ".vVVVVVVv.",
+    "vVVVVVVVVv",
+    "vVVVVVVVVv",
+    "vVVVVVVVVv",
+    "vVVVVVVVVv",
+    ".vVVVVVVv.",
+    ".vvVVVVvv.",
+    "...vvvv...",
+    ], 5, 4)                                              # purple label
+    c = put(c, CAT_SIT, 8, 5)                             # grey cat, kept upright so it reads at 1x
+    c = col(c, 16, 3, 14, 'r'); c = col(c, 17, 3, 14, 'R'); c = col(c, 18, 3, 14, 'R')  # red band
+    for y in (4, 7, 10, 13):
+        c = put(c, ['K'], 17, y)
+    c = put(c, CROWN, 20, 7)                              # crown, upright (turned sideways it reads as a K)
+    c = col(c, 25, 3, 14, 's'); c = col(c, 26, 3, 14, 'N'); c = col(c, 27, 3, 14, 'N')  # zip seam
+    for y in (4, 8, 12):
+        c = put(c, ['o'], 26, y)
+    if open_lip:                                          # torn-open top: flap peeled up, kibble inside the mouth
+        c = put(c, ['.', '.', '.', '.'], 28, 7)           # no outline across the opening
+        c = put(c, ['m', 'M', 'M', 'm'], 27, 7)           # kibble showing in the mouth
+        c = put(c, ['..oo', '.oNo', 'oNo.', 'No..'], 27, 3)  # flap torn back over the top edge
+        c = put(c, ['o'], 28, 11)                         # lower lip
+    return R(c)
 
 
 GUN_IDLE = gun_bag()
+_SHUT = gun_bag(open_lip=False)
 
-_BURST = blank(GUN_W, GUN_H)
-_BURST = put(_BURST, ['M'], 30, 4)
-_BURST = put(_BURST, ['M', 'm'], 29, 6)
-_BURST = put(_BURST, ['M'], 31, 8)
-_BURST = put(_BURST, ['m'], 30, 10)
-GUN_FIRE = [overlay(shift(GUN_IDLE, -1, 0), _BURST), overlay(GUN_IDLE, shift(_BURST, 0, 1)), GUN_IDLE]
-_POUR = blank(GUN_W, GUN_H)
-_POUR = put(_POUR, ['M'], 27, 3)
-_POUR = put(_POUR, ['m'], 26, 5)
-GUN_RELOAD = [shift(GUN_IDLE, 0, 1), overlay(shift(GUN_IDLE, 1, 0), _POUR), overlay(shift(GUN_IDLE, 0, -1), shift(_POUR, 0, 2)), GUN_IDLE]
+
+def kibble_at(frame, pts):
+    for x, y, ch in pts:
+        frame = put(frame, [ch], x, y)
+    return frame
+
+
+# fire (14 fps): recoil squeeze with a burst out of the top, the burst scatters, the lip settles
+GUN_FIRE = [
+    kibble_at(shift(GUN_IDLE, -1, 0), [(29, 7, 'M'), (30, 9, 'm'), (29, 10, 'M'), (31, 8, 'M')]),
+    kibble_at(GUN_IDLE, [(30, 6, 'm'), (31, 9, 'M'), (30, 11, 'M')]),
+    kibble_at(GUN_IDLE, [(29, 9, 'M')]),
+]
+# reload (8 fps): the paw folds the top shut, shakes the bag, kibble tumbles back up to the opening
+GUN_RELOAD = [
+    shift(_SHUT, 0, 1),
+    shift(_SHUT, 1, -1),
+    kibble_at(shift(GUN_IDLE, 0, 1), [(26, 1, 'M'), (28, 2, 'm')]),
+    GUN_IDLE,
+]
 
 # ---------------------------------------------------------------- Ammonomicon page: the bag upright, 24 x 32
 def ammonomicon_bag():
@@ -200,77 +226,117 @@ def ammonomicon_bag():
 
 GUN_AMMONOMICON = ammonomicon_bag()
 
-# ---------------------------------------------------------------- active: Royal Canin Kitten can, 20 x 20 (can 16 x 19 centred)
-def can():
-    W, H = 20, 20
-    c = blank(W, H)
-    # lid (gold) rows 0-3
-    c = put(c, R([
-    "....oooooooo....",
-    "..ooAAAYYYYaaoo.",
-    ".oAAAYYoooYYaaao",
-    ".oAAYYYoKKoYYaao",
-    ".oooooooooooooo.",
-    ]), 2, 0)
-    # body rows 5-16: pink label, cylinder shading (highlight left, shade right)
-    for y in range(5, 17):
-        c = put(c, ["oqIIIIIIIIIIPPpo"], 2, y)
-    # white panel with crown, red band, kitten
-    for y in range(6, 15):
-        c = put(c, ["KWWWWWWw"], 6, y)
-    c = put(c, CROWN, 7, 6)
-    c = put(c, ["RRRRRRRr"], 6, 9)
-    for x in (7, 9, 11):
-        c = put(c, ['K'], x, 9)
-    c = put(c, R([
-    ".oo.",
-    "oWWo",
-    "oWWo",
-    "WWWW",
-    ".oo.",
-    ]), 8, 10)                                            # tiny white kitten
-    # bottom rim (gold) rows 17-19
-    c = put(c, R([
-    ".oAAAYYYYYYaaao.",
-    "..ooAAYYYYaaoo..",
-    "....oooooooo....",
-    ]), 2, 17)
+# ---------------------------------------------------------------- active: Royal Canin Kitten tin (reference/ideas/active_item_idea.png)
+# A short, wide gold tin: ring-pull lid, pink label wrapped around a white panel with the crown over the red
+# band, a pink KITTEN strip and a window of gravy chunks. Items keep their drawn outline.
+CAN_ICON = R([
+"....oooooooooooo....",
+"..ooYYYYYYYYYYYYoo..",
+".oAYYaaaaaaaaaaYYao.",
+".oAYaaoooooaaaaaYao.",
+".oAYaoYaaaYoAAAaYao.",
+".oAYaaoooooaaaaaYao.",
+".oAYYaaaaaaaaaaYYao.",
+".ooYYYYYYYYYYYYYYoo.",
+".oqIIWWWRWRWRWWIPpo.",
+".oqIIWWWWRWRWWWIPpo.",
+".oqIIWWWWWWWWWWIPpo.",  # the red band is the crown's base
+".oqIRRKRRKRRKRRRPpo.",
+".oqIPPPPPWMmMmWIPpo.",
+".oqIPPPPPWmMmMWIPpo.",
+".oqIIIIIIWWWWWWIPpo.",
+".oAAYYYYYYYYYYYYaao.",
+"..ooaaYYYYYYYYaaoo..",
+"....oooooooooooo....",
+])
+
+# Thrown: the tin tumbles end over end (16x16 frames, square so a rotation never shifts it).
+_TIN_SIDE = R([
+".oooooooooo.",
+"oAYYYYYYYYao",
+"oqIWRWRWIPpo",
+"oqIRRRRRRPpo",
+"oqIPWMmWIPpo",
+"oqIPWmMWIPpo",
+"oAYYYYYYYYao",
+".oooooooooo.",
+])
+_TIN_LID = R([
+"...oooo...",
+".ooYYYYoo.",
+".oYaaaaYo.",
+"oYaooooaYo",
+"oYaoYYoAYo",
+"oYaooooaYo",
+"oYaaaAAaYo",
+".oYaaaaYo.",
+".ooYYYYoo.",
+"...oooo...",
+])
+_TIN_BOTTOM = R([
+"...oooo...",
+".ooaaaaoo.",
+".oaYYYYao.",
+"oaYAAYYYao",
+"oaYAYYYYao",
+"oaYYYYYYao",
+"oaYYYYYaao",
+".oaYYYYao.",
+".ooaaaaoo.",
+"...oooo...",
+])
+_side16 = pad(_TIN_SIDE, 16, 16, 2, 4)
+CAN_TOSS = [_side16, pad(_TIN_LID, 16, 16, 3, 3), rotate(_side16, -180), pad(_TIN_BOTTOM, 16, 16, 3, 3)]
+
+# Burst where the can stops (VFX, 20x20): the lid pops off, gravy splats, hearts rise.
+_SPLAT_S = R([
+"..oooooo..",
+".oMMmMMMo.",
+"oMmMMMmMMo",
+".oMMMmMMo.",
+"..oooooo..",
+])
+_SPLAT_L = R([
+"....oooooooooo....",
+"..ooMMMmMMMMmMMoo.",
+".oMMmMMMMMmMMMMMMo",
+"oMMMMMMmMMMMMmMMMo",
+".oMMmMMMMMMmMMMMo.",
+"..ooMMMMmMMMMMoo..",
+"....oooooooooo....",
+])
+_LID_S = R([
+".oooo.",
+"oAYYao",
+".oooo.",
+])
+_DROP = R([
+"oo",
+"Mm",
+])
+_HEART = R([".oo.oo.", "oHHoHHo", "oHHHHHo", ".oHHHo.", "..oHo..", "...o..."])
+
+
+def _burst(i):
+    c = blank(20, 20)
+    if i == 0:
+        c = put(c, _SPLAT_S, 5, 15)
+        c = put(c, _TIN_SIDE, 4, 8)
+        c = put(c, _LID_S, 7, 4)
+    elif i == 1:
+        c = put(c, _SPLAT_L, 1, 12)
+        c = put(c, _LID_S, 11, 2)
+        c = put(c, _DROP, 1, 9)
+        c = put(c, _DROP, 17, 10)
+    elif i == 2:
+        c = put(c, _SPLAT_L, 1, 13)
+        c = put(c, _HEART, 6, 4)
+        c = put(c, _DROP, 16, 8)
+    else:
+        c = put(c, _SPLAT_L, 1, 13)
+        c = put(c, _HEART, 4, 1)
+        c = put(c, _HEART, 12, 5)
     return c
 
 
-CAN_ICON = can()
-CAN_TOSS = [rotate(CAN_ICON, a) for a in (0, -90, -180, -270)]
-
-
-def splash(stage):
-    """Burst can on its side with gravy spreading; stage 0..2 adds hearts."""
-    W, H = 20, 20
-    c = blank(W, H)
-    gravy = R([
-    "....oooooooo....",
-    "..ooMMMMMMMMoo..",
-    ".oMMMmMMMMmMMMo.",
-    "oMMMMMMMmMMMMMMo",
-    "oMmMMMMMMMMMmMMo",
-    ".oooMMMMMMMMooo.",
-    "...oooooooooo...",
-    ])
-    c = put(c, gravy, 2, 12 - stage)
-    lid = R([
-    "..oooooo..",
-    ".oAAYYYao.",
-    "oAAYYoooao",
-    ".oaaYYYao.",
-    "..oooooo..",
-    ])
-    c = put(c, lid, 1, 8 - stage)
-    heart = R([".oo.oo.", "oHHoHHo", "oHHHHHo", ".oHHHo.", "..oHo..", "...o..."])
-    if stage >= 1:
-        c = put(c, heart, 12, 3)
-    if stage >= 2:
-        c = put(c, heart, 3, 1)
-        c = put(c, heart, 14, 0)
-    return c
-
-
-CAN_SPLASH = [splash(0), splash(1), splash(2)]
+GRAVY_BURST = [_burst(i) for i in range(4)]

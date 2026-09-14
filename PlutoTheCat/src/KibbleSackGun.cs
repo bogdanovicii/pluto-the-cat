@@ -56,8 +56,8 @@ namespace PlutoTheCat
             gun.gunClass = GunClass.PISTOL;
             gun.gunHandedness = GunHandedness.OneHanded;
 
-            // Kibble leaves the zip opening of the bag (right end of the 32x18 sprite). Units: pixels / 16.
-            gun.barrelOffset.transform.localPosition = new Vector3(29f / 16f, 7f / 16f, 0f);
+            // Kibble leaves the torn-open zip top of the bag (right end of the 32x18 sprite). Units: pixels / 16.
+            gun.barrelOffset.transform.localPosition = new Vector3(29f / 16f, 9f / 16f, 0f);
 
             // Starter-gun flags.
             gun.InfiniteAmmo = true;

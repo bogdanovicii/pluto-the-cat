@@ -115,17 +115,16 @@ def gun_and_items():
         for i, f in enumerate(fr, 1):
             name = f'pluto_kibble_sack_{anim}_{i:03d}'
             save(f, os.path.join(wc, name + '.png'))
-            # hand grips the sack near its closed (left) end; casing/barrel at the open right end
+            # hand grips the bottom gusset (left end); casing/barrel at the torn-open top (right end)
             with open(os.path.join(wc, name + '.jtk2d'), 'w') as fh:
-                json.dump(jtk2d(U.GUN_W, U.GUN_H, (7, 5), (29, 7)), fh, indent=2)
+                json.dump(jtk2d(U.GUN_W, U.GUN_H, (4, 5), (29, 9)), fh, indent=2)
     save(U.KIBBLE, os.path.join(pc, 'pluto_kibble_001.png'))
     # Same sprite name in the Ammonomicon collection = the picture shown on the gun's Ammonomicon page.
     save(U.GUN_AMMONOMICON, os.path.join(SPRITE_ROOT, 'Ammonomicon Encounter Icon Collection', 'pluto_kibble_sack_idle_001.png'))
 
     items = os.path.join(RES, 'Items')
     save(U.CAN_ICON, os.path.join(items, 'wet_food_can_icon.png'))
-    write_clip(items, U.CAN_TOSS, 'wet_food_can_toss')
-    write_clip(items, U.CAN_SPLASH, 'wet_food_can_splash')
+    write_clip(pc, U.CAN_TOSS, 'pluto_wet_food_can')   # the thrown can tumbles through these
     save(U.NINE_LIVES_ICON, os.path.join(items, 'nine_lives_icon.png'))
     save(U.CRUMB, os.path.join(items, 'kibble_crumb.png'))
     save(U.LASER_DOT, os.path.join(items, 'laser_dot.png'))
@@ -152,11 +151,16 @@ def gun_and_items():
     write_clip(os.path.join(comp, 'pet'), margin(V4.COCO_PET), 'coco_pet', body=True)
     write_clip(os.path.join(comp, 'block'), margin(V4.COCO_BLOCK), 'coco_block', body=True)
     write_clip(os.path.join(comp, 'ko'), margin(V4.COCO_KO), 'coco_ko', body=True)
+    # 2.15 Knighted (Coco + Ser Junkan as a Holy Knight): helmeted clip set, swapped in by name like Junkan's armour
+    for clip, frames in (('idle', V4.COCO_KNIGHT_IDLE), ('move', V4.COCO_KNIGHT_MOVE), ('pet', V4.COCO_KNIGHT_PET),
+                         ('block', V4.COCO_KNIGHT_BLOCK), ('ko', V4.COCO_KNIGHT_KO)):
+        write_clip(os.path.join(comp, 'knight_' + clip), margin(frames), 'coco_knight_' + clip, body=True)
     save(V4.SQUEAKER_ICON, os.path.join(items, 'squeaker_icon.png'))
     vfx = os.path.join(RES, 'VFX')
     clean(vfx)
     write_clip(vfx, V4.FUR_PUFF, 'furpuff')
     write_clip(vfx, V4.LOVE_BURST, 'loveburst')
+    write_clip(vfx, U.GRAVY_BURST, 'gravyburst')   # wet food can burst
     write_clip(vfx, V4.BLOCK_SPARK, 'spark')
     save(V4.BOWL_PICKUP, os.path.join(items, 'kibble_bowl_001.png'))
     save(V4.BOWL_PICKUP_2, os.path.join(items, 'kibble_bowl_002.png'))
@@ -186,7 +190,7 @@ def thunderstore():
 def previews():
     os.makedirs(PREVIEW, exist_ok=True)
     V.main()   # character sheet, breach/variants sheet, scale check, APNG clips (with the runtime outline simulated)
-    sheet([[U.GUN_IDLE] + U.GUN_FIRE + U.GUN_RELOAD + [U.GUN_AMMONOMICON], [U.KIBBLE, U.CAN_ICON] + U.CAN_TOSS + U.CAN_SPLASH],
+    sheet([[U.GUN_IDLE] + U.GUN_FIRE + U.GUN_RELOAD + [U.GUN_AMMONOMICON], [U.KIBBLE, U.CAN_ICON] + U.CAN_TOSS + U.GRAVY_BURST],
           os.path.join(PREVIEW, 'items-sheet.png'), scale=6)
     sheet([[U.FACE_34, U.FACE_34_BLINK, U.FACE_34_HURT] + U.FOYER_IDLE[3:] + U.FOYER_APPEAR[2:3], [U.ICON_9, U.COOP_DEATH, P.HAND, U.NINE_LIVES_ICON, U.CRUMB, U.LASER_DOT, U.BATHTUB],
            [U.HAIRBALL] + V4.COCO_IDLE[:2] + V4.COCO_MOVE + [V4.GUN2_IDLE, V4.GUN2_FIRE[0], V4.GRAVY, V4.BOWL_PICKUP] + V4.FUR_PUFF + V4.LOVE_BURST + U.FOYER_APPEAR,

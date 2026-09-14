@@ -98,16 +98,17 @@ def run_pose(head, body_part, i):
 
 
 def run_side(head, body_part):
-    """Vanilla hop: contact (legs splayed, feet on the ground) -> airborne (+4, legs tucked)
-    -> pass (+3, legs reaching down), then the same with the other leg leading."""
+    """Vanilla hop: contact (feet on the ground, legs straight under the hips, 1 px wider than idle)
+    -> airborne (+4, legs tucked) -> pass (+3, legs gathered under the belly), then a gathered
+    contact. Legs stay vertical: diagonal legs read as the splits at 1x."""
     hipB, hipF = 5 + BODY_DX, 12 + BODY_DX
     keys = [
-        [(P.LEG_BACK, hipB - 2, LEG_Y - 1), (P.LEG_FWD, hipF, LEG_Y - 1)],        # contact, front leg forward
+        [(P.SIDE_LEG, hipB - 1, LEG_Y), (P.SIDE_LEG, hipF + 1, LEG_Y)],            # contact, stride
         [(P.LEG_TUCK, hipB, LEG_Y), (P.LEG_TUCK, hipF, LEG_Y)],                    # airborne
-        [(P.LEG_REACH, hipB, LEG_Y - 1), (P.LEG_REACH, hipF, LEG_Y - 1)],          # pass, reaching down
-        [(P.LEG_FWD, hipB, LEG_Y - 1), (P.LEG_BACK, hipF - 2, LEG_Y - 1)],        # contact, other leg forward
+        [(P.SIDE_LEG_LONG, hipB + 1, LEG_Y - 1), (P.SIDE_LEG_LONG, hipF - 1, LEG_Y - 1)],  # pass, gathered
+        [(P.SIDE_LEG, hipB + 1, LEG_Y), (P.SIDE_LEG, hipF - 1, LEG_Y)],            # contact, gathered
         [(P.LEG_TUCK, hipB, LEG_Y), (P.LEG_TUCK, hipF, LEG_Y)],                    # airborne
-        [(P.LEG_REACH, hipB, LEG_Y - 1), (P.LEG_REACH, hipF, LEG_Y - 1)],          # pass
+        [(P.SIDE_LEG_LONG, hipB - 1, LEG_Y - 1), (P.SIDE_LEG_LONG, hipF + 1, LEG_Y - 1)],  # pass, reaching
     ]
     out = []
     for i, legs in enumerate(keys):
@@ -118,15 +119,16 @@ def run_side(head, body_part):
 
 
 def run_front(head, body_part, kind):
-    """Front/back hop: a leg steps out to the side on contact, both tuck when airborne."""
+    """Front/back hop: one foot plants under its hip while the other lifts, both tuck when airborne.
+    Feet never leave the hip columns (no sideways splay)."""
     hipL, hipR = 3 + BODY_DX, 12 + BODY_DX
     keys = [
-        [(P.LEG_BACK, hipL - 2, LEG_Y - 1), (P.SIDE_LEG, hipR, LEG_Y)],             # left leg steps out
+        [(P.SIDE_LEG, hipL, LEG_Y), (P.LEG_TUCK, hipR, LEG_Y)],                    # left foot plants, right lifts
         [(P.LEG_TUCK, hipL, LEG_Y), (P.LEG_TUCK, hipR, LEG_Y)],                    # airborne
-        [(P.LEG_REACH, hipL, LEG_Y - 1), (P.LEG_REACH, hipR, LEG_Y - 1)],          # pass
-        [(P.SIDE_LEG, hipL, LEG_Y), (P.LEG_FWD, hipR, LEG_Y - 1)],                  # right leg steps out
+        [(P.SIDE_LEG_LONG, hipL, LEG_Y - 1), (P.SIDE_LEG_LONG, hipR, LEG_Y - 1)],  # pass
+        [(P.LEG_TUCK, hipL, LEG_Y), (P.SIDE_LEG, hipR, LEG_Y)],                    # right foot plants, left lifts
         [(P.LEG_TUCK, hipL, LEG_Y), (P.LEG_TUCK, hipR, LEG_Y)],                    # airborne
-        [(P.LEG_REACH, hipL, LEG_Y - 1), (P.LEG_REACH, hipR, LEG_Y - 1)],          # pass
+        [(P.SIDE_LEG_LONG, hipL, LEG_Y - 1), (P.SIDE_LEG_LONG, hipR, LEG_Y - 1)],  # pass
     ]
     out = []
     for i, legs in enumerate(keys):
@@ -146,24 +148,55 @@ for _c in ('run_right', 'run_right_bw', 'run_down', 'run_up'):
     record(_c, RUN_DY)
 
 
-# ---------------------------------------------------------------- dodge roll (9 frames)
-OVERSHOOT_SIDE = with_legs(with_tail(P.SIDE_BODY, 'side', dy=-1, tail='B'),
-                           [(P.SIDE_LEG_LONG, 5 + BODY_DX, LEG_Y - 1), (P.SIDE_LEG_LONG, 12 + BODY_DX, LEG_Y - 1)])
+# ---------------------------------------------------------------- dodge rolls (9 frames each)
+# PlayerController picks the clip from the roll direction: |x| >= 0.1 -> dodge_left (dodge_left_bw
+# when rolling up), else dodge (down) / dodge_bw (up). Rolling left forces the sprite flip, so the
+# side rolls face right like the run. Vanilla shape: wind-up, dive, somersault with the body still
+# readable in every frame, stand up. Alexandria flags frames 0-4 invulnerable/airborne.
+def fill_bottom(rows):
+    return max(y for y, r in enumerate(rows) if any(ch not in '.o' for ch in r))
 
 
-def dodge():
-    """Crouch, stretched leap, three crisp tumbles (ball rotated BEFORE placing, so it never
-    wobbles), a low ball, landing squash, 1-px overshoot, idle. Alexandria flags frames 0-4
-    invulnerable/airborne."""
-    balls = {a: pad(rotate(X.BALL, a), W, H, BODY_DX + 1, GROUND - 14) for a in (0, -90, -180, -270)}
-    leap = pad(X.BALL_STRETCH, W, H, BODY_DX + 2, GROUND - 16 - 2)
-    crouch = with_tail(X.CROUCH, 'side')
-    land = with_tail(X.LAND, 'side', tail='B')
-    return [crouch, leap, balls[-90], balls[-180], balls[-270], shift(balls[0], 0, -1), land, OVERSHOOT_SIDE, IDLE_SIDE[0]]
+def seat(part, dy, dx=BODY_DX):
+    """Place a part so its lowest fill row sits dy px above the ground."""
+    return pad(part, W, H, dx, GROUND - fill_bottom(part) - dy)
 
 
-DODGE = dodge()
-DODGE_FRONT = DODGE
+def tumble(tuck, angle, dy):
+    """Rotate the square 16x16 tuck BEFORE placing it, so the tumble never wobbles or slides."""
+    return seat(rotate(tuck, angle), dy, BODY_DX + 1)
+
+
+def dodge_side(crouch, head, body_part, tuck, land, idle):
+    """Crouch, forward dive (paws out, tail streaming), four 90-degree somersault frames rotating
+    forward (clockwise), curled touch-down, landing squash, idle."""
+    hipB, hipF = 5 + BODY_DX, 12 + BODY_DX
+    dive = with_tail(lean(P.squashed(P.ears_back(head), body_part, P.EMPTY_LEGS, 1), 2), 'side', tail='B', dy=-3, tail_dy=-4)
+    dive = with_legs(dive, [(P.LEG_TUCK, hipB - 2, LEG_Y - 3), (P.LEG_TUCK, hipF + 2, LEG_Y - 4)])
+    return [crouch, dive, tumble(tuck, 0, 4), tumble(tuck, -90, 5), tumble(tuck, -180, 4), tumble(tuck, -270, 2),
+            tumble(tuck, 0, 0), land, idle]
+
+
+def dodge_vertical(crouch, low, first, second, land, idle):
+    """Down/up roll seen along the roll: crouch, low, the head goes over (first part), upside down
+    (second part), coming back round low, landing squash, idle."""
+    return [crouch, low, seat(first, 3), seat(second, 5), seat(second, 3), seat(first, 1), land, idle[2], idle[0]]
+
+
+DODGE_SIDE = dodge_side(with_tail(X.CROUCH, 'side'), P.HEAD_SIDE, P.BODY_SIDE, X.TUCK_SIDE,
+                        with_tail(X.LAND, 'side', tail='B'), IDLE_SIDE[0])
+DODGE_SIDE_BW = dodge_side(with_legs(with_tail(P.squashed(P.HEAD_BW, P.BODY_BW, P.EMPTY_LEGS, 3), 'side'), SIDE_LEGS),
+                           P.HEAD_BW, P.BODY_BW, X.TUCK_SIDE_BW,
+                           with_legs(with_tail(P.squashed(P.HEAD_BW, P.BODY_BW, P.EMPTY_LEGS, 2), 'side', tail='B'), SIDE_LEGS),
+                           IDLE_BW[0])
+DODGE_DOWN = dodge_vertical(with_legs(with_tail(P.squashed(P.HEAD_FRONT, P.BODY_FRONT, P.EMPTY_LEGS, 3), 'front'), FRONT_LEGS),
+                            squash(IDLE_FRONT[0], 0.8), X.CROWN, X.BACK_UP,
+                            with_legs(with_tail(P.squashed(P.HEAD_FRONT, P.BODY_FRONT, P.EMPTY_LEGS, 2), 'front', tail='B'), FRONT_LEGS),
+                            IDLE_FRONT)
+DODGE_UP = dodge_vertical(with_legs(with_tail(P.squashed(P.HEAD_BACK, P.BODY_BACK, P.EMPTY_LEGS, 3), 'back'), BACK_LEGS),
+                          squash(IDLE_BACK[0], 0.8), X.BELLY_UP, X.BACK_UP,
+                          with_legs(with_tail(P.squashed(P.HEAD_BACK, P.BODY_BACK, P.EMPTY_LEGS, 2), 'back', tail='B'), BACK_LEGS),
+                          IDLE_BACK)
 
 
 # ---------------------------------------------------------------- death (8) / death_shot (6)
@@ -273,10 +306,10 @@ CLIPS = {
     'death': DEATH,
     'death_coop': None,
     'death_shot': DEATH_SHOT,
-    'dodge': DODGE,
-    'dodge_bw': DODGE,
-    'dodge_left': DODGE_FRONT,
-    'dodge_left_bw': DODGE_FRONT,
+    'dodge': DODGE_DOWN,
+    'dodge_bw': DODGE_UP,
+    'dodge_left': DODGE_SIDE,
+    'dodge_left_bw': DODGE_SIDE_BW,
     'doorway': DOORWAY,
     'ghost_idle_back': GHOST_BACK,
     'ghost_idle_back_left': GHOST_BACK,

@@ -143,13 +143,16 @@ ok(f'gun: {len(pngs)} frames with attach points')
 
 # 4. item art
 items = os.path.join(RES, 'Items')
-for f in ['wet_food_can_icon.png'] + [f'wet_food_can_toss_00{i}.png' for i in range(1, 5)] + [f'wet_food_can_splash_00{i}.png' for i in range(1, 4)]:
-    if not os.path.exists(os.path.join(items, f)):
-        err(f'item art missing: {f}')
+if not os.path.exists(os.path.join(items, 'wet_food_can_icon.png')):
+    err('item art missing: wet_food_can_icon.png')
+for i in range(1, 5):   # the thrown can tumbles through four projectile sprites
+    if not os.path.exists(os.path.join(RES, 'SpriteRoot', 'ProjectileCollection', f'pluto_wet_food_can_00{i}.png')):
+        err(f'wet food can projectile frame missing: pluto_wet_food_can_00{i}.png')
 for f in ['coco_blue_icon.png', 'kibble_bowl_001.png', 'kibble_bowl_002.png']:
     if not os.path.exists(os.path.join(items, f)):
         err(f'item art missing: {f}')
-for sub, n in (('idle', 4), ('move', 6), ('pet', 4), ('block', 3), ('ko', 2)):
+for sub, n in (('idle', 4), ('move', 6), ('pet', 4), ('block', 3), ('ko', 2),
+               ('knight_idle', 4), ('knight_move', 6), ('knight_pet', 4), ('knight_block', 3), ('knight_ko', 2)):
     d = os.path.join(RES, 'Companions', 'coco', sub)
     if not os.path.isdir(d) or len([f for f in os.listdir(d) if f.endswith('.png')]) != n:
         err(f'companion clip {sub} should have {n} frames')
@@ -164,7 +167,7 @@ if not os.path.exists(os.path.join(items, 'squeaker_icon.png')):
     err('item art missing: squeaker_icon.png')
 if len([f for f in os.listdir(os.path.join(RES, 'VFX')) if f.startswith('spark')]) != 3:
     err('VFX spark should have 3 frames')
-for prefix in ('furpuff', 'loveburst', 'anger'):
+for prefix in ('furpuff', 'loveburst', 'anger', 'gravyburst'):
     if len([f for f in os.listdir(os.path.join(RES, 'VFX')) if f.startswith(prefix)]) != 4:
         err(f'VFX {prefix} should have 4 frames')
 if not os.path.exists(os.path.join(RES, 'SpriteRoot', 'ProjectileCollection', 'pluto_gravy_001.png')):

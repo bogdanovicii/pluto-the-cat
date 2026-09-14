@@ -302,7 +302,7 @@ CAN_SPLASH = [
 ]
 
 # v3 composed bag / can replace the flat v2 ones above.
-from art_v3 import GUN_IDLE, GUN_FIRE, GUN_RELOAD, GUN_AMMONOMICON, GUN_W, GUN_H, CAN_ICON, CAN_TOSS, CAN_SPLASH  # noqa: E402
+from art_v3 import GUN_IDLE, GUN_FIRE, GUN_RELOAD, GUN_AMMONOMICON, GUN_W, GUN_H, CAN_ICON, CAN_TOSS, GRAVY_BURST  # noqa: E402
 
 # ---------------------------------------------------------------- big cards rendered with PIL
 

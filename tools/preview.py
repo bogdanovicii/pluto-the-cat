@@ -114,7 +114,7 @@ def main():
                 [(k, A.CLIPS[k]) for k in ('idle_hand', 'idle_twohands', 'idle_forward_twohands', 'run_right_hand')] +
                 [('wet idle', A.ALT_CLIPS['idle']), ('wet run', A.ALT_CLIPS['run_right'])],
                 os.path.join(OUT, 'breach-and-variants.png'), scale=3)
-    scale_check(A.IDLE_SIDE[:1] + A.IDLE_FRONT[:1] + A.IDLE_BACK[:1] + A.RUN_SIDE[:2] + A.DODGE[2:3],
+    scale_check(A.IDLE_SIDE[:1] + A.IDLE_FRONT[:1] + A.IDLE_BACK[:1] + A.RUN_SIDE[:2] + A.DODGE_SIDE[3:4],
                 os.path.join(OUT, 'scale-check.png'))
     for clip in ('idle', 'run_right', 'run_down', 'run_up', 'dodge', 'death', 'item_get', 'idle_forward'):
         apng(A.CLIPS[clip], os.path.join(OUT, 'anim', clip + '.png'), FPS.get(clip, 8))

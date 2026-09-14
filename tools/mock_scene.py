@@ -91,7 +91,7 @@ paste(V4.FUR_PUFF[1], ax - 8, ay + 8)
 # ---------------------------------------------------------------- 4. Wet Food Can thrown + splash with hearts, kibble bowl
 cx, cy = 118, 122
 paste(V3.CAN_TOSS[1], cx - 30, cy - 18)
-paste(V3.CAN_SPLASH[2], cx, cy)
+paste(V3.GRAVY_BURST[2], cx, cy)
 paste(V4.LOVE_BURST[2], cx + 18, cy - 10)
 paste(V4.BOWL_PICKUP, cx + 44, cy + 8)
 # a running Pluto heading for the bowl
