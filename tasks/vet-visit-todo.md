@@ -87,3 +87,10 @@ Feedback: still no gun; ward Techs did nothing; wants greetings in the ward, dia
 - [x] White floor tiles as 25 strip props (HeightOffGround -4, config FloorTiles)
 - [x] Built, tests pass, tag v0.9.0, GitHub release, drop page
 - [ ] In-game: gun present? Techs move+shoot? floor under actors? difficulty (hearts lost, time to kill)
+
+## 0.8.0 in-game feedback (user, 2026-09-14) -> brief for the next session
+Tested 0.8.0: works, much better, but not the Gemini look; Pluto has no gun and cannot shoot; ward staff do nothing
+(no movement, no shots); wants a Tech greeting in the ward that sends Pluto to the theatre, the Vet dialogue then the
+boss fight; every clinic human able to attack with vanilla-like patterns; balanced (not easy, not hard); story well driven.
+- [x] Brief written: PlutoVetVisit/docs/prompts/next-session-0.10-prompt.md (starts from the other session's 0.9.0)
+- [ ] 0.10.0 by the next session; then the in-game pass; then 1.0 merge (separate approval)
