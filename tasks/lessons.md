@@ -66,3 +66,8 @@
 ## 2026-09-14 — Playdate did nothing in game (user report, 2.15.0-2.15.1)
 - A companion's `AIActor.ParentRoom` is always null: `CompanionItem.CreateCompanion` instantiates the prefab without `ConfigureOnPlacement`, the only place (besides mimics) that sets it. `CocoFriends.FindChaser` returned null on its first line, so the Dog and Squire's Junkan never moved, and no static check could see it. Look a companion's room up from the owner (`CurrentRoom`) or its position (`GetAbsoluteRoom`), like vanilla `TargetEnemiesBehavior`; Coco's own decoy only worked because `CocoBlueController.CurrentRoom()` already did.
 - Every engine field a new feature reads needs the same decompiled-source check as the calls it makes: I verified `OverrideTarget`, `CurrentForm` and petting, but not `ParentRoom`. Add a log line at each step of a chain that can only be tested in game (synergy active, companion found, target found), so the first tester log shows where it stops.
+
+## Boss card text (Vet Visit 0.11.1 test, 2026-09-14)
+- BossCardUIController sets nameLabel.Text straight from the enemies string table, and its title font lacks some lowercase glyphs: "The Vet" rendered "Te Vet". Write boss card name and subtitle strings in capitals, like vanilla ("THE EVIL EYE!", "BEHOLSTER").
+- Boss card art must bleed off the card edges; a portrait that ends in a straight line mid-card reads as a pasted rectangle.
+- When a boss sprite grows, re-check its spawn cell against surrounding props: the 48x40 Vet spawned behind the exam table and under the lamp.
