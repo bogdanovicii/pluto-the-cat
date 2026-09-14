@@ -129,4 +129,5 @@ Screenshots (repo root, 13.57.57 / 13.58.04 / 13.58.10): purple lab walls over t
 - [x] Code review of the runtime fixes: root causes confirmed against the source; fixed per-player watchdog counters, the engage comment, bank repair write-back to the prefab, preload off, recipe warning, validate.py guard
 - [x] Build + validate + 89 tests green; commit c66f603, tag v0.10.1 pushed, GitHub release v0.10.1 (344288 bytes, sha256 058abc2a...16d2); drop page v32 payload decoded and verified
 - [x] Steam session messaged as `Download [1e08e7]` with the 10.1 steps
+- [x] On request, drop page v33 also carries Pluto_The_Cat 2.13.0 (dist/ build by another session, sha256 ac0441cc...3709, not on GitHub); both payloads verified; Steam session asked to test both
 - [ ] Tester must report: the three prefab bank lines, the `loadout on arrival` line, whether Tech bursts fly and hurt, hearts lost and Vet time, a screenshot per zone (purple walls gone? Pluto in front of walls?), cardboard box still hides the gun, all [VetVisit] lines
