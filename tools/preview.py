@@ -103,6 +103,13 @@ def apng(frames, path, fps, scale=4, floor='stone'):
     ims[0].save(path, save_all=True, append_images=ims[1:], duration=int(1000 / fps), loop=0, disposal=1)
 
 
+def samurai_rows():
+    """Samurai costume idle and run for the breach/variants sheet (built by tools/samurai.py)."""
+    import samurai
+    clips, _, _ = samurai.build()
+    return [('samurai idle', clips['idle']), ('samurai run', clips['run_right'])]
+
+
 def main():
     import character_anims as A
     os.makedirs(OUT, exist_ok=True)
@@ -112,7 +119,7 @@ def main():
     strip_sheet(body, os.path.join(OUT, 'character-sheet.png'), scale=3)
     strip_sheet([(k, v) for k, v in A.BREACH_IDLES.items()] +
                 [(k, A.CLIPS[k]) for k in ('idle_hand', 'idle_twohands', 'idle_forward_twohands', 'run_right_hand')] +
-                [('wet idle', A.ALT_CLIPS['idle']), ('wet run', A.ALT_CLIPS['run_right'])],
+                samurai_rows(),
                 os.path.join(OUT, 'breach-and-variants.png'), scale=3)
     scale_check(A.IDLE_SIDE[:1] + A.IDLE_FRONT[:1] + A.IDLE_BACK[:1] + A.RUN_SIDE[:2] + A.DODGE_SIDE[3:4],
                 os.path.join(OUT, 'scale-check.png'))

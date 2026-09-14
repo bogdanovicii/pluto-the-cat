@@ -434,17 +434,7 @@ _gtop = next(y for y, r in enumerate(_ghost_small) if any(ch != '.' for ch in r)
 DEATH_COOP = [overlay(with_tail(X.LYING, 'lying'), shift(_ghost_small, 6, 2 - _gtop + d, allow_drop=True), 0, 0) for d in (0, -1, 0, -1)]
 CLIPS['death_coop'] = DEATH_COOP
 
-# --- alt skin: Wet Pluto (fresh out of the bath): flattened dark fur, blue-grey white, grumpy eyes
-WET_MAP = {'B': 'J', 'b': 'j', 'L': 'J', 'l': 'J', 'd': 'j', '9': 'j', 'W': 'U', 'w': 'u', 'x': 'u', 'K': 'U'}
-
-
-def wet(frames):
-    return [recolor(f, WET_MAP) for f in frames]
-
-
-ALT_CLIPS = {k: (wet(v) if v else None) for k, v in CLIPS.items()}
-ALT_BREACH_IDLES = {k: wet(v) for k, v in BREACH_IDLES.items()}
-ALT_HAND = recolor(P.HAND, WET_MAP)
+# --- alt skin: the samurai costume (2.16.0) is built by tools/samurai.py from kimono head/body parts.
 
 for k, v in list(CLIPS.items()) + list(BREACH_IDLES.items()):
     if v:

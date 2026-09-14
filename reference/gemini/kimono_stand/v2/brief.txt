@@ -1,0 +1,5 @@
+A single 32x32-pixel game sprite for Enter the Gungeon, drawn so each of the 32 pixels per side is a huge clearly visible square (the whole image is a 32 by 32 grid of big square pixels). Match the chunky style of the attached 12x-zoomed bathtub sprite: very simple shapes, a thick 1-pixel near-black outline around the whole object, flat colours with 2-3 tones each, no gradients, no anti-aliasing, no fine lines thinner than one big pixel.
+
+Object: a SAMURAI KIMONO DISPLAY STAND, filling the grid: a sturdy dark-brown wooden T-shaped rack (two thick legs and a crossbar), an indigo haori jacket (#2b3a67, lighter #3e5190 top-left) hung across the crossbar with short wide sleeves, a big clear white paw-print crest (#f0ece0) in the middle of the jacket (one pad and three toe dots, each toe at least one full big pixel apart), a crimson obi sash (#b3202a) draped over one end of the crossbar, and a folded charcoal hakama (#3a3a44) block on the floor between the legs. Costume colours as in the second attached image.
+
+Background: one flat solid chroma green (#00B140). No text, no scenery, no shadow on the background.

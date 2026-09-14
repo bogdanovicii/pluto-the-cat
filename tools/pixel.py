@@ -58,6 +58,12 @@ PALETTE = {
     '9': (0x2A, 0x1F, 0x1A, 255),  # deep shadow line (folds), darker than the stripe
     '1': (0xB3, 0xD4, 0xF2, 255),  # plush blue light
     '2': (0x86, 0xB6, 0xE6, 255),  # plush blue base
+    '5': (0x2B, 0x3A, 0x67, 255),  # samurai haori indigo (2.16.0)
+    '6': (0x1C, 0x26, 0x48, 255),  # haori indigo shadow / folds
+    '7': (0x3E, 0x51, 0x90, 255),  # haori indigo light
+    '4': (0x3A, 0x3A, 0x44, 255),  # hakama charcoal
+    '0': (0x26, 0x26, 0x2E, 255),  # hakama charcoal shadow
+    '8': (0xB3, 0x20, 0x2A, 255),  # obi and hachimaki crimson (shade: 'r')
     '3': (0x5C, 0x8E, 0xC2, 255),  # plush blue dark
     'f': (0x4A, 0x86, 0xB0, 255),  # bath water dark
 }

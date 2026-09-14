@@ -63,9 +63,9 @@ Knobs: `LampIntensity`, `LampRadius`, `MoodRedR/G/B`. Log: `[VetVisit] mood: lam
 
 ### A4. The masked Vet
 
-At a quarter of health, the Vet plays a one-shot `mask_on` clip (5 frames: he snaps on gloves and pulls up a surgical mask) with `PlayUntilFinished`. Then `aiAnimator.OverrideIdleAnimation = "idle_mask"` and `OverrideMoveAnimation = "move_mask"`. Phase 3 attacks, which are separate items for the last quarter, use `tell_mask` and `fire_mask`. The death clip gets a masked version, `die_mask`, used after the swap.
+At a quarter of health, the Vet plays a one-shot `mask_on` clip (5 frames: he snaps on gloves and pulls up a surgical mask) with `PlayUntilFinished`. Then `aiAnimator.OverrideIdleAnimation = "mask_idle"` and `OverrideMoveAnimation = "mask_move"`. Phase 3 attacks, which are separate items for the last quarter, use `mask_tell` and `mask_fire`. The death clip gets a masked version, `mask_die`, used after the swap. The clips are named `mask_*` because EnemyBuilder matches clip folders by resource-path prefix, so `idle` would also pick up `idle_mask`.
 
-New art, all with the same canvas and hitbox as the current Vet (48x40, `CastLayout.VET_*`): mask_on 5, idle_mask 5, move_mask 6, tell_mask 4, fire_mask 4, die_mask 8. Log: `[VetVisit] the Vet puts on the mask`.
+New art, all with the same canvas and hitbox as the current Vet (48x40, `CastLayout.VET_*`): mask_on 5, mask_idle 5, mask_move 6, mask_tell 4, mask_fire 4, mask_die 8. Log: `[VetVisit] the Vet puts on the mask`.
 
 ### A5. Clinic sounds (built-in events only)
 

@@ -2,7 +2,7 @@
 """Automated review of a finished art PNG, plus a review sheet to look at.
 
 usage:
-  review_art.py art.png [--kind bosscard|winpic|icon|item|sprite] [--scale K] [--max-colours N]
+  review_art.py art.png [--kind bosscard|winpic|icon|item|sprite] [--scale K] [--max-colours N] [--allow-stray N]
                 [--mock screenshot.png --mock-rect x0,y0,x1,y1] [--out review.png]
 
 FAIL checks (exit 1): semi-transparent pixels; more colours than allowed; stray single pixels (at art-pixel
@@ -33,6 +33,8 @@ def main():
     ap.add_argument('--mock')
     ap.add_argument('--mock-rect')
     ap.add_argument('--out')
+    ap.add_argument('--allow-stray', type=int, default=0,
+                    help='intentional single-pixel details (paw toes, glints) to allow; name them in the review verdict')
     a = ap.parse_args()
 
     im = Image.open(a.art).convert('RGBA')
@@ -79,7 +81,7 @@ def main():
             nb = [sp[x + dx, y + dy] for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)) if 0 <= x + dx < sw and 0 <= y + dy < sh]
             if nb and all(n != c for n in nb) and all(n[3] == 255 for n in nb):
                 stray += 1
-    if stray > max(2, len(opaque) // (k * k) // 400):
+    if stray > max(2, len(opaque) // (k * k) // 400) + a.allow_stray:
         fails.append(f'{stray} stray single pixels (art-pixel level)')
     elif stray:
         warns.append(f'{stray} stray single pixels - check eyes/highlights are intentional')

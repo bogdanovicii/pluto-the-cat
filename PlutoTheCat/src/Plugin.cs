@@ -52,7 +52,6 @@ namespace PlutoTheCat
             Step("vfx", PlutoVFX.Init);
             Step("fur", PlutoFur.Init);
             Step("gun", KibbleSackGun.Add);
-            Step("gravy pouch", GravyPouchGun.Add);
             Step("taiyaki cannon", TaiyakiCannonGun.Add);   // samurai costume loadout (<altGuns>)
             Step("katana", KatanaGun.Add);
             Step("active", WetFoodCanItem.Init);
@@ -68,8 +67,8 @@ namespace PlutoTheCat
                 built = Loader.BuildCharacter(
                     CHARACTER_ROOT, GUID,
                     PlutoConfig.FoyerPosition,
-                    true,                        // hasAltSkin (Wet Pluto, newaltspritesetup/)
-                    PlutoConfig.BathtubPosition, // the bathtub
+                    true,                        // hasAltSkin (samurai costume, newaltspritesetup/)
+                    PlutoConfig.BathtubPosition, // the kimono stand (costume swapper)
                     true,                        // removeFoyerExtras
                     false,                       // hasArmourlessAnimations
                     false,                       // usesArmourNotHealth
@@ -89,6 +88,16 @@ namespace PlutoTheCat
             // Polish, each optional.
             Step("reflexes", () => CatReflexes(built));
             Step("patches", () => PlutoPatches.Apply(built));
+            // The samurai costume's boss card (reference/art/bosscard/samurai.png). Not named bosscard_*, so Alexandria leaves
+            // it out of the normal card list; PlutoPatches shows it while the costume is worn.
+            Step("samurai card", () =>
+            {
+                const string res = "PlutoTheCat.Characters.Pluto.samuraicard_001.png";
+                Texture2D tex = Alexandria.ItemAPI.ResourceExtractor.GetTextureFromResource(res, typeof(Plugin).Assembly);
+                if (tex == null) throw new Exception("missing embedded resource " + res);
+                tex.filterMode = FilterMode.Point;
+                PlutoPatches.SamuraiCard = new System.Collections.Generic.List<Texture2D> { tex };
+            });
             // The samurai costume stand appears only once Pluto's past is beaten: vanilla KILLED_PAST, which Vet Visit sets
             // when the Vet falls. UnlockSamuraiCostume forces it for testing.
             if (PlutoConfig.UnlockSamuraiCostume)

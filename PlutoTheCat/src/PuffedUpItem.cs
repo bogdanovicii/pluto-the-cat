@@ -163,10 +163,11 @@ namespace PlutoTheCat
                 if (fur == null || player.sprite == null || player.spriteAnimator == null) return;
 
                 tk2dSpriteAnimationClip clip = player.spriteAnimator.CurrentClip;
-                int id = clip == null ? -1 : PlutoFur.Lookup(clip.name, player.spriteAnimator.CurrentFrame, Variant());
+                // The samurai kimono covers the fur: no fur layer while the costume is worn (the layers follow the normal frames).
+                int id = clip == null || player.IsUsingAlternateCostume ? -1 : PlutoFur.Lookup(clip.name, player.spriteAnimator.CurrentFrame, Variant());
                 if (id < 0)
                 {
-                    fur.renderer.enabled = false;     // pits, deaths, ghosts: no fur layer
+                    fur.renderer.enabled = false;     // pits, deaths, ghosts, samurai costume: no fur layer
                     return;
                 }
                 fur.renderer.enabled = true;

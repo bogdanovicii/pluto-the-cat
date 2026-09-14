@@ -182,8 +182,6 @@ if len([f for f in os.listdir(os.path.join(RES, 'VFX')) if f.startswith('spark')
 for prefix in ('furpuff', 'loveburst', 'anger', 'gravyburst'):
     if len([f for f in os.listdir(os.path.join(RES, 'VFX')) if f.startswith(prefix)]) != 4:
         err(f'VFX {prefix} should have 4 frames')
-if not os.path.exists(os.path.join(RES, 'SpriteRoot', 'ProjectileCollection', 'pluto_gravy_001.png')):
-    err('gravy projectile sprite missing')
 ok('item art')
 
 # 4b. boss intro card: the game draws the player's card over the boss art (BossCardUIController.playerSprite),

@@ -1,4 +1,4 @@
-"""Compose an in-game style mock-up from the real sprites (floor, Pluto + gun, Coco, Wet Pluto, Puffed Up, HUD).
+"""Compose an in-game style mock-up from the real sprites (floor, Pluto + gun, Coco, samurai Pluto, Puffed Up, HUD).
 Usage: python3 tools/mock_scene.py  -> docs/art-preview/ingame-mock.png
 """
 import os
@@ -70,15 +70,13 @@ shadow(px - 26, py + 25, 14)
 paste(V4.COCO_MOVE[1], px - 28, py + 14, body=True)
 paste(U.CRUMB, px - 10, py + 26)
 
-# ---------------------------------------------------------------- 2. Wet Pluto with the gravy pouch beside the bathtub
+# ---------------------------------------------------------------- 2. Samurai Pluto (2.16.0 costume, tools/samurai.py)
+import samurai  # noqa: E402
+_sam_clips, _, _sam_hand = samurai.build()
 wx, wy = 150, 60
-paste(U.BATHTUB, wx - 40, wy - 2)
 shadow(wx + 4, wy + 25, 18)
-paste(A.ALT_CLIPS['idle'][0], wx, wy, body=True)
-paste(V4.GUN2_FIRE[0], wx + 21 - 4, wy + 19 - (V4.GUN2_H - 4))
-paste(recolor(P.HAND, A.WET_MAP), wx + 19, wy + 17, body=True)
-for gxx, gyy in ((wx + 46, wy + 14), (wx + 58, wy + 16)):
-    paste(V4.GRAVY, gxx, gyy)
+paste(_sam_clips['idle'][0], wx, wy, body=True)
+paste(_sam_hand, wx + 19, wy + 17, body=True)
 
 # ---------------------------------------------------------------- 3. Puffed Up Pluto: halo behind, body scaled 1.25, anger marks above
 ax, ay = 228, 56

@@ -76,6 +76,7 @@ namespace PlutoTheCat
                 if (!IsPluto(player) || NormalCard == null || NormalCard.Count == 0) return;
                 bool samurai = player.IsUsingAlternateCostume && SamuraiCard != null && SamuraiCard.Count > 0;
                 player.BosscardSprites = samurai ? SamuraiCard : NormalCard;
+                if (player.BosscardSpriteFPS <= 0f) player.BosscardSpriteFPS = 4f;   // never set by the game or Alexandria
             }
             catch (Exception e)
             {

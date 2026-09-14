@@ -1,0 +1,12 @@
+{
+  "model": "gemini-3-pro-image",
+  "prompt": "Pixel-art prop sprite for the video game Enter the Gungeon, in exactly the same pixel style, pixel size, outline weight and shading as the FIRST attached reference (the current Breach costume swapper prop, a bathtub, shown at 12x zoom on green): chunky square pixels, crisp 1-pixel dark outline, flat cel shading with 3 tones per material, top-left light, no gradients, no anti-aliasing.\n\nDraw a SAMURAI KIMONO DISPLAY STAND to replace it, same footprint and size class as the bathtub, seen from the same front three-quarter angle:\n- a simple dark wooden T-shaped kimono rack (ik\u014d) standing on the floor,\n- an indigo haori jacket (#2b3a67) hung across it with its sleeves spread, a small white paw-print crest (#f0ece0) on the back,\n- a crimson obi sash (#b3202a) draped over the crossbar,\n- a crimson hachimaki headband tied on one end of the crossbar with its tails hanging,\n- a folded charcoal hakama (#3a3a44) on the base.\nThe costume must match the second attached image (the samurai costume design).\n\nDraw TWO frames side by side: frame 1 as described; frame 2 identical but with the sleeves and headband tails swaying slightly and a small sparkle on the crest (the \"you can interact\" highlight). Background: one flat solid chroma green (#00B140), no scenery, no text.\n",
+  "refs": [
+    "reference/gemini/kimono_stand/ref_bathtub_12x.png",
+    "reference/gemini/samurai_costume/sheet.png"
+  ],
+  "ratio": "16:9",
+  "size": "2K",
+  "seconds": 24.2,
+  "time": "2026-09-14 20:58:57"
+}

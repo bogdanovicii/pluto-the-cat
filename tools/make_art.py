@@ -60,21 +60,30 @@ def character():
         write_clip(os.path.join(nss, 'breach_idles', clip), frames, f'pluto_select_{clip}', body=True)
     save(strip_outline(P.HAND), os.path.join(nss, 'hand_001.png'))
 
-    # v2 alt skin: Wet Pluto. Same clip layout under newaltspritesetup/, hand_alt_001, bathtub swapper object.
+    # 2.16.0 alt skin: the samurai costume (replaces Wet Pluto). Same clip layout under newaltspritesetup/, built by
+    # tools/samurai.py from the kimono head/body parts; hand_alt_001 is a white paw with an indigo sleeve cuff.
+    import samurai
+    sam_clips, sam_breach, sam_hand = samurai.build()
     clean(os.path.join(CHAR, 'newaltspritesetup'))
     alt = os.path.join(CHAR, 'newaltspritesetup')
-    for clip, frames in A.ALT_CLIPS.items():
+    for clip, frames in sam_clips.items():
         folder = os.path.join(alt, clip)
         if frames is None:
             os.makedirs(folder, exist_ok=True)
             save(PLACEHOLDER, os.path.join(folder, 'cc_sprite_placeholder.png'))
         else:
-            write_clip(folder, frames, f'plutowet_{clip}', body=True)
-    for clip, frames in A.ALT_BREACH_IDLES.items():
+            write_clip(folder, frames, f'plutowet_{clip}', body=True)   # sprite prefix kept: names only need to be unique
+    for clip, frames in sam_breach.items():
         write_clip(os.path.join(alt, 'breach_idles', clip), frames, f'plutowet_select_{clip}', body=True)
-    save(strip_outline(A.ALT_HAND), os.path.join(alt, 'hand_alt_001.png'))
-    save(U.BATHTUB, os.path.join(CHAR, 'alt_skin_obj_sprite_001.png'))
-    save(U.BATHTUB_2, os.path.join(CHAR, 'alt_skin_obj_sprite_002.png'))
+    save(strip_outline(sam_hand), os.path.join(alt, 'hand_alt_001.png'))
+    # Breach costume swapper: the kimono stand (approved pluto-artist frames), bathtub only if the art is missing
+    stand = os.path.join(ROOT, 'reference', 'art', 'kimono_stand')
+    for i, fallback in ((1, U.BATHTUB), (2, U.BATHTUB_2)):
+        src = os.path.join(stand, f'alt_skin_obj_sprite_00{i}.png')
+        if os.path.exists(src):
+            shutil.copy(src, os.path.join(CHAR, f'alt_skin_obj_sprite_00{i}.png'))
+        else:
+            save(fallback, os.path.join(CHAR, f'alt_skin_obj_sprite_00{i}.png'))
 
     # UI
     save(U.FACE_34, os.path.join(CHAR, 'facecard.png'))
@@ -155,14 +164,6 @@ def gun_and_items():
     save(U.CRUMB, os.path.join(items, 'kibble_crumb.png'))
     save(U.LASER_DOT, os.path.join(items, 'laser_dot.png'))
     save(U.HAIRBALL, os.path.join(pc, 'pluto_hairball_001.png'))
-    # 2.2: gravy pouch (alt gun) + gravy glob
-    for anim, fr in {'idle': [V4.GUN2_IDLE], 'fire': V4.GUN2_FIRE, 'reload': V4.GUN2_RELOAD}.items():
-        for i, f in enumerate(fr, 1):
-            name = f'pluto_gravy_pouch_{anim}_{i:03d}'
-            save(f, os.path.join(wc, name + '.png'))
-            with open(os.path.join(wc, name + '.jtk2d'), 'w') as fh:
-                json.dump(jtk2d(V4.GUN2_W, V4.GUN2_H, (4, 4), (22, 6)), fh, indent=2)
-    save(V4.GRAVY, os.path.join(pc, 'pluto_gravy_001.png'))
     # 2.2: Coco Blue companion frames, VFX, bowl pickup, coco icon
     comp = os.path.join(RES, 'Companions', 'coco')
     clean(comp)
@@ -221,7 +222,7 @@ def previews():
     sheet([[U.GUN_IDLE] + U.GUN_FIRE + U.GUN_RELOAD + [U.GUN_AMMONOMICON], [U.KIBBLE, U.CAN_ICON] + U.CAN_TOSS + U.GRAVY_BURST],
           os.path.join(PREVIEW, 'items-sheet.png'), scale=6)
     sheet([[U.FACE_34, U.FACE_34_BLINK, U.FACE_34_HURT] + U.FOYER_IDLE[3:] + U.FOYER_APPEAR[2:3], [U.ICON_9, U.COOP_DEATH, P.HAND, U.NINE_LIVES_ICON, U.CRUMB, U.LASER_DOT, U.BATHTUB],
-           [U.HAIRBALL] + V4.COCO_IDLE[:2] + V4.COCO_MOVE + [V4.GUN2_IDLE, V4.GUN2_FIRE[0], V4.GRAVY, V4.BOWL_PICKUP] + V4.FUR_PUFF + V4.LOVE_BURST + U.FOYER_APPEAR,
+           [U.HAIRBALL] + V4.COCO_IDLE[:2] + V4.COCO_MOVE + [V4.BOWL_PICKUP] + V4.FUR_PUFF + V4.LOVE_BURST + U.FOYER_APPEAR,
            V5.FUR_HALO + [V5.PUFFED_ICON] + V5.ANGER_MARKS],
           os.path.join(PREVIEW, 'ui-sheet.png'), scale=5)
 
