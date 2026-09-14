@@ -158,12 +158,15 @@ Steam checklist (new `## 0.14.0` section):
 - Remove the forced `KILLED_PAST` and `KILLED_PAST_ALTERNATE_COSTUME` in `Plugin.cs`, which exist today only to unlock the bathtub.
 - The vanilla `CharacterCostumeSwapper` already shows only once `KILLED_PAST` is set for the character.
 - Debug key `UnlockSamuraiCostume` (default false) forces the flag for the tester.
+- Verified by the character session: the vanilla `CharacterCostumeSwapper` (line 24) and Alexandria's swapper read only `KILLED_PAST`; `KILLED_PAST_ALTERNATE_COSTUME` is never read. So the Vet Visit's `EndPast` setting `KILLED_PAST` is the whole gate.
 
 ### B3. Costume-bound loadout
 
 - Alexandria puts `<altGuns>` into `startingAlternateGunIds`, but only the Breach alt-gun shrine sets `UsingAlternateStartingGuns`.
 - Add a Harmony postfix on `PlayerController.SwapToAlternateCostume` that sets `UsingAlternateStartingGuns = IsUsingAlternateCostume` and calls `ReinitializeGuns()`.
-- Verify that quick restart keeps it. Dungeon.cs carries `UsingAlternateStartingGuns` over.
+- Verified: quick restart keeps both the costume and `UsingAlternateStartingGuns`. Continuing a saved run keeps only the costume (`CostumeID`). The swap also runs before `Start` at character select, quick restart and continue, when the inventory is still null.
+- So the postfix sets the flag and calls `ReinitializeGuns()` only in the Breach and only for Pluto, and the Breach alt-gun shrine is blocked for Pluto.
+- Unverified: whether a continued run's saved inventory already restores the samurai guns. The Vet Visit logs the gun ids on arrival (A7) to show it.
 - `<altGuns>`: `pluto:taiyaki_cannon`, `pluto:katana`.
 
 ### B4. Taiyaki Cannon (`pluto:taiyaki_cannon`)
@@ -183,15 +186,14 @@ Steam checklist (new `## 0.14.0` section):
   - Reload blocks bullets around Pluto.
   - Infinite ammo; not droppable as a starter.
 - Sprite: a curved blade about 32 px long, a black and white diamond-wrap handle and a gold disc guard.
-- Route 1: clone Blasphemy (id 417) with `IsHeroSword`. The arc radius is the distance from the Casing point to the hand ×1.85, so a longer sprite gives a longer reach.
+- Route: clone Blasphemy (id 417) with `IsHeroSword` (verified: the full-health wave is in `Gun.HandleSlash`, the reload bullet-clear in `Gun.Reload`). The arc radius is the distance from the Casing point to the hand ×1.85, so a longer sprite gives a longer reach.
 - Route 2, the fallback: Alexandria `SlashData` / `SlashDoer` with `slashRange` about 4.
-- The full-health wave isn't confirmed in the decompile; verify it before choosing a route.
 
 ### B6. Boss card busts
 
 - One shared pose and placement for both skins: the left third of the card, bleeding off the bottom and left edges, transparent elsewhere.
 - The normal skin shows Pluto holding the Royal Kibble Sack; the samurai skin shows the kimono with the katana.
-- Verify per-costume card support, since `BosscardSprites` is one list. If there's no clean hook, patch the card at intro time based on `IsUsingAlternateCostume`.
+- Verified: vanilla has no per-costume card and Alexandria adds every `*bosscard_*` file to one list. The samurai card uses its own file names and a prefix patch on `BossCardUIController.ToggleCoreVisiblity` that picks the set by `IsUsingAlternateCostume`. The Vet's card is unaffected.
 - Name strings on the card go in capitals, because the card font drops some lowercase letters.
 
 ## C. Interface between the parts
@@ -213,6 +215,6 @@ Steam checklist (new `## 0.14.0` section):
 
 - `AdditionalBraveLight` initialisation couldn't be read, since the reference DLL has no method bodies. The floor-pool sprite is the fallback.
 - A custom `PlayableCharacters` value may not survive in the save file. The flag file in C2 covers the trophy either way.
-- The katana's full-health wave isn't confirmed. The SlashDoer route is the fallback.
+- A continued (saved) run may not restore the samurai guns (B3). The arrival log in A7 shows it; if it doesn't, the character side re-arms on run start.
 - The Gemini-to-pixel conversion may need heavy clean-up for animation consistency. Generate a whole clip as one sheet and keep the tests' anchor rows.
 - Removing the forced flags also locks the costume for existing players until they beat the past. This is the intended vanilla behaviour, with the debug key for testing.
