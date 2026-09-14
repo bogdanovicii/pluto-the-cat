@@ -62,5 +62,11 @@ Feedback: Pluto had no weapon, the Vet never attacked / had no weapon, the boss 
 ## v2 — vanilla-depth past (design 2026-09-14, docs/superpowers/specs/2026-09-14-vet-visit-v2-design.md)
 - [x] Research: vanilla pasts structure (04a), Alexandria APIs for waves/enemies/NPCs/cutscenes (04b)
 - [x] Design spec drafted: one 30x52 room with three gated zones, three acts, cast (Owner, Receptionist, Rex, Grandma Cat, critters, Vet Techs, escaped patients, the Nurse, the Vet)
-- [ ] User approval of the design
-- [ ] 0.5.0 room + gates + vanilla waves; 0.6.0 Vet Tech/Nurse; 0.7.0 intro cutscene + NPCs; 0.8.0 dressing + balance; 1.0 merge
+- [x] User approval of the design (2026-09-14: "start with the next phase")
+- [x] Gemini concept set for the three-zone past (PlutoVetVisit/docs/past-concepts.md, 17 images, ASCII zone draft) — 2026-09-14
+- [x] 0.5.0 room + gates + vanilla waves: 30x52 map with two 2-cell dividers and centre gaps; clinic door prop (closed/open frames,
+      ClinicDoor.cs toggles the HighObstacle collider); kennels + nurse station; controller runs waiting room -> ward (door seals,
+      two config-driven waves of rat/parrot/mutant kin at side-door and kennel cells, timeout guard) -> theatre (Vet spawns on entry,
+      dialogue, fight). 46 unit tests; build + validate green; dist/Pluto_Vet_Visit-0.5.0.zip — 2026-09-14
+- [ ] In-game test 5 (docs/checklist.md milestone 5): doors render and block, waves spawn and clear, wall segments draw as walls — pending
+- [ ] 0.6.0 Vet Tech/Nurse; 0.7.0 intro cutscene + NPCs; 0.8.0 dressing + balance; 1.0 merge
