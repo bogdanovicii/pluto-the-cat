@@ -31,7 +31,7 @@ Neither part edits the other's files. They meet only at the interface in section
 Where: `VetVisitController.EndPast`. Today it sets KILLED_PAST, waits 3.5 s, locks the conversation camera, shows the epilogue, freezes the frame, then starts the credits and the win page. No timer runs before the credits, so a scene of any length fits between the epilogue and the freeze frame.
 
 Beats, all during the existing conversation lock (input override, letterbox, HUD hidden):
-1. The theatre door slides open (`Play_OBJ_door_open_01`). Bogdan and Bianca are re-shown (SetActive true, UpdateZDepth) at the theatre door and run to Pluto with `ClinicNpc.Walk`. The camera follows with `OverridePosition`.
+1. Bogdan and Bianca are re-shown (`ClinicNpc.Show`) at the theatre's east side door (`TheatreSpawns[0]`, where the Nurse arrives; the zone door behind Pluto has no opening animation) and run to Pluto with `ClinicNpc.Walk`. The camera follows with `OverridePosition`.
 2. Bianca: "There you are!" She kneels (clip `kneel`), Pluto is hidden (`IsVisible = false` plus the shadow; both players in co-op), and Bianca switches to `carry` (Pluto in her arms).
 3. Bogdan picks up the carrier (clip `pat`, a pat on Pluto's head): "Let's go home, buddy."
 4. Pluto thinks: "Home."
