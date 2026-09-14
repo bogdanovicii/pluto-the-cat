@@ -47,6 +47,7 @@
 - [x] Runtime outline verified in decompiled code (PlayerController.Start + AIActor.Start via procedurallyOutlined); 2.10.2 strips Coco too
 - [x] 2.11.0: Nine Lives lore (starts on life 7; lives 7, 8, 9; ninth is final), StartingLife config, named-life banner
 - [x] 2.12.0: kibble cracks secret-room walls (extra wall damage on hit; no passive reveal by request); no fall damage (OnPitfall + ModifyDamage cancel, Nine Lives skips it)
+- [x] 2.13.0: straight run legs (no splits), four vanilla-style dodge clips (side dive + somersault, down/up over-the-back rolls, bw side roll)
 - [ ] In-game checks on the Steam machine: Pluto vs Pilot screenshot, gun paw alignment, punchout log lines
 - [ ] v2 later: custom sounds (Alexandria SoundAPI needs Wwise soundbanks), custom past, Hegemony unlock cost
 

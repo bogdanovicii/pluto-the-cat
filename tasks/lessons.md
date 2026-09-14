@@ -47,3 +47,8 @@
 ## 2026-09-14 — CS0507 again (Wet Food Can 2.14.0)
 - `PlayerItem.DoEffect` is `public virtual`, like `BraveBehaviour.OnDestroy` before it. Before overriding any EtG member, grep an existing override in this repo (or the decompiled source) for its access modifier instead of assuming `protected`.
 - A new C# file that uses Alexandria helpers needs `using Alexandria.Misc;` (`ProjectileUtility`); copy the using block from the file whose pattern you are reusing.
+
+## 2026-09-14 — committing while another session edits the same files
+- A "did I stage someone else's paths?" check that only prints is not a guard. The other session added hunks between the check and `git add`, and the commit picked up its knight art and changelog section. Make the check abort (`grep ... && exit 1`) and run it on the staged index immediately before `git commit`, in the same command.
+- In zsh a `$VAR` holding several paths is one word; use an array (`PATHS=(...)`, `"${PATHS[@]}"`).
+- With another session live in the tree, agree on a file freeze ("tell me before you touch X") before committing, or commit only files the other session said it does not edit.
