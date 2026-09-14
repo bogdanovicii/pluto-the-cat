@@ -12,7 +12,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 ROOT = os.path.dirname(HERE)
 
-from pixel import save, img_from_rows, sheet, PALETTE, strip_outline, pad  # noqa: E402
+from pixel import save, img_from_rows, sheet, PALETTE, strip_outline, pad, outline_img, Image  # noqa: E402
 import lint_art  # noqa: E402
 import preview as V  # noqa: E402
 import character_anims as A  # noqa: E402
@@ -82,7 +82,20 @@ def character():
     write_clip(os.path.join(CHAR, 'foyercard'), U.FOYER_APPEAR, 'pluto_facecard_appear')
     save(U.ICON_9, os.path.join(CHAR, 'icon.png'))
     save(U.COOP_DEATH, os.path.join(CHAR, 'coop_page_death.png'))
-    U.boss_card().save(os.path.join(CHAR, 'bosscard_001.png'))
+    # Boss intro card: the game draws the player's card OVER the boss art (BossCardUIController.playerSprite),
+    # so it is a cut-out on transparency like vanilla cards: Pluto's idle breathing, 5x, bottom-left corner.
+    # The card gets no runtime outline, so the outline is baked in here.
+    import character_anims as _A
+    for f in os.listdir(CHAR):
+        if f.startswith('bosscard_') and f.endswith('.png'):
+            os.remove(os.path.join(CHAR, f))
+    for i, frame in enumerate(_A.IDLE_SIDE, 1):
+        body = outline_img(img_from_rows(strip_outline(frame)))
+        body = body.crop((0, 0, body.width, body.getbbox()[3]))   # feet stand on the card's bottom edge
+        body = body.resize((body.width * 5, body.height * 5), Image.NEAREST)
+        card = Image.new('RGBA', (427, 240), (0, 0, 0, 0))
+        card.alpha_composite(body, (2, 240 - body.height))
+        card.save(os.path.join(CHAR, f'bosscard_{i:03d}.png'))
     U.win_pic().save(os.path.join(CHAR, 'win_pic_001.png'))
     U.win_pic().save(os.path.join(CHAR, 'win_pic_junkan.png'))
     save(U.GUN_AMMONOMICON, os.path.join(CHAR, 'loadoutsprites', 'a_kibblesack.png'))

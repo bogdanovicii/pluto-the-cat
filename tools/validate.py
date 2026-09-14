@@ -180,6 +180,21 @@ if not os.path.exists(os.path.join(RES, 'SpriteRoot', 'ProjectileCollection', 'p
     err('gravy projectile sprite missing')
 ok('item art')
 
+# 4b. boss intro card: the game draws the player's card over the boss art (BossCardUIController.playerSprite),
+# so it must be a cut-out on transparency like vanilla/Kotonoha cards (~12 % opaque), never a full opaque panel.
+_cards = sorted(f for f in os.listdir(CHAR) if f.startswith('bosscard_') and f.endswith('.png'))
+if not _cards:
+    err('boss intro card missing: Characters/Pluto/bosscard_001.png')
+for f in _cards:
+    _im = Image.open(os.path.join(CHAR, f)).convert('RGBA')
+    _alpha = _im.getchannel('A').tobytes()
+    _opaque = sum(1 for v in _alpha if v) / len(_alpha)
+    if _im.size != (427, 240):
+        err(f'{f}: boss card must be 427x240, got {_im.size}')
+    if _opaque > 0.30:
+        err(f'{f}: boss card is {_opaque:.0%} opaque; it would cover the boss art (keep it a cut-out, <= 30 %)')
+ok(f'boss card: {len(_cards)} frame(s), cut-out')
+
 # 5. characterdata ids match the C# ids
 cd = open(os.path.join(CHAR, 'characterdata.txt')).read()
 src = ''.join(open(os.path.join(ROOT, 'PlutoTheCat', 'src', f)).read() for f in os.listdir(os.path.join(ROOT, 'PlutoTheCat', 'src')))
