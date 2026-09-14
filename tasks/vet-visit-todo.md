@@ -114,6 +114,6 @@ Started from 0.9.0; verified its claims against the decompiled game (fedes1to/Et
       FloorTiles/WallFaces wired; pale ambient via Room.customAmbientLight + LabAmbientLightController disabled. validate.py check_look.
 - [x] 79 unit tests, build + validate green; docs/checklist.md milestone 10 (log lines + knobs); changelog; version 0.10.0.
 - [x] Release chain: releases/Pluto_Vet_Visit-0.10.0.zip (sha256 e1f0ca65...86cf4a), tag v0.10.0 pushed, GitHub release v0.10.0, drop page v31 (pluto_vet_visit_zip.json verified)
-- [ ] Steam session message NOT sent: no `plutosm-*` session was reachable (ListAgents, 2026-09-14 13:25); the user must open one and point it at the drop page / release
+- [x] Steam session messaged as `Download [1e08e7]` (its name changes, the ref stays) with the links, sha256 and the milestone-10 steps; results pending
 - [ ] Tester must report: the `loadout on arrival` line; each `wave 1 Vet Tech ... state/awoken/pathed` line; whether Techs move within 2 s;
       hearts lost + time to kill the Vet; anything drawn over Pluto (lamp head, floors, wall faces); screenshot of each zone next to level_overview.png.
