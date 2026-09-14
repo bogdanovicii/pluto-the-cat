@@ -193,4 +193,5 @@ Spec: docs/superpowers/specs/2026-09-14-samurai-pluto-and-clinic-life-design.md 
 - [x] Part A plan: docs/superpowers/plans/2026-09-14-vet-visit-0.14.0-clinic-life.md (15 tasks: art sources, sounds, loadout, trophy, mood, kennels, mask, ending, 6 art tasks, release)
 - [x] Execute part A on PlutoVetVisit branch vet-visit-0.14.0 (2026-09-14): tasks 1-8 code (art sources, sounds, costume loadout, trophy + progress file, theatre mood, kennels, masked Vet, pick-up ending); art tasks 9-14 approved (boss card, win picture, trophy Gemini-converted; ending, kennel and mask clips hand-copied from Gemini sheets because direct conversions failed review). VET_RELEASE validate 104/104, 181 tests, build green.
 - [ ] Gemini project hit its monthly spend cap (10 kennel sheets failed); the user must raise it in AI Studio before more generations
-- [ ] Code review of v0.13.0..HEAD src, then release 0.14.0 jointly with Pluto the Cat 2.16.0 (c4 holds its push/tag/drop page) after the user confirms
+- [x] Review clean; user confirmed ("do it and send it to steam machine"); v0.14.0 merged to main, tagged, GitHub release (sha f185e46b...822f); drop page v41 carries the Vet Visit 0.14.0 card
+- [ ] Pluto the Cat 2.16.0: c4 waits for its own user's OK, then swaps its drop-page card; then one combined tester message (c4's 7 samurai test points + checklist 0.14.0)
