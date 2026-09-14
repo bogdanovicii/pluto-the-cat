@@ -94,3 +94,26 @@ Tested 0.8.0: works, much better, but not the Gemini look; Pluto has no gun and 
 boss fight; every clinic human able to attack with vanilla-like patterns; balanced (not easy, not hard); story well driven.
 - [x] Brief written: PlutoVetVisit/docs/prompts/next-session-0.10-prompt.md (starts from the other session's 0.9.0)
 - [ ] 0.10.0 by the next session; then the in-game pass; then 1.0 merge (separate approval)
+
+## 0.10.0 2026-09-14 — plays, looks and reads like a vanilla past (this session)
+Started from 0.9.0; verified its claims against the decompiled game (fedes1to/EtG-source) before changing anything.
+- [x] Guns: the Ark's ResetPlayers hands the starting guns back and clears input overrides before the load; nothing strips them after.
+      Loadout check rewritten: repairs gun + renderer (empty-reason ToggleGunRenderers clears every hide key) + input
+      (ClearAllInputOverrides, PreventPausing) outside our own cutscenes; runs after the fall-spawn, after each cutscene, every 3 s;
+      logs a before/after snapshot; `vet_loadout` prints it.
+- [x] Staff: root cause = EnemyBuilder actors are born State Inactive (no ObjectVisibilityManager; autoEngage only feeds it) so the
+      BehaviorSpeculator never ticks. Engage() hardened (each step logged), heartbeat re-engages, SelfEngage component on Tech/Nurse
+      (console spawns fight too, greeter held until his lines). Tech range 20, LOS on, Hegemony burst cadence, no timing differentiator.
+- [x] Story: greeting sends Pluto to the far door; Rex/Grandma bubble on the door; Vet line at the Nurse's arrival; BeginCutscene/EndCutscene
+      pair (lock, unlock, loadout repair, input logged) in a finally for all three acts.
+- [x] Patterns: measured vs Bullet King / Gorgun / Beholster / Gull; three phases (60 %, 25 %), InitialAttackDelay 2 s, breathers,
+      wall gap opens on Pluto and walks, "full course" sequential group, pills pop when shot, shot audio on every bank entry; Vet 800 HP.
+      `[Balance]` knobs: BulletSpeedScale, BossCooldownScale, speeds, Tech/Nurse cooldowns.
+- [x] Look (art subagent, hand-drawn row-strings): per-zone tiled floors, wall faces (room now 30x54), lamp head/arm/pool, strapped
+      80x40 table, barred kennels + cone variant, 9 orange chairs, 112 px desk, double cabinets, station with bowls, tank on a stand;
+      FloorTiles/WallFaces wired; pale ambient via Room.customAmbientLight + LabAmbientLightController disabled. validate.py check_look.
+- [x] 79 unit tests, build + validate green; docs/checklist.md milestone 10 (log lines + knobs); changelog; version 0.10.0.
+- [x] Release chain: releases/Pluto_Vet_Visit-0.10.0.zip (sha256 e1f0ca65...86cf4a), tag v0.10.0 pushed, GitHub release v0.10.0, drop page v31 (pluto_vet_visit_zip.json verified)
+- [ ] Steam session message NOT sent: no `plutosm-*` session was reachable (ListAgents, 2026-09-14 13:25); the user must open one and point it at the drop page / release
+- [ ] Tester must report: the `loadout on arrival` line; each `wave 1 Vet Tech ... state/awoken/pathed` line; whether Techs move within 2 s;
+      hearts lost + time to kill the Vet; anything drawn over Pluto (lamp head, floors, wall faces); screenshot of each zone next to level_overview.png.
