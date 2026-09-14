@@ -117,3 +117,16 @@ Started from 0.9.0; verified its claims against the decompiled game (fedes1to/Et
 - [x] Steam session messaged as `Download [1e08e7]` (its name changes, the ref stays) with the links, sha256 and the milestone-10 steps; results pending
 - [ ] Tester must report: the `loadout on arrival` line; each `wave 1 Vet Tech ... state/awoken/pathed` line; whether Techs move within 2 s;
       hearts lost + time to kill the Vet; anything drawn over Pluto (lamp head, floors, wall faces); screenshot of each zone next to level_overview.png.
+
+## 0.10.1 2026-09-14 — after the 0.10.0 in-game test
+Test: Techs awake and moving but every shot threw the AIBulletBank NRE (188x); Pluto's gun active=False, input FoyerInputOnly; stuck at wave 1.
+Screenshots (repo root, 13.57.57 / 13.58.04 / 13.58.10): purple lab walls over the wall faces, noisy floor, scattered kennels.
+- [x] Root cause (enemy shots): double clone of the bullet copy; Alexandria's Instantiate hook activated it, it died, BulletObject null, aiShooter null deref. One inactive copy + CheckBank/repair per actor.
+- [x] Root cause (Pluto): `vet_visit` skips Foyer.OnDepartedFoyer (IsFoyer, ForceNoGun, gun SetActive(false)). Replayed in EnsureLoadout; gun object reactivated; watchdog tick line.
+- [x] Engage NRE: no RefreshBehaviors; greeter speculator no longer disabled.
+- [x] Art pass from the screenshots: wall faces 480x48 standing at HOG -0.2 (in front of the lab's purple wall, behind Pluto hugging it), wall decor standing on them (HOG from wall_decor_hog), floor variants capped per zone, kennel bank 5 per side (cat/dog/cone/open), ward side doors and mid-floor litter box removed, brown doormat, spaced chairs, 16 px clock, theatre toys in the corner; generator emits ObjectSpec.Perpendicular; validate.py checks the depth rules; build green (51 sprites, 75 placeables)
+- [x] Watchdog split: full pass at arrival/cutscene end/console; the 3 s pass only acts on a hidden gun or input override that lasted two ticks outside stealth, rolls, cutscenes and the boss intro
+- [x] Code review of the runtime fixes: root causes confirmed against the source; fixed per-player watchdog counters, the engage comment, bank repair write-back to the prefab, preload off, recipe warning, validate.py guard
+- [x] Build + validate + 89 tests green; commit c66f603, tag v0.10.1 pushed, GitHub release v0.10.1 (344288 bytes, sha256 058abc2a...16d2); drop page v32 payload decoded and verified
+- [x] Steam session messaged as `Download [1e08e7]` with the 10.1 steps
+- [ ] Tester must report: the three prefab bank lines, the `loadout on arrival` line, whether Tech bursts fly and hurt, hearts lost and Vet time, a screenshot per zone (purple walls gone? Pluto in front of walls?), cardboard box still hides the gun, all [VetVisit] lines

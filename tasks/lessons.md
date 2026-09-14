@@ -33,3 +33,13 @@
 ## 2026-09-14 — build status behind a pipe (Vet Visit 0.5.0)
 - `./build.sh | grep ...` returned grep's status, so a compile error (CS0507) slipped past `&&` and the commit ran with a stale zip. Never chain a commit after a piped build; write the log to a file, check `$?` (or `set -o pipefail`) and only then archive and commit.
 - `BraveBehaviour.OnDestroy` is `public virtual`; override it as `public override` and call `base.OnDestroy()`.
+
+## 2026-09-14 — splayed run legs came back (2.13.0)
+- The "short splayed stride, vanilla-like" legs (two outward diagonals on the contact frames) read as the splits at 1x, and the user had to flag it twice. The rule now lives in the skill's animation.md: run legs stay vertical under the hips, stride at most 1 px, never diagonal.
+- "Similar to the other characters" means open the vanilla frames first (wiki.gg `File:Convict_Dodge*.gif`, four directions). Pluto had one clip for all four dodge directions and an anonymous ball; vanilla rolls keep head, limbs and back readable in every tumble frame.
+
+## 2026-09-14 — Vet Visit 0.10.0 in-game test (user report: Pluto cannot shoot, enemies cannot shoot)
+- A console shortcut is not the real route. `vet_visit` loads the past straight from the Breach and skips `Foyer.OnDepartedFoyer`, so `GameManager.IsFoyer` stays true (input reads `FoyerInputOnly`: no firing), `ForceNoGun` stays true and the gun object stays `SetActive(false)`. When a debug entry point exists, trace what the normal exit from the previous scene does and replay it; log the flag that gates the behaviour (`isFoyer`), not only its symptoms.
+- Clearing a flag is not restoring state: `ForceNoGun = false` makes `CurrentGun` non-null again but leaves the object inactive. Check the object (`activeSelf`) after every repair, and log the value you repaired, not the value you set.
+- Read the helper you wrap. Alexandria's `CopyBulletBankEntry` already makes a private inactive fake-prefab copy; cloning it again with `FakePrefab.Clone` let Alexandria's own Instantiate hook re-activate the clone, which lived in the world, died, and nulled every bank entry. The enemy NRE had the same stack since 0.3.0: a stack trace that survives several "fixes" means the fixes were aimed elsewhere; open the top frame (`AIBulletBank.CreateProjectileFromBank`) and list every dereference.
+- Depth claims from reasoning alone need an in-game check: flat sprites lose to the tileset's standing wall face. Ask for screenshots early and compare them with the concept before adding more art.
