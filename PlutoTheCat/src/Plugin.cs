@@ -86,12 +86,11 @@ namespace PlutoTheCat
 
             // Polish, each optional.
             Step("reflexes", () => CatReflexes(built));
-            // The Breach costume swapper (the bathtub) only appears once the character's past counts as beaten.
-            Step("alt costume unlock", () =>
-            {
-                GameStatsManager.Instance.SetCharacterSpecificFlag(built.identity, CharacterSpecificGungeonFlags.KILLED_PAST, true);
-                GameStatsManager.Instance.SetCharacterSpecificFlag(built.identity, CharacterSpecificGungeonFlags.KILLED_PAST_ALTERNATE_COSTUME, true);
-            });
+            Step("patches", () => PlutoPatches.Apply(built));
+            // The samurai costume stand appears only once Pluto's past is beaten: vanilla KILLED_PAST, which Vet Visit sets
+            // when the Vet falls. UnlockSamuraiCostume forces it for testing.
+            if (PlutoConfig.UnlockSamuraiCostume)
+                Step("debug samurai unlock", () => GameStatsManager.Instance.SetCharacterSpecificFlag(built.identity, CharacterSpecificGungeonFlags.KILLED_PAST, true));
             if (PlutoConfig.LogPunchoutNames) Step("punchout dump", DumpPunchoutNames);
             Step("cat tricks", CatTricks.Init);
             Step("synergies", PlutoSynergies.Init);

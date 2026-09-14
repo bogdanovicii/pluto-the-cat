@@ -16,9 +16,11 @@ armor: 0
 	pluto:puffed_up
 </loadout>
 
-#Alexandria 0.5.10 requires this block even without an alt skin (HandleLoadout iterates it without a null check).
+#Samurai costume loadout (2.16.0): PlutoPatches sets UsingAlternateStartingGuns while the costume is worn.
+#Alexandria 0.5.10 requires this block (HandleLoadout iterates it without a null check).
 <altGuns>
-	pluto:gravy_pouch
+	pluto:taiyaki_cannon infinite
+	pluto:katana infinite
 </altGuns>
 
 <stats>

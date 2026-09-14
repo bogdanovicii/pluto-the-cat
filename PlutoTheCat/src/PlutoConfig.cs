@@ -29,6 +29,7 @@ namespace PlutoTheCat
         public static Vector3 BathtubOffset = new Vector3(0f, 2.1f, 0f);
         public static Vector3 BathtubPosition { get { return FoyerPosition + BathtubOffset; } }
         public static bool LogPunchoutNames = true;
+        public static bool UnlockSamuraiCostume = false;
         public static float AngrySeconds = 6f;
         public static float AngryDamageMultiplier = 1.5f;
         public static float AngryFireRateMultiplier = 1.3f;
@@ -73,6 +74,7 @@ namespace PlutoTheCat
             CocoKnockoutSeconds = cfg.Bind("Balance", "CocoKnockoutSeconds", CocoKnockoutSeconds, "How long Coco stays knocked out (petting him ends it early).").Value;
             CocoStuffingRegenSeconds = cfg.Bind("Balance", "CocoStuffingRegenSeconds", CocoStuffingRegenSeconds, "Seconds per point of stuffing regained while not knocked out.").Value;
             LogPunchoutNames = cfg.Bind("Debug", "LogPunchoutNames", LogPunchoutNames, "Write the Pilot's Punch-Out sprite names to the log at startup.").Value;
+            UnlockSamuraiCostume = cfg.Bind("Debug", "UnlockSamuraiCostume", UnlockSamuraiCostume, "Testing only: unlock the samurai costume in the Breach without beating Pluto's past (normally it appears after the Vet is beaten).").Value;
         }
 
         private static Vector3 Vec(string text, Vector3 fallback)
