@@ -182,7 +182,7 @@ Tester: past runs start to finish, bullets hit for half a heart, 0 bank errors, 
 - [x] Pluto walks into the reception counter from the south: collider vs sprite footprint, audit all standing props, add a check; agent on clinic_objects.py
 - [x] Two owners replace the generic Owner: Bogdan (guy) and Bianca (long brown hair, dressed in yellow); sprites, intro beats, comments; agent on npc_poses.py + VetVisitController.cs
 - [x] Offer the user more improvement ideas
-- [ ] Build, tests, review, release 0.13.0, drop page, tester message
+- [x] Build, tests (146), review clean, released v0.13.0 (sha 58f5ef26...ae9e), drop page Pluto 2.15.3 + Vet Visit 0.13.0, tester messaged
 
 ## Samurai Pluto and a living clinic (user, 2026-09-14): design first
 Spec: docs/superpowers/specs/2026-09-14-samurai-pluto-and-clinic-life-design.md (commit fb1a5c1). Waiting for the user's review.
