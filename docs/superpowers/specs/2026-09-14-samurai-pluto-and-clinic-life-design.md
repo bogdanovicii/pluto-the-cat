@@ -186,8 +186,15 @@ Steam checklist (new `## 0.14.0` section):
   - Reload blocks bullets around Pluto.
   - Infinite ammo; not droppable as a starter.
 - Sprite: a curved blade about 32 px long, a black and white diamond-wrap handle and a gold disc guard.
-- Route: clone Blasphemy (id 417) with `IsHeroSword` (verified: the full-health wave is in `Gun.HandleSlash`, the reload bullet-clear in `Gun.Reload`). The arc radius is the distance from the Casing point to the hand ×1.85, so a longer sprite gives a longer reach.
-- Route 2, the fallback: Alexandria `SlashData` / `SlashDoer` with `slashRange` about 4.
+- Route (verified by the character session):
+  - Build a new gun like `KibbleSackGun` (not a clone of Blasphemy 417) and take Blasphemy's projectile module.
+  - Set `IsHeroSword = true` and `HeroSwordDoesntBlank = false`. True would disable the full-health wave and the reload block, and make the swing reflect bullets instead of destroying them. The wave is in `Gun.HandleSlash`, the reload clear in `Gun.Reload`.
+  - Set `InfiniteAmmo`, `CanBeDropped = false` and a larger `blankReloadRadius` (the reload clear radius, default 1).
+- Reach:
+  - The slash radius is 1.85 × the distance from the gun's `PrimaryHand` point to its `Casing` child transform, not the sprite length.
+  - The reach grows by moving `Casing` outward. Unverified: the sprite setup may reset it.
+  - The arc is fixed at 45°, and swing damage equals the projectile module's damage, so it is tied to the wave's damage.
+- Route 2, the fallback: Alexandria `SlashData` / `SlashDoer` with `slashRange` about 4. It needs its own full-health wave and reload blank.
 
 ### B6. Boss card busts
 
@@ -195,6 +202,9 @@ Steam checklist (new `## 0.14.0` section):
 - The normal skin shows Pluto holding the Royal Kibble Sack; the samurai skin shows the kimono with the katana.
 - Verified: vanilla has no per-costume card and Alexandria adds every `*bosscard_*` file to one list. The samurai card uses its own file names and a prefix patch on `BossCardUIController.ToggleCoreVisiblity` that picks the set by `IsUsingAlternateCostume`. The Vet's card is unaffected.
 - Name strings on the card go in capitals, because the card font drops some lowercase letters.
+- Set `player.BosscardSpriteFPS` explicitly. Neither the game nor Alexandria sets it, so Pluto may inherit the Pilot base's value (unverified).
+- The samurai card's file names must not contain `bosscard_`, or Alexandria adds them to the normal card list.
+- Art: the normal-skin bust (in progress with the pluto-artist skill) fixes the shared pose and placement for the samurai bust.
 
 ## C. Interface between the parts
 
@@ -215,6 +225,7 @@ Steam checklist (new `## 0.14.0` section):
 
 - `AdditionalBraveLight` initialisation couldn't be read, since the reference DLL has no method bodies. The floor-pool sprite is the fallback.
 - A custom `PlayableCharacters` value may not survive in the save file. The flag file in C2 covers the trophy either way.
+- The katana's swing cooldown (0.5 s) and the knockback on Pluto (40) are hard-coded in the game, and the vanilla slash effect won't grow with the longer reach.
 - A continued (saved) run may not restore the samurai guns (B3). The arrival log in A7 shows it; if it doesn't, the character side re-arms on run start.
 - The Gemini-to-pixel conversion may need heavy clean-up for animation consistency. Generate a whole clip as one sheet and keep the tests' anchor rows.
 - Removing the forced flags also locks the costume for existing players until they beat the past. This is the intended vanilla behaviour, with the debug key for testing.
