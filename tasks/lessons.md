@@ -29,3 +29,7 @@
 ## 2026-09-14 — shared tooling drift (Vet Visit)
 - A sibling project that imports the main mod's `tools/pixel.py` palette live re-rendered 36 committed PNGs when the main palette changed, and `validate.py` stayed green. Snapshot shared constants (palette values) into the consumer and add a test that fails loudly on drift; never import mutable art constants across projects.
 - When two sessions work in one tree, keep every generated artifact's source of truth inside the project that ships it.
+
+## 2026-09-14 — build status behind a pipe (Vet Visit 0.5.0)
+- `./build.sh | grep ...` returned grep's status, so a compile error (CS0507) slipped past `&&` and the commit ran with a stale zip. Never chain a commit after a piped build; write the log to a file, check `$?` (or `set -o pipefail`) and only then archive and commit.
+- `BraveBehaviour.OnDestroy` is `public virtual`; override it as `public override` and call `base.OnDestroy()`.
