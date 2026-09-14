@@ -1,0 +1,13 @@
+{
+  "model": "gemini-3-pro-image",
+  "prompt": "Create the PLAYER PORTRAIT for a boss-intro card in the video game Enter the Gungeon, in exactly the art style of the first attached image (the Pilot's portrait at the bottom-left of the Beholster boss card): high-resolution pixel art at card resolution, a bold thick dark-brown outline around the whole figure, crisp hard-edged pixels, cel shading with 3-4 tones per material, a warm top-left light, no gradients, no blur, no anti-aliasing, no texture noise.\n\nSUBJECT: Pluto, the real cat in the other attached photos - match his markings exactly. A chubby adult cat with GREY-BROWN taupe tabby fur (cool taupe brown with near-black mackerel stripes, NOT orange, NOT ginger), a forehead \"M\" marking, a white blaze between the eyes running down to a white muzzle, a white chest and white paws, a small white oval spot on top of his head between the ears surrounded by tabby, big ears with pink inner ears, hazel-green eyes with vertical slit pupils, a pink nose.\n\nPOSE: a heroic head-and-shoulders bust in three-quarter view, facing RIGHT toward the boss, smug confident expression like the Pilot's. One white front paw raises his weapon: a white-and-silver ROYAL CANIN dry cat food pouch held sideways like a gun, red band with a five-dot crown, a purple round label with a grey cat, the zip top torn open and pointing right with brown kibble spilling out. The chest and shoulders are cut off by the bottom edge of the image, exactly like the Pilot's bust.\n\nCOMPOSITION: 16:9 frame. The whole figure sits in the LEFT 40% of the frame and in its lower two thirds; the right 60% and the top-left corner are completely empty. Background: one flat solid chroma green (#00B140) everywhere, no scenery, no shadows on the background, no text.\n",
+  "refs": [
+    "boss card example.jpg",
+    "reference/photos/white_spot_on_head.jpeg",
+    "reference/photos/61B24754-CF54-4EDC-95DF-F832B6872B59_1_105_c.jpeg"
+  ],
+  "ratio": "16:9",
+  "size": "2K",
+  "seconds": 23.3,
+  "time": "2026-09-14 20:12:17"
+}
