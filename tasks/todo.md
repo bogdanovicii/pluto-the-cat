@@ -88,7 +88,7 @@ Engine facts (Re-ETG decompiled): `SackKnightController.CurrentForm` (HOLY_KNIGH
 - [x] make_art.py export (knight_* folders), lint_art.py companion lint, validate.py tuple list — after the peer's build is green
 - [x] ./build.sh (log to file, check exit status), CHANGELOG 2.15.0 above 2.14.0, version bump
 - [ ] In-game check on the Steam machine: Dog pathing while follow is paused, Dog bite reach, Junkan charging the override target, helmet swap on pet/KO
-- Found in passing: plain COCO_MOVE hop frames clip Coco's ears (lenient shift) — spun off as its own task
+- [x] 2.15.1: plain Coco hop frames clipped his ears (lenient shift on the bare 16x13 drawing) — fixed with a 17x16 canvas, strict pad/shift, Coco clips in the art lint and a 19x18 size guard in validate.py; built green (sha256 48df73ba...faec93)
 
 ### Review (2.15.0 Coco synergies)
 Built green 2026-09-14: dist/Pluto_The_Cat-2.15.0.zip sha256 380fb7241bd1843d8ea980aee1b8a29954b2725e30851fd38482e54fbd890611 (combined release with the peer's Wet Food Can rework).

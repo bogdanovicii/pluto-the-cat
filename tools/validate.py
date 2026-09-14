@@ -156,6 +156,12 @@ for sub, n in (('idle', 4), ('move', 6), ('pet', 4), ('block', 3), ('ko', 2),
     d = os.path.join(RES, 'Companions', 'coco', sub)
     if not os.path.isdir(d) or len([f for f in os.listdir(d) if f.endswith('.png')]) != n:
         err(f'companion clip {sub} should have {n} frames')
+# Coco's clips keep headroom for the hop and the pet wiggle (17x16 drawn + 1-px margin); 2.15.1 fixed clipped ears
+for sub in ('idle', 'move', 'pet', 'block'):
+    d = os.path.join(RES, 'Companions', 'coco', sub)
+    sizes = {Image.open(os.path.join(d, f)).size for f in os.listdir(d) if f.endswith('.png')} if os.path.isdir(d) else set()
+    if sizes != {(19, 18)}:
+        err(f'companion clip {sub}: frame sizes {sizes} != 19x18')
 for f in ['fur_halo_001.png', 'fur_halo_002.png', 'puffed_up_icon.png']:
     if not os.path.exists(os.path.join(items, f)):
         err(f'item art missing: {f}')

@@ -4,7 +4,17 @@ pop-in select card.
 Palette keys added in pixel.py for this file: 1/2/3 plush blue (light/base/dark).
 """
 from pixel import check_rect as R, overlay_clip as overlay, pad_clip as pad, shift_clip as shift, flip_h, scale_down, squash
+from pixel import pad as _pad_strict, shift as _shift_strict
 from art_v3 import CROWN, blank, put, row, col
+
+# Coco's clips live on a 17 x 16 canvas: 3 rows above the 13-row drawing for the 3-px hop and 1 column on the right
+# for the pet wiggle. Bottom-left anchored, so the C# hitbox offsets (3,2) do not move. Strict pad/shift: before 2.15.1
+# the hop frames were shifted on the bare 16 x 13 drawing and silently lost the ears and the top of the head.
+COCO_W, COCO_H = 17, 16
+
+
+def _room(drawing):
+    return _pad_strict(drawing, COCO_W, COCO_H, 0, COCO_H - len(drawing))
 
 # ---------------------------------------------------------------- Coco Blue: round blue plush cat, 16 x 13
 # Photo: reference/photos/coco/coco_blue_1.png. Blue oval body, white belly, tiny red-lined ears, stub paws,
@@ -39,15 +49,16 @@ COCO_IDLE_2 = R([  # breathe: a touch wider
 ".oo3322222233oo.",
 "..oo.oooooo.oo..",
 ])
-COCO_IDLE = [COCO_IDLE_1, COCO_IDLE_1, COCO_IDLE_2, COCO_IDLE_2]
+_I1, _I2 = _room(COCO_IDLE_1), _room(COCO_IDLE_2)
+COCO_IDLE = [_I1, _I1, _I2, _I2]
 # hop cycle: squash, stretch up, land
 COCO_MOVE = [
-    squash(COCO_IDLE_1, 0.85),
-    shift(COCO_IDLE_1, 0, -2),
-    shift(COCO_IDLE_2, 0, -3),
-    shift(COCO_IDLE_1, 0, -1),
-    COCO_IDLE_1,
-    squash(COCO_IDLE_2, 0.9),
+    squash(_I1, 0.85),
+    _shift_strict(_I1, 0, -2),
+    _shift_strict(_I2, 0, -3),
+    _shift_strict(_I1, 0, -1),
+    _I1,
+    squash(_I2, 0.9),
 ]
 
 # ---------------------------------------------------------------- gravy pouch (Wet Pluto's alt gun), 24 x 14, opening on the right
@@ -226,7 +237,8 @@ COCO_PET_1 = R([
 ".oo3322222233oo.",
 "..oo.oooooo.oo..",
 ])
-COCO_PET = [COCO_PET_1, squash(COCO_PET_1, 0.92), COCO_PET_1, shift(COCO_PET_1, 1, 0)]
+_P1 = _room(COCO_PET_1)
+COCO_PET = [_P1, squash(_P1, 0.92), _P1, _shift_strict(_P1, 1, 0)]
 
 
 # ---------------------------------------------------------------- Coco blocking a bullet: squish flat with ">.<" eyes and a spark, 3 frames
@@ -245,7 +257,8 @@ COCO_BLOCK_1 = R([
 ".oo3322222233oo.",
 "..oo.oooooo.oo..",
 ])
-COCO_BLOCK = [squash(COCO_BLOCK_1, 0.9), COCO_BLOCK_1, shift(COCO_BLOCK_1, 0, -1)]
+_B1 = _room(COCO_BLOCK_1)
+COCO_BLOCK = [squash(_B1, 0.9), _B1, _shift_strict(_B1, 0, -1)]
 
 # Decoy mode: Coco with a determined face, running (used as the move clip while decoying)
 COCO_DECOY_1 = R([
@@ -263,7 +276,8 @@ COCO_DECOY_1 = R([
 ".oo3322222233oo.",
 "..oo.oooooo.oo..",
 ])
-COCO_DECOY = [squash(COCO_DECOY_1, 0.85), shift(COCO_DECOY_1, 0, -3), shift(COCO_DECOY_1, 0, -1), COCO_DECOY_1]
+_D1 = _room(COCO_DECOY_1)
+COCO_DECOY = [squash(_D1, 0.85), _shift_strict(_D1, 0, -3), _shift_strict(_D1, 0, -1), _D1]
 
 # Squeaky Toy icon 16 x 16: a little blue Coco-shaped squeaky toy with a nozzle, squeaking
 SQUEAKER_ICON = R([
@@ -336,11 +350,11 @@ COCO_KO = [_ko(0), _ko(1)]
 # ---------------------------------------------------------------- 2.14 Knighted: Coco Blue + Ser Junkan at Holy Knight
 # Junkan bakes each armour level into its own clip set (junk_shspcg_* is the Holy Knight) and swaps clip names at
 # runtime; Coco does the same. The tin kettle helmet (gold band, red plume) is drawn onto every base drawing BEFORE
-# the clip's squash/shift, so it squashes and hops with him. Canvas grows to 16 x 20: 7 rows above the 13-row
+# the clip's squash/shift, so it squashes and hops with him. Canvas grows to 17 x 20: 7 rows above the 13-row
 # drawing leave room for the plume on the 3-px hop. Strict pad/overlay/shift: a clipped plume raises.
-from pixel import pad as _pad_strict, overlay as _overlay_strict, shift as _shift_strict
+from pixel import overlay as _overlay_strict
 
-KNIGHT_W, KNIGHT_H = 16, 20
+KNIGHT_W, KNIGHT_H = COCO_W, 20
 KNIGHT_TOP = KNIGHT_H - 13
 # 9 x 8, plume swept back; the bottom row (dark gold brim edge) sits on the drawing's row 3, between the ears. Light from top-left:
 # tin S -> Z -> z, gold A -> a -> y, plume R / r.
@@ -384,7 +398,7 @@ COCO_KNIGHT_MOVE = [
     KNIGHT_IDLE_1,
     squash(KNIGHT_IDLE_2, 0.9),
 ]
-COCO_KNIGHT_PET = [KNIGHT_PET_1, squash(KNIGHT_PET_1, 0.92), KNIGHT_PET_1, shift(KNIGHT_PET_1, 1, 0)]
+COCO_KNIGHT_PET = [KNIGHT_PET_1, squash(KNIGHT_PET_1, 0.92), KNIGHT_PET_1, _shift_strict(KNIGHT_PET_1, 1, 0)]
 COCO_KNIGHT_BLOCK = [squash(KNIGHT_BLOCK_1, 0.9), KNIGHT_BLOCK_1, _shift_strict(KNIGHT_BLOCK_1, 0, -1)]
 # knocked out: the helmet came off and lies beside him (24 x 16)
 COCO_KNIGHT_KO = [_overlay_strict(_pad_strict(COCO_KO[i], 24, 16, 0, 0), HELMET_DOWN, 15, 11) for i in range(2)]

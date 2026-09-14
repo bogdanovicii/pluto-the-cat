@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.15.1
+- Coco Blue keeps his ears when he hops: the move frames used to cut off the top of his head (up to 25 pixels on the highest hop), and the last frame of the pet wiggle lost his right edge. His frames now have room above and to the side.
+
 ## 2.15.0
 - Coco Blue has friends. **Playdate** (Coco Blue + Dog): while Coco is a decoy the Dog runs at the enemy chasing him and bites it (6 damage every 1.2 s). Petting either one makes the other wiggle with hearts, and petting the Dog gives Pluto Coco's burst of speed.
 - **Squire** (Coco Blue + Ser Junkan): Coco holds one more bullet per Junkan rank (up to +6 at Holy Knight), and while Coco is a decoy Junkan charges the enemy chasing him.
