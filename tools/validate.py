@@ -133,10 +133,20 @@ for need in ('pluto_taiyaki_cannon_idle_001.png', 'pluto_katana_idle_001.png'):
 for need in ('pluto_mini_taiyaki_001.png', 'pluto_katana_wave_001.png'):
     if not os.path.exists(os.path.join(RES, 'SpriteRoot', 'ProjectileCollection', need)):
         err(f'samurai projectile sprite missing: {need}')
-for prefix in ('pluto_kibble_sack', 'pluto_taiyaki_cannon', 'pluto_katana'):
+for prefix in ('pluto_kibble_sack', 'pluto_taiyaki_cannon', 'pluto_katana_idle', 'pluto_katana_reload'):
     gun_sizes = {Image.open(os.path.join(wc, f)).size for f in pngs if f.startswith(prefix)}
     if len(gun_sizes) != 1:
         err(f'{prefix} frames must share one canvas size, got {gun_sizes}')
+# 2.16.1 katana swing: the fire frames use a taller canvas (grip at (6, 40)); KatanaGun.cs shifts them so the grip
+# stays at the idle grip (6, 13). Both numbers must match the constants there.
+_katana_fire = sorted(f for f in pngs if f.startswith('pluto_katana_fire_'))
+if len(_katana_fire) < 6:
+    err(f'katana swing needs at least 6 fire frames, got {len(_katana_fire)}')
+if {Image.open(os.path.join(wc, f)).size for f in _katana_fire} != {(43, 80)}:
+    err('katana fire frames must all be 43x80 (swing canvas)')
+_katana_src = open(os.path.join(ROOT, 'PlutoTheCat', 'src', 'KatanaGun.cs')).read()
+if 'SwingGripOffsetPixels = 27' not in _katana_src:
+    err('KatanaGun.cs must shift the fire frames down by 27 px (SwingGripOffsetPixels = 27)')
 for f in pngs:
     j = json.load(open(os.path.join(wc, f[:-4] + '.jtk2d')))
     if (j['width'], j['height']) != Image.open(os.path.join(wc, f)).size:

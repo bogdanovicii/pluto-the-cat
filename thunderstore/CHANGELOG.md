@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.16.1
+- The **Katana** now swings like Blasphemy: the blade sweeps from raised to low around Pluto's paw over 8 frames, with a thin steel-white crescent trailing it. Before, the fire animation held the blade still and only showed a crescent.
+
 ## 2.16.0
 - **Samurai Pluto**: a new alternate costume replaces Wet Pluto. Crimson hachimaki with trailing tails, indigo haori with a white paw crest and an open collar, crimson obi, charcoal hakama, on every animation (rolls and death included).
 - The costume unlocks the vanilla way: beat Pluto's past (the Vet Visit) and a kimono stand appears in the Breach next to him. The old forced unlock is gone. Testing key `UnlockSamuraiCostume` (Debug, default false) shows the stand anyway.

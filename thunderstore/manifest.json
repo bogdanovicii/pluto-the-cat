@@ -1,6 +1,6 @@
 {
   "name": "Pluto_The_Cat",
-  "version_number": "2.16.0",
+  "version_number": "2.16.1",
   "website_url": "",
   "description": "Adds Pluto the Cat as a playable Gungeoneer, with his Royal Kibble Sack and a Wet Food Can that makes enemies fall in love.",
   "dependencies": [

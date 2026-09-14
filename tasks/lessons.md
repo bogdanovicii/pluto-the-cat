@@ -87,3 +87,8 @@
 ## Shared git index (2026-09-14, commit ebdebfc)
 - Two sessions share the parent repo's index. A plain `git add X && git commit` records everything the other session has staged too: ebdebfc (a one-line spec edit) carried 342 files of the character session's 2.16.0 work.
 - Rule: in the parent repo, commit only with explicit paths in one step, `git commit -m "..." -- <paths>`, and never leave files staged between commands. Check `git show --stat` after committing.
+
+## Hero sword swing is the gun's fire animation (2.16.1, user: "the katana does not have a swing animation like blasphemy")
+- `IsHeroSword` only runs the slash logic and plays `shootAnimation` (Gun.cs HandleShootAnimation); nothing rotates the sword. The visible swing must be drawn: the blade sweeps around the grip over many frames (Blasphemy, Planetside's Crystalline).
+- A still blade plus a crescent reads as "no swing". Review a weapon's fire clip as motion (APNG at the real fps), not as a strip of stills.
+- Swing frames need a taller canvas; shift their sprite definitions in code (position0..3) so the grip pixel lands on the idle grip, and keep the jtk2d hand at the idle position.
