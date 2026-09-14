@@ -176,3 +176,10 @@ Tester: past runs start to finish, bullets hit for half a heart, 0 bank errors, 
 - [ ] Notes from the log: last-reinforcement Fungun shows the odd display name "Your own slow reflexes" (vanilla actor name, GUID verified earlier); Poisbulon has no bullet bank (goop enemy)
 - [x] Build, tests (132), review clean, released v0.12.0 (sha 76ee03f8...001f), drop page Pluto 2.15.3 + Vet Visit 0.12.0, tester messaged
 - [ ] Await Steam results for 0.12.0
+
+## 0.13.0 (user, 2026-09-14, screenshots of 0.12.0 in game)
+- [ ] Win picture looks bad (tile grid, grey box, brown blob because the main mod's Pluto art can't be imported at build): hand-drawn victory scene with Pluto, the knocked-out Vet, Bogdan and Bianca; agent on cards.win_pic
+- [ ] Pluto walks into the reception counter from the south: collider vs sprite footprint, audit all standing props, add a check; agent on clinic_objects.py
+- [ ] Two owners replace the generic Owner: Bogdan (guy) and Bianca (long brown hair, dressed in yellow); sprites, intro beats, comments; agent on npc_poses.py + VetVisitController.cs
+- [ ] Offer the user more improvement ideas
+- [ ] Build, tests, review, release 0.13.0, drop page, tester message
