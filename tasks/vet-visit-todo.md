@@ -158,7 +158,8 @@ dialogue incl. side characters; room nicer, more engaging, hand-drawn, structure
 - [x] Code: animated props + examinable props in ClinicObjects (missing frames skipped, not fatal)
 - [x] Build, validate, 112 tests, checklist milestone 11; commit 43b15e1, tag v0.11.0, GitHub release (214846 bytes, sha256 ca027ade...f2d2); drop page v36 (Vet Visit card swapped in the published index.html, both payloads decoded); tester messaged (Download [1e08e7])
 - [x] Gemini credits back: layout_waiting_room/ward/theatre references generated (reference/gemini/past_concepts/layout_*.png); the redesigned room already follows them
-- [ ] Vet sprite redraw in Enter the Gungeon style (user, 2026-09-14): agent running on tools/vet_poses.py with new Gemini references; then CastLayout VET_* (canvas, hitbox, shoot point) wired into VetBoss.cs, build, release 0.11.1
+- [x] Vet sprite redraw in Enter the Gungeon style (user, 2026-09-14): 48x40 big-head Vet from Gemini sprite references; CastLayout VET_* drives hitbox, shadow and shoot point; 118 tests; released v0.11.1 (sha 7092f597...), drop page v37 (Pluto 2.15.1 + Vet Visit 0.11.1), tester Download [1e08e7] messaged
+- [ ] Await Steam results for 0.11.0/0.11.1 (hits register, AI, boss card, dialogue on screen, new Vet sprite)
 - [ ] Tester must report for 0.11.0: bullet lines (built WxH), hits on Pluto, dialogue on screen, wave behaviour, boss card, room screenshots, hearts lost and Vet time
 - [x] Code review of 0.11.0 before compiling: no compile blockers; fixed the Syringe Tech lunge fan (a dash's bulletScript is force-stopped before it ticks -> lunge + shoot sequence), PastTalk measuring (renderer bounds after the scale-in, only its own box, intercom anchor not parented to Pluto, body sprite for the head), missing animation frames non-fatal, anesthesia EndOnBlank
 - [x] First full 0.11.0 build: exit 0, validate all checks, 106 tests OK, 196 PNGs embedded, 97 placeables
