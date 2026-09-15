@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.17.0 (in progress)
+## 2.17.0 (test build, not released)
 
 - **Five new cat items** in the loot pool for every character, each with its own Ammonomicon page and lore:
   - **Ball of Yarn** (active, C): a bouncing ball that tangles enemies it touches (stunned, then slowed; bosses only slowed). Walk into it to bat it again. `YarnSeconds`, `YarnDamage`, `YarnTangleSeconds`, `YarnSlowSeconds`, `YarnCooldownDamage`.
