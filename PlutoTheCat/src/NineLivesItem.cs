@@ -9,15 +9,16 @@ namespace PlutoTheCat
     /// run starts on his seventh (PlutoConfig.StartingLife). While he is not yet on his ninth, a hit
     /// that would kill him is cancelled: he stands back up with one full heart, gets a short
     /// invulnerability window and moves on to the next life. On the ninth life there is no next one.
+    /// The current life is always readable: the item's subtitle names it (pickup notice and Ammonomicon,
+    /// e.g. from the pause menu), and every new floor opens with a short "Seventh life. Two to spare." notice.
     /// </summary>
     public class NineLivesItem : PassiveItem
     {
         public const string ID = "pluto:nine_lives";
-        public const int LastLife = 9;
+        public const int LastLife = NineLivesRules.LastLife;
         public int CurrentLife;
-        public int LivesLeft { get { return LastLife - CurrentLife; } }   // saves still available
-
-        private static readonly string[] Ordinal = { "", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth" };
+        public int LivesLeft { get { return NineLivesRules.SavesLeft(CurrentLife); } }   // saves still available
+        private bool listening;
 
         public static void Init()
         {
@@ -41,9 +42,11 @@ namespace PlutoTheCat
 
         public override void Pickup(PlayerController player)
         {
-            if (!m_pickedUpThisRun) CurrentLife = Mathf.Clamp(PlutoConfig.StartingLife, 1, LastLife);
+            if (!m_pickedUpThisRun) CurrentLife = NineLivesRules.ClampLife(PlutoConfig.StartingLife);
             base.Pickup(player);
             player.healthHaver.ModifyDamage += OnModifyDamage;
+            ListenForFloors(true);
+            RefreshSubtitle();
         }
 
         // Keep the count across a mid-run save and continue.
@@ -57,11 +60,13 @@ namespace PlutoTheCat
         {
             base.MidGameDeserialize(data);
             if (data != null && data.Count > 0 && data[data.Count - 1] is int saved) CurrentLife = saved;
+            RefreshSubtitle();
         }
 
         public override DebrisObject Drop(PlayerController player)
         {
             player.healthHaver.ModifyDamage -= OnModifyDamage;
+            ListenForFloors(false);
             return base.Drop(player);
         }
 
@@ -69,7 +74,40 @@ namespace PlutoTheCat
         {
             if (Owner != null && Owner.healthHaver != null)
                 Owner.healthHaver.ModifyDamage -= OnModifyDamage;
+            ListenForFloors(false);
             base.OnDestroy();
+        }
+
+        private void ListenForFloors(bool on)
+        {
+            if (on == listening || !GameManager.HasInstance) return;
+            if (on) GameManager.Instance.OnNewLevelFullyLoaded += OnNewFloor;
+            else GameManager.Instance.OnNewLevelFullyLoaded -= OnNewFloor;
+            listening = on;
+        }
+
+        /// <summary>A compact reminder at the start of every floor, so the saves can be planned around.</summary>
+        private void OnNewFloor()
+        {
+            if (this == null || Owner == null) return;
+            Notify(NineLivesRules.Status(CurrentLife));
+        }
+
+        /// <summary>The subtitle names the current life ("Eighth Life"), readable any time in the Ammonomicon.</summary>
+        private void RefreshSubtitle()
+        {
+            try { this.SetShortDescription(NineLivesRules.Title(CurrentLife)); }
+            catch (System.Exception e) { Plugin.Log("Nine Lives subtitle failed: " + e.Message); }
+        }
+
+        private void Notify(string text)
+        {
+            try
+            {
+                GameUIRoot.Instance.notificationController.DoCustomNotification("Nine Lives", text,
+                    sprite.Collection, sprite.spriteId, UINotificationController.NotificationColor.PURPLE, true, false);
+            }
+            catch (System.Exception e) { Plugin.Log("notification failed: " + e.Message); }
         }
 
         private void OnModifyDamage(HealthHaver hh, HealthHaver.ModifyDamageEventArgs args)
@@ -90,14 +128,8 @@ namespace PlutoTheCat
             player.ForceBlank(4f, 0.5f, false, true, null, false, -1f);   // small blank to clear nearby bullets
             PlutoVFX.Spawn(PlutoVFX.FurPuff, player.CenterPosition);
             PuffedUpItem.Trigger(player);   // guarded internally
-            try
-            {
-                string life = Ordinal[Mathf.Clamp(CurrentLife, 1, LastLife)];
-                GameUIRoot.Instance.notificationController.DoCustomNotification("Nine Lives",
-                    CurrentLife >= LastLife ? "Ninth life. The last one." : char.ToUpper(life[0]) + life.Substring(1) + " life.",
-                    sprite.Collection, sprite.spriteId, UINotificationController.NotificationColor.PURPLE, true, false);
-            }
-            catch (System.Exception e) { Plugin.Log("notification failed: " + e.Message); }
+            Notify(NineLivesRules.Status(CurrentLife));                 // "Eighth life. One to spare." / "Ninth life. The last one."
+            RefreshSubtitle();
             Plugin.Log("Nine Lives: now on life " + CurrentLife + " of " + LastLife + ".");
         }
     }

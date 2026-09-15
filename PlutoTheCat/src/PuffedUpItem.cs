@@ -8,6 +8,8 @@ namespace PlutoTheCat
     /// Puffed Up: Pluto's anger passive. Every hit (including one Nine Lives cancels) makes him bristle
     /// for a few seconds: the body sprite scales up, a ring of standing fur is drawn behind him, anger
     /// marks pop over his head, and he hits harder, fires faster and moves faster until he calms down.
+    /// The samurai kimono hides the fur ring, so in that costume the anger shows as a red flash on the
+    /// hit, a red pulse while it lasts and anger marks that keep popping over his head (AngerCueRules).
     /// </summary>
     public class PuffedUpItem : PassiveItem
     {
@@ -70,9 +72,11 @@ namespace PlutoTheCat
         /// <summary>Per-player anger state: stat modifiers, timer, and the fur overlay that follows every frame.</summary>
         public class AngerDoer : MonoBehaviour
         {
+            private const string TintSource = "PlutoPuffedUp";
+            private static readonly Color AngerRed = new Color(1f, 0.18f, 0.1f);
             private PlayerController player;
-            private float timeLeft, elapsed, shudderTimer, particleTimer;
-            private bool angry;
+            private float timeLeft, elapsed, shudderTimer, particleTimer, markTimer;
+            private bool angry, tinted;
             private GameObject furObj;
             private tk2dSprite fur;
             private StatModifier damageMod, fireMod;
@@ -87,6 +91,7 @@ namespace PlutoTheCat
                 if (angry) return;   // refresh only
                 angry = true;
                 elapsed = 0f; shudderTimer = 1.2f; particleTimer = 0.8f;
+                markTimer = AngerCueRules.MarkInterval;   // the first marks spawn below
 
                 damageMod = new StatModifier { statToBoost = PlayerStats.StatType.Damage, modifyType = StatModifier.ModifyMethod.MULTIPLICATIVE, amount = PlutoConfig.AngryDamageMultiplier, ignoredForSaveData = true };
                 fireMod = new StatModifier { statToBoost = PlayerStats.StatType.RateOfFire, modifyType = StatModifier.ModifyMethod.MULTIPLICATIVE, amount = PlutoConfig.AngryFireRateMultiplier, ignoredForSaveData = true };
@@ -106,6 +111,7 @@ namespace PlutoTheCat
             private void CalmDown()
             {
                 angry = false;
+                ClearCostumeCue();
                 if (player != null)
                 {
                     player.ownerlessStatModifiers.Remove(damageMod);
@@ -114,6 +120,29 @@ namespace PlutoTheCat
                     if (player.sprite != null) player.sprite.scale = Vector3.one;
                 }
                 ShowFur(false);
+            }
+
+            /// <summary>Samurai costume only: red flash then pulse on the body, and repeating anger marks.</summary>
+            private void UpdateCostumeCue(float dt)
+            {
+                if (!player.IsUsingAlternateCostume)
+                {
+                    ClearCostumeCue();   // costume swapped mid-anger: the fur ring takes over
+                    return;
+                }
+                Color tint = AngerRed;
+                tint.a = AngerCueRules.TintAlpha(elapsed, timeLeft);
+                player.RegisterOverrideColor(tint, TintSource);
+                tinted = true;
+                bool spawn;
+                markTimer = AngerCueRules.NextMarkTimer(markTimer, dt, out spawn);
+                if (spawn) PlutoVFX.Spawn(PlutoVFX.AngerMarks, player.CenterPosition + new Vector2(0f, 1.2f));
+            }
+
+            private void ClearCostumeCue()
+            {
+                if (tinted && player != null) player.DeregisterOverrideColor(TintSource);
+                tinted = false;
             }
 
             private void ShowFur(bool on)
@@ -160,6 +189,7 @@ namespace PlutoTheCat
                     particleTimer = 1.5f;
                     PlutoVFX.Spawn(PlutoVFX.FurPuff, player.CenterPosition + Random.insideUnitCircle * 0.5f);
                 }
+                UpdateCostumeCue(dt);
                 if (fur == null || player.sprite == null || player.spriteAnimator == null) return;
 
                 tk2dSpriteAnimationClip clip = player.spriteAnimator.CurrentClip;
