@@ -96,3 +96,7 @@
 ## Playdate still did nothing visible (2.16.1 user report: "the dog does not attack, it should attack like the wolf does")
 - Vanilla Dog (item 300, enemy Dog c07ef60a...) has no attack behaviours; the attacking "Wolf" is a separate companion prefab (Dog_Past ededff1d..., item 492) with SeekTargetBehavior + WolfCompanionAttackBehavior. A scripted ApplyDamage next to an idle-looking Dog reads as "no attack" even when it lands.
 - When the user names a vanilla behaviour to copy ("like the wolf"), reuse that behaviour class with its prefab values instead of scripting a look-alike; add it to the speculator lists, call RefreshBehaviors(), and on removal Interrupt() first and reset BehaviorOverridesVelocity, LockFacingDirection, PathableTiles and OverrideTarget.
+
+## Narrowing an automatic repair (combat polish, 2026-09-15 review finding)
+- The Vet Visit loadout watchdog was narrowed to respect foreign input/gun/render locks, but the broad repair became console-only (`vet_loadout`). That silently removed the automatic fix for the 0.10.0 in-game "Pluto cannot fire" bug; tests passed because they only checked the narrowing.
+- Rule: when making a recovery path less aggressive, keep an escalation path (persistent + unexplained state for N checks -> the broad repair, logged), and add a test that the escalation is still wired. A fix verified in game must not become manual-only without the user's say.
