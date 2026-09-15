@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.16.5
+- **Coco's knight helmet really shows with Ser Junkan**: the helmet swap wrote the animation name the game ignores for Coco's one-direction clips, so he never changed (the Knighted helmet had never shown since 2.15.0). He now wears the gold plumed helmet at every Junkan form.
+- **Ammonomicon pages for the Taiyaki Cannon and Katana** show the gun's picture (they were blank).
+- **Samurai Puffed Up is fluffy again**: the samurai costume gets its own standing-fur ring that stays off the kimono, alongside the red anger cue.
+- **The Katana makes a sound when it swings** (it borrows Blasphemy's swing sound).
+
 ## 2.16.4 (test build, not released)
 - **Coco runs again during the Squeaky Toy decoy**: 2.16.3 let him stand still when no bullet threatened him. Every decoy leg now runs 2.5-3.5 tiles in a panicky zigzag, still steering away from incoming bullets and staying within about 8 tiles of Pluto.
 - **Coco wears the gold knight helmet** whenever Ser Junkan is with him (Squire), whatever Junkan's form; it comes off when the synergy ends and lies beside him when he is knocked out.
