@@ -19,6 +19,7 @@ import character_anims as A  # noqa: E402
 import ui_and_items as U  # noqa: E402
 import poses as P  # noqa: E402
 import art_v4 as V4  # noqa: E402
+import art_yasupen as PEN  # noqa: E402
 import art_v5 as V5  # noqa: E402
 import fur as FUR  # noqa: E402
 import weapon_layout as WL  # noqa: E402
@@ -194,6 +195,13 @@ def gun_and_items():
     for clip, frames in (('idle', V4.COCO_KNIGHT_IDLE), ('move', V4.COCO_KNIGHT_MOVE), ('pet', V4.COCO_KNIGHT_PET),
                          ('block', V4.COCO_KNIGHT_BLOCK), ('ko', V4.COCO_KNIGHT_KO)):
         write_clip(os.path.join(comp, 'knight_' + clip), margin(frames), 'coco_knight_' + clip, body=True)
+    # 2.18.0 Yasupen companion (same margin and outline stripping as Coco)
+    pen = os.path.join(RES, 'Companions', 'yasupen')
+    clean(pen)
+    for clip, frames in (('idle', PEN.PEN_IDLE), ('move', PEN.PEN_MOVE), ('slide', PEN.PEN_SLIDE),
+                         ('pet', PEN.PEN_PET), ('cheer', PEN.PEN_CHEER)):
+        write_clip(os.path.join(pen, clip), margin(frames), 'yasupen_' + clip, body=True)
+    save(PEN.PEN_ICON, os.path.join(items, 'yasupen_icon.png'))
     save(V4.SQUEAKER_ICON, os.path.join(items, 'squeaker_icon.png'))
     vfx = os.path.join(RES, 'VFX')
     clean(vfx)
@@ -258,6 +266,10 @@ def previews():
                    ('coco_knight_pet', V4.COCO_KNIGHT_PET), ('coco_knight_block', V4.COCO_KNIGHT_BLOCK), ('coco_knight_ko', V4.COCO_KNIGHT_KO)],
                   os.path.join(PREVIEW, 'coco-helmets.png'), scale=4)
     V.scale_check([V4.COCO_IDLE_1, V4.KNIGHT_IDLE_1], os.path.join(PREVIEW, 'coco-helmets-scale.png'))
+    V.strip_sheet([('yasupen_idle', PEN.PEN_IDLE), ('yasupen_move', PEN.PEN_MOVE), ('yasupen_slide', PEN.PEN_SLIDE),
+                   ('yasupen_pet', PEN.PEN_PET), ('yasupen_cheer', PEN.PEN_CHEER)],
+                  os.path.join(PREVIEW, 'yasupen.png'), scale=4)
+    V.scale_check([V4.COCO_IDLE_1, PEN.PEN_IDLE_1], os.path.join(PREVIEW, 'yasupen-scale.png'))
     import weapon_preview   # weapon alignment sheets (grip, muzzle, aim, reach) from tools/weapon_layout.py
     weapon_preview.main()
 

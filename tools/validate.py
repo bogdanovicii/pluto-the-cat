@@ -194,6 +194,15 @@ for sub in ('idle', 'move', 'pet', 'block'):
     sizes = {Image.open(os.path.join(d, f)).size for f in os.listdir(d) if f.endswith('.png')} if os.path.isdir(d) else set()
     if sizes != {(19, 18)}:
         err(f'companion clip {sub}: frame sizes {sizes} != 19x18')
+for sub, n in (('idle', 4), ('move', 4), ('slide', 2), ('pet', 4), ('cheer', 2)):
+    d = os.path.join(RES, 'Companions', 'yasupen', sub)
+    frames = [f for f in os.listdir(d) if f.endswith('.png')] if os.path.isdir(d) else []
+    if len(frames) != n:
+        err(f'yasupen clip {sub} should have {n} frames')
+    elif {Image.open(os.path.join(d, f)).size for f in frames} != {(22, 26)}:
+        err(f'yasupen clip {sub}: frames must be 22x26')
+if not os.path.exists(os.path.join(items, 'yasupen_icon.png')):
+    err('item art missing: yasupen_icon.png')
 for f in ['fur_halo_001.png', 'fur_halo_002.png', 'puffed_up_icon.png']:
     if not os.path.exists(os.path.join(items, f)):
         err(f'item art missing: {f}')

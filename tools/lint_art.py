@@ -34,6 +34,7 @@ AIRBORNE = {
     'ghost_idle_left': ALL, 'ghost_idle_right': ALL, 'ghost_sneeze_left': ALL, 'ghost_sneeze_right': ALL,
     'death_coop': ALL, 'death': {5}, 'death_shot': {4}, 'item_get': {1}, 'select_choose': {1}, 'stretch': ALL,
     'coco_move': {1, 2, 3}, 'coco_block': {2}, 'coco_knight_move': {1, 2, 3}, 'coco_knight_block': {2},
+    'yasupen_move': {1, 3}, 'yasupen_pet': {3}, 'yasupen_cheer': {1},   # 2.18.0 Yasupen hop frames (shifted up 1 px)
     'pet': {1}, 'slide_right': ALL, 'slide_up': ALL, 'slide_down': ALL, 'chest_recover': set(),
 }
 # clips where repeated frames are intentional holds
@@ -42,7 +43,7 @@ HOLDS = {'death', 'death_shot', 'item_get', 'chest_recover', 'select_choose', 'k
          'slide_up', 'slide_down', 'stretch', 'ghost_sneeze_left', 'ghost_sneeze_right', 'timefall', 'spinfall',
          'dodge', 'dodge_bw', 'dodge_left', 'dodge_left_bw', 'death_coop', 'tablekick_right', 'jetpack_down',
          'jetpack_right', 'jetpack_right_bw', 'jetpack_up', 'doorway', 'idle', 'idle_forward', 'idle_backward', 'idle_bw',
-         'select_idle', 'groom', 'coco_idle', 'coco_knight_idle'}
+         'select_idle', 'groom', 'coco_idle', 'coco_knight_idle', 'yasupen_idle'}
 
 
 def bbox(f):
@@ -123,7 +124,10 @@ def main():
     knight = {'coco_knight_idle': V4.COCO_KNIGHT_IDLE, 'coco_knight_move': V4.COCO_KNIGHT_MOVE,
               'coco_knight_pet': V4.COCO_KNIGHT_PET, 'coco_knight_block': V4.COCO_KNIGHT_BLOCK}
     e3, w3 = lint(knight, V4.KNIGHT_W, V4.KNIGHT_H, V4.KNIGHT_H - 2, label='companion/')
-    errors, warnings = e1 + e2 + e3 + e4, w1 + w2 + w3 + w4
+    import art_yasupen as PEN
+    pen = {'yasupen_idle': PEN.PEN_IDLE, 'yasupen_move': PEN.PEN_MOVE, 'yasupen_pet': PEN.PEN_PET, 'yasupen_cheer': PEN.PEN_CHEER}
+    e5, w5 = lint(pen, PEN.PEN_W, PEN.PEN_H, PEN.PEN_H - 2, label='companion/')
+    errors, warnings = e1 + e2 + e3 + e4 + e5, w1 + w2 + w3 + w4 + w5
     for w in warnings:
         print('warn ', w)
     for e in errors:
