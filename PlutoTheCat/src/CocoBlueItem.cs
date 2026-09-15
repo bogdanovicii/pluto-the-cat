@@ -169,9 +169,13 @@ namespace PlutoTheCat
                 PlutoVFX.Spawn(PlutoVFX.LoveBurst, (Vector2)transform.position + new Vector2(0.5f, 1f));
             }
 
+            // A Single-direction animation plays its Prefix (DirectionalAnimation.GetInfo(0) returns Prefix for
+            // DirectionType.Single and never reads AnimNames); Junkan's two-way clips read AnimNames. Write both.
             private static void SetClip(DirectionalAnimation anim, string clip)
             {
-                if (anim != null && anim.AnimNames != null && anim.AnimNames.Length > 0) anim.AnimNames[0] = clip;
+                if (anim == null) return;
+                anim.Prefix = clip;
+                if (anim.AnimNames != null && anim.AnimNames.Length > 0) anim.AnimNames[0] = clip;
             }
 
             public static CocoBlueController For(PlayerController player)

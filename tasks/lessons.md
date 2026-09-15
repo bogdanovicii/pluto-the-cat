@@ -110,3 +110,7 @@
 - a7dfe7d picked "turn the fur off for the costume" out of the spec's two options (mask where the kimono covers, or turn off) and swapped in a red tint cue. The user reads the fur as the item itself, so removing it for a costume was a regression, not a style choice.
 - When a costume or skin conflicts with an existing visual effect, keep the effect and adapt it to the costume (here: grow fur only from fur-coloured edges), or ask the user before dropping it.
 - "Gets bigger" comes only from `Balance/AngryScale` != 1 in the tester's cfg (the default has been 1.0 since 2.4.1), so a size change the defaults cannot produce points at a stale config value.
+
+## Coco helmet never showed (2.16.4 in-game report, 2026-09-15)
+- "coco still has no helmet when i have junkan", even after the clip choice was fixed: SetHelmet rewrote only DirectionalAnimation.AnimNames[0], like Ser Junkan's armour swap. But Coco's clips are DirectionType.Single, and DirectionalAnimation.GetInfo(0) returns Prefix for Single, never AnimNames (Re-ETG decompile). Junkan's clips are TwoWayHorizontal, which is why his swap works. The Knighted helmet had never shown since 2.15.0.
+- Rule: when copying a vanilla technique, check the preconditions in the decompile (here the DirectionType) before assuming it transfers; for Single animations set Prefix (and AnimNames[0]).

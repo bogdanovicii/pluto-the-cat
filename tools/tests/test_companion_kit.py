@@ -46,5 +46,13 @@ class CompanionKitTests(unittest.TestCase):
         self.assertGreater(bound, 30)
 
 
+    def test_helmet_swap_writes_prefix(self):
+        # Coco's clips are DirectionType.Single: the game plays DirectionalAnimation.Prefix and ignores AnimNames,
+        # so a helmet swap that only rewrites AnimNames[0] never shows (2.16.4 in-game report).
+        src = (ROOT / 'PlutoTheCat/src/CocoBlueItem.cs').read_text(encoding='utf-8')
+        start = src.index('private static void SetClip(')
+        body = src[start:src.index('}', src.index('{', start)) + 1]
+        self.assertIn('anim.Prefix = clip', body)
+
 if __name__ == '__main__':
     unittest.main()
