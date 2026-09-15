@@ -1,0 +1,15 @@
+Pixel-art item icon sheet for the video game Enter the Gungeon, in exactly the same pixel style, pixel size, outline weight and shading as the attached reference icons (existing 16x16 item icons of this mod shown at 16x zoom): chunky square pixels, a crisp 1-pixel dark brown-black outline (#1E1614) around every object, flat cel shading with 3 tones per material, light from the top-left, no gradients, no anti-aliasing, no blur, no text.
+
+Top row: THREE separate Japan-themed item icons, spaced far apart, each drawn LARGE so every pixel is a clear big square, each with the proportions of a 16x16 pixel icon:
+1. "MANEKI-NEKO": a small white Japanese beckoning lucky cat figurine sitting upright, white ceramic body (#F4F0E8, shade #D0C6B8), LEFT paw raised and bent forward, a red collar (#C0392B) with a round gold bell (#E8B04A, shade #B8742A), holding a gold koban coin against its chest, pink inner ears (#F5C6D0), a happy closed-eye face, one tiny calico patch of orange-brown (#C8763A) on the head.
+2. "DARUMA DOLL": a round red Japanese daruma doll (red #C0392B, shade #7E2A22, highlight #E8584A) with a white face area (#F4F0E8), gold eyebrow and beard swirls (#E8B04A), and ONLY THE LEFT EYE painted in as a black dot; the right eye is a blank white circle.
+3. "UCHIWA FAN": a round Japanese paper hand fan with a straight bamboo handle (#C8A266, shade #8B6A3E), the round paper face white (#F4F0E8) printed with a simple red sun circle (#C0392B) and three indigo wave lines (#2E3F6E) at the bottom, the bamboo ribs faintly visible through the paper.
+
+Bottom row: small effect sprites, each with the proportions of a 6 to 12 pixel sprite, spaced apart:
+- three curved white-and-pale-cyan wind gust wisps (#F4F0E8, #BFE3EE) of different sizes, like swooshes,
+- the daruma doll rolled onto its side (same colours) for a rolling frame,
+- a single gold koban coin with a shine pixel.
+
+All pieces share one palette family with the reference icons, plus traditional Japanese red, gold, white and indigo. Chunky, readable silhouettes at tiny size, like vanilla Gungeon item icons.
+
+Background: one flat solid chroma green (#00B140), no scenery, no text, no labels, no shadows on the background.

@@ -1,0 +1,16 @@
+Pixel-art companion sprite sheet for the video game Enter the Gungeon, in exactly the same pixel style, pixel size and shading as the attached reference companion sprites of this mod (the small blue cat plush companion shown zoomed): chunky square pixels, a crisp 1-pixel dark outline (#1E1614), flat cel shading with 3 tones per material, light from the top-left, no gradients, no anti-aliasing, no blur.
+
+The character: "YASUPEN", the twin brother of Donpen, the famous penguin mascot of the Japanese discount store Don Quijote. He must look almost exactly like Donpen: a chubby round midnight-blue penguin (blue #1F3A8A, shade #142760, highlight #3A5BC0) with a big round white belly and face patch (#F4F0E8, shade #D8D0C4), a short wide yellow-orange beak (#F2B53A, shade #C9851E) and yellow-orange flat feet, small black eyes with a white shine pixel, stubby flipper wings, and a floppy red Santa-style nightcap (#D32F2F, shade #9A1F1F) with a white fluffy trim and a white pom-pom that flops to one side. The twin's differences: on his white belly the big single katakana character ヤ in red (instead of Donpen's ド), and a bright neon-yellow handwritten price-tag sticker (#FFE14A with a hot pink #FF3D8B border) stuck crooked on his nightcap with the Japanese word 激安 written on it. He looks cheerful and a bit smug, like he just found a great bargain.
+
+Proportions of a 18x22 pixel character sprite. Draw these separate poses in one row, spaced far apart, all the same size and facing RIGHT:
+1. IDLE 1: standing, flippers down.
+2. IDLE 2: slight bounce, pom-pom flopped the other way.
+3. WADDLE 1: left foot forward, leaning.
+4. WADDLE 2: right foot forward, leaning the other way.
+5. BELLY SLIDE: lying flat on his belly sliding forward, flippers back, nightcap streaming behind, two speed lines.
+6. HAPPY (being petted): eyes closed as happy arcs, flippers up, two small pink hearts.
+7. CHEER: holding up a tiny neon-yellow POP price sign above his head.
+
+Below the poses: a small item icon with the proportions of a 16x16 pixel icon: the neon-yellow 激安 price-tag sticker on its own, with a hot pink border and a tiny blue penguin silhouette in the corner.
+
+Background: one flat solid chroma green (#00B140), no scenery, no text other than the ヤ on his belly and the 激安 on the price tags, no labels, no shadows on the background.

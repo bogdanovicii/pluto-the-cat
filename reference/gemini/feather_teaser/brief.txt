@@ -1,0 +1,14 @@
+Pixel-art weapon sprite sheet for the video game Enter the Gungeon, in exactly the same pixel style, pixel size, outline weight and shading as the attached reference gun sprites of this mod (shown zoomed): chunky square pixels, a crisp 1-pixel dark brown-black outline (#1E1614), flat cel shading with 3 tones per material, light from the top-left, no gradients, no anti-aliasing, no blur, no text.
+
+The weapon: "FEATHER TEASER", a cat teaser wand toy used as a gun. Held sideways pointing RIGHT, grip at the lower left where a paw holds it. Proportions of a 40x20 pixel gun sprite. A thin flexible stick (wood #C8A266, shade #8B6A3E) with a soft pink foam grip (#F5C6D0, shade #E8A0B0) at the left end; from the tip hangs a short string (#F4F0E8) holding a bunch of three fluffy feathers in bright colours: hot pink (#E8588A), sunny yellow (#F2C94C) and sky blue (#6FB7D8), plus a tiny silver bell (#C9CED6) where the feathers are tied.
+
+Draw these separate frames in one row, spaced far apart, all on the same canvas size with the grip in the same place:
+1. IDLE: wand held level, feathers hanging and swaying slightly.
+2. CHARGE: wand pulled back and bent, feathers trembling, two small motion lines.
+3. FIRE: wand snapped forward, the string and feathers flung out straight to the right, a short whoosh arc.
+4. EMPTY: the stick alone with an empty string end curled (the feathers have flown away as the projectile).
+5. RETURN: the feathers coming back and re-attaching to the string with a little sparkle.
+
+Below the frames, the projectile, each with the proportions of a 10 to 14 pixel sprite: the feather bunch flying on its own in two rotation frames (tilted up and tilted down) with a short string tail, and a small burst of three single loose feathers for when it hits.
+
+Background: one flat solid chroma green (#00B140), no scenery, no text, no labels, no shadows on the background. Do not use any green in the weapon itself.

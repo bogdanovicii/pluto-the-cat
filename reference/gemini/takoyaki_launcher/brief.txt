@@ -1,0 +1,14 @@
+Pixel-art weapon sprite sheet for the video game Enter the Gungeon, in exactly the same pixel style, pixel size, outline weight and shading as the attached reference gun sprites of this mod (shown zoomed; the golden fish-shaped Taiyaki Cannon is the sister weapon of this one): chunky square pixels, a crisp 1-pixel dark brown-black outline (#1E1614), flat cel shading with 3 tones per material, light from the top-left, no gradients, no anti-aliasing, no blur, no text.
+
+The weapon: "TAKOYAKI LAUNCHER", an Osaka street-food takoyaki grill turned into a mortar gun. Held sideways, pointing RIGHT and slightly upward, grip at the lower left where a paw holds it. Proportions of a 34x22 pixel gun sprite. A black cast-iron takoyaki pan body (#3B3438, shade #26211F, highlight #5E5660) with a row of round half-sphere cups along its top, three golden takoyaki balls sitting in the cups (#D9A441, shade #A8702E) drizzled with dark brown sauce (#5A3514) and white mayo zigzags (#F4F0E8), a short wide barrel at the front like a mortar, a wooden handle grip (#C8A266, shade #8B6A3E), and a small red paper lantern charm (#C0392B) hanging under the barrel.
+
+Draw these separate frames in one row, spaced far apart, all on the same canvas size with the grip in the same place:
+1. IDLE: loaded, steam rising gently from the balls in two small wisps.
+2. FIRE 1: the barrel kicks up, a puff of steam and a takoyaki ball launching out of the muzzle.
+3. FIRE 2: recoil settling, one cup now empty.
+4. RELOAD 1: a wooden skewer pick (#C8A266) flipping a new raw batter ball in a cup.
+5. RELOAD 2: the balls turning golden, sauce drizzled on, a little sparkle.
+
+Below the frames, the projectile and effects, each with the proportions of a 8 to 14 pixel sprite: a single flying takoyaki ball with sauce, mayo and a few pale bonito flakes on top (two rotation frames), a small orange-red burn flame, and a splat of sauce for the landing.
+
+Background: one flat solid chroma magenta (#FF00FF), no scenery, no text, no labels, no shadows on the background.

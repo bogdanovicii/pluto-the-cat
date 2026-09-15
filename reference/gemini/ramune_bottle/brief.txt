@@ -1,0 +1,15 @@
+Pixel-art weapon sprite sheet for the video game Enter the Gungeon, in exactly the same pixel style, pixel size, outline weight and shading as the attached reference gun sprites of this mod (shown zoomed): chunky square pixels, a crisp 1-pixel dark brown-black outline (#1E1614), flat cel shading with 3 tones per material, light from the top-left, no gradients, no anti-aliasing, no blur, no text.
+
+The weapon: "RAMUNE BOTTLE", a Japanese ramune soda bottle used as a gun. Held sideways with the neck pointing RIGHT, the round bottom at the lower left where a paw holds it. Proportions of a 30x16 pixel gun sprite. Classic codd-neck bottle of pale aqua glass (#A8E0DC, shade #6FB8B4, deep #3E8A88) with clear fizzy soda inside showing small white bubbles, the pinched neck holding a clear glass marble (#E6F4F8 with a white shine pixel), a blue plastic cap ring (#2E6FD0) at the mouth, and a small paper label with a simple red and blue wave stripe (#C0392B, #2E3F6E).
+
+Draw these separate frames in one row, spaced far apart, all on the same canvas size with the grip in the same place:
+1. IDLE: bottle at rest, a few bubbles.
+2. SHAKE 1: bottle tilted up, bubbles multiplying, two short shake lines.
+3. SHAKE 2: bottle tilted down, the soda foaming white inside.
+4. FIRE: a wide burst of white foam and bubbles blasting out of the mouth.
+5. MARBLE SHOT: the marble shooting out of the neck with a white pop star.
+6. RELOAD: the blue cap pressed back on with a small "pop" burst of bubbles and the marble back in the neck.
+
+Below the frames, the projectiles, each with the proportions of a 4 to 10 pixel sprite: three round soda bubbles of different sizes (pale aqua with a white shine), the glass marble projectile with a short motion streak, and a small foam splash for when it hits.
+
+Background: one flat solid chroma magenta (#FF00FF), no scenery, no text, no labels, no shadows on the background.
