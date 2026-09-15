@@ -15,7 +15,6 @@
     <DebugType>portable</DebugType>
     <Optimize>true</Optimize>
     <WarningLevel>4</WarningLevel>
-    <NoWarn>MSB3277</NoWarn>
   </PropertyGroup>
 
   <!-- Reference assemblies restored from nuget.bepinex.dev (see packages.config / nuget.config). -->
@@ -32,6 +31,8 @@
     <Reference Include="0Harmony"><HintPath>$(Pkg)\HarmonyX.2.7.0\lib\net35\0Harmony.dll</HintPath><Private>False</Private></Reference>
     <Reference Include="MonoMod.RuntimeDetour"><HintPath>$(Pkg)\MonoMod.RuntimeDetour.21.12.13.1\lib\net35\MonoMod.RuntimeDetour.dll</HintPath><Private>False</Private></Reference>
     <Reference Include="MonoMod.Utils"><HintPath>$(Pkg)\MonoMod.Utils.21.12.13.1\lib\net35\MonoMod.Utils.dll</HintPath><Private>False</Private></Reference>
+    <!-- MonoMod, HarmonyX, BepInEx and ModTheGungeonAPI reference Mono.Cecil 0.10.4; without it msbuild resolves Mono's net4 copy (MSB3277). -->
+    <Reference Include="Mono.Cecil"><HintPath>$(Pkg)\Mono.Cecil.0.10.4\lib\net35\Mono.Cecil.dll</HintPath><Private>False</Private></Reference>
     <Reference Include="Newtonsoft.Json"><HintPath>$(Pkg)\Newtonsoft.Json.13.0.1\lib\net35\Newtonsoft.Json.dll</HintPath><Private>False</Private></Reference>
     <Reference Include="UnityEngine"><HintPath>$(Pkg)\EtG.UnityEngine.1.0.0\lib\UnityEngine.dll</HintPath><Private>False</Private></Reference>
     <Reference Include="UnityEngine.CoreModule"><HintPath>$(Pkg)\EtG.UnityEngine.1.0.0\lib\UnityEngine.CoreModule.dll</HintPath><Private>False</Private></Reference>
