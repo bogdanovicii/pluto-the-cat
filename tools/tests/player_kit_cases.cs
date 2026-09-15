@@ -69,6 +69,8 @@ class PlayerKitCases
             {"BellRadius", 2.5}, {"BellCooldownSeconds", 4}, {"BellStunSeconds", 1},
             {"HairballItemRadius", 3}, {"HairballItemSeconds", 5}, {"HairballItemBulletSpeed", 0.35}, {"HairballItemCooldownDamage", 350},
             {"PostRadius", 2.5}, {"PostDamageMultiplier", 1.3}, {"PostPierce", 1},
+            // 2.18 Yasupen
+            {"YasupenSlideCooldown", 5}, {"YasupenSlideRange", 6}, {"YasupenSlideDamage", 8}, {"YasupenSlideKnockback", 30}, {"YasupenShopDiscount", 0.1}, {"YasupenBargainChance", 0.2},
         };
         foreach (var d in defaults) Check(PlutoConfigRules.Contains(d.Key, d.Value), "default in range: " + d.Key);
         Check(PlutoConfigRules.Keys.Count == defaults.Count, "every ranged setting has a default case");

@@ -69,6 +69,14 @@ namespace PlutoTheCat
         public static float PostDamageMultiplier = 1.3f;
         public static int PostPierce = 1;
 
+        // 2.18 Yasupen (section "Yasupen")
+        public static float YasupenSlideCooldown = 5f;
+        public static float YasupenSlideRange = 6f;
+        public static float YasupenSlideDamage = 8f;
+        public static float YasupenSlideKnockback = 30f;
+        public static float YasupenShopDiscount = 0.1f;
+        public static float YasupenBargainChance = 0.2f;
+
         private static readonly Action<string> Warn = message => Debug.LogWarning("[Pluto] config: " + message);
 
         public static void Bind(ConfigFile cfg)
@@ -106,6 +114,7 @@ namespace PlutoTheCat
             CocoKnockoutSeconds = PlutoConfigRules.Clamp("CocoKnockoutSeconds", cfg.Bind("Balance", "CocoKnockoutSeconds", CocoKnockoutSeconds, "How long Coco stays knocked out (petting him ends it early).").Value, CocoKnockoutSeconds, Warn);
             CocoStuffingRegenSeconds = PlutoConfigRules.Clamp("CocoStuffingRegenSeconds", cfg.Bind("Balance", "CocoStuffingRegenSeconds", CocoStuffingRegenSeconds, "Seconds per point of stuffing regained while not knocked out.").Value, CocoStuffingRegenSeconds, Warn);
             BindCatItems(cfg);
+            BindYasupen(cfg);
             LogPunchoutNames = cfg.Bind("Debug", "LogPunchoutNames", LogPunchoutNames, "Write the Pilot's Punch-Out sprite names to the log at startup.").Value;
             UnlockSamuraiCostume = cfg.Bind("Debug", "UnlockSamuraiCostume", UnlockSamuraiCostume, "Testing only: unlock the samurai costume in the Breach without beating Pluto's past (normally it appears after the Vet is beaten).").Value;
         }
@@ -133,6 +142,17 @@ namespace PlutoTheCat
             PostRadius = PlutoConfigRules.Clamp("PostRadius", cfg.Bind(S, "PostRadius", PostRadius, "Scratching Post: how close (tiles) to stand to get sharpened claws.").Value, PostRadius, Warn);
             PostDamageMultiplier = PlutoConfigRules.Clamp("PostDamageMultiplier", cfg.Bind(S, "PostDamageMultiplier", PostDamageMultiplier, "Scratching Post: damage multiplier while sharpened.").Value, PostDamageMultiplier, Warn);
             PostPierce = PlutoConfigRules.Clamp("PostPierce", cfg.Bind(S, "PostPierce", PostPierce, "Scratching Post: extra enemies each shot pierces while sharpened.").Value, PostPierce, Warn);
+        }
+
+        private static void BindYasupen(ConfigFile cfg)
+        {
+            const string S = "Yasupen";
+            YasupenSlideCooldown = PlutoConfigRules.Clamp("YasupenSlideCooldown", cfg.Bind(S, "YasupenSlideCooldown", YasupenSlideCooldown, "Yasupen: seconds between belly slides.").Value, YasupenSlideCooldown, Warn);
+            YasupenSlideRange = PlutoConfigRules.Clamp("YasupenSlideRange", cfg.Bind(S, "YasupenSlideRange", YasupenSlideRange, "Yasupen: how far (tiles) an enemy may be for him to slide at it.").Value, YasupenSlideRange, Warn);
+            YasupenSlideDamage = PlutoConfigRules.Clamp("YasupenSlideDamage", cfg.Bind(S, "YasupenSlideDamage", YasupenSlideDamage, "Yasupen: damage his belly slide deals to each enemy it hits.").Value, YasupenSlideDamage, Warn);
+            YasupenSlideKnockback = PlutoConfigRules.Clamp("YasupenSlideKnockback", cfg.Bind(S, "YasupenSlideKnockback", YasupenSlideKnockback, "Yasupen: knockback of the belly slide (bosses are never knocked back).").Value, YasupenSlideKnockback, Warn);
+            YasupenShopDiscount = PlutoConfigRules.Clamp("YasupenShopDiscount", cfg.Bind(S, "YasupenShopDiscount", YasupenShopDiscount, "Yasupen: shop discount while he is with you (0.1 = 10 % off, at most 0.5).").Value, YasupenShopDiscount, Warn);
+            YasupenBargainChance = PlutoConfigRules.Clamp("YasupenBargainChance", cfg.Bind(S, "YasupenBargainChance", YasupenBargainChance, "Yasupen: chance (0-1) after a room is cleared that he finds a miracle bargain of 3-5 casings.").Value, YasupenBargainChance, Warn);
         }
 
         private static Vector3 Vec(string text, Vector3 fallback)

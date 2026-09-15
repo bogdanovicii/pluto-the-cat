@@ -67,6 +67,12 @@ namespace PlutoTheCat
             { "PostRadius", new Range(0.5, 20) },
             { "PostDamageMultiplier", new Range(1, 10) },
             { "PostPierce", new Range(0, 10) },
+            { "YasupenSlideCooldown", new Range(0.5, 60) },
+            { "YasupenSlideRange", new Range(0, 20) },
+            { "YasupenSlideDamage", new Range(0, Damage) },
+            { "YasupenSlideKnockback", new Range(0, 200) },
+            { "YasupenShopDiscount", new Range(0, 0.5) },
+            { "YasupenBargainChance", new Range(0, 1) },
         };
 
         public static ICollection<string> Keys { get { return Ranges.Keys; } }
