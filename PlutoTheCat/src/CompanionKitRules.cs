@@ -64,5 +64,78 @@ namespace PlutoTheCat
             if (distance2 >= 1.44f) return 0f;
             return (1.44f - distance2) * 12f / (0.25f + t);
         }
+
+        // ------------------------------------------------------------ decoy run
+        // A decoy Coco always runs a "leg" to a spot at least DecoyMinStep away (standing still is never a choice),
+        // prefers legs that avoid incoming bullets (threat, from ProjectileRisk) and stays within reach of the owner.
+        public const int DecoyCandidateCount = 9;           // eight directions around Coco plus one toward the owner
+        public const float DecoyMinStep = 1.5f;
+        public const float DecoyLeash = 8f;                 // past this he may only run back toward the owner
+        public const float DecoyComfort = 5f;               // beyond this a leg costs more the further it strays
+        public const float DecoyArrive = 0.6f;
+        public const float DecoyMaxLegSeconds = 1.4f;
+        public const float DecoySwerveMargin = 6f;
+
+        /// <summary>Eight points on a ring of the given radius (rotated by spin radians) and one leg toward the owner.</summary>
+        public static void DecoyCandidates(float meX, float meY, float ownerX, float ownerY, float spin, float radius, float[] xs, float[] ys)
+        {
+            for (int i = 0; i < 8; i++)
+            {
+                double angle = spin + i * Math.PI / 4.0;
+                xs[i] = meX + (float)Math.Cos(angle) * radius;
+                ys[i] = meY + (float)Math.Sin(angle) * radius;
+            }
+            float dx = ownerX - meX, dy = ownerY - meY;
+            float d = (float)Math.Sqrt(dx * dx + dy * dy);
+            float step = Math.Min(radius, d);
+            xs[8] = d < 0.001f ? meX : meX + dx / d * step;
+            ys[8] = d < 0.001f ? meY : meY + dy / d * step;
+        }
+
+        /// <summary>Lower is better; float.MaxValue when the leg is not allowed (too short, or strays past the leash).</summary>
+        public static float DecoyLegScore(float meX, float meY, float x, float y, float ownerX, float ownerY, float threat, float jitter)
+        {
+            if (Distance(meX, meY, x, y) < DecoyMinStep) return float.MaxValue;
+            float ownerDistance = Distance(x, y, ownerX, ownerY);
+            if (ownerDistance > DecoyLeash && ownerDistance >= Distance(meX, meY, ownerX, ownerY)) return float.MaxValue;
+            return threat + Math.Max(0f, ownerDistance - DecoyComfort) * 3f + jitter;
+        }
+
+        /// <summary>Index of the best allowed leg, or -1 when none is allowed.</summary>
+        public static int PickDecoyLeg(float meX, float meY, float ownerX, float ownerY, float[] xs, float[] ys, float[] threat, float[] jitter)
+        {
+            int best = -1;
+            float bestScore = float.MaxValue;
+            for (int i = 0; i < xs.Length; i++)
+            {
+                float score = DecoyLegScore(meX, meY, xs[i], ys[i], ownerX, ownerY, threat[i], jitter[i]);
+                if (score < bestScore) { bestScore = score; best = i; }
+            }
+            return best;
+        }
+
+        /// <summary>
+        /// Whether to start a new leg now: none yet, arrived, stalled (moved less than 0.05 since the last check),
+        /// ran too long, or the current leg's threat is clearly worse than the best alternative.
+        /// </summary>
+        public static bool NeedsNewDecoyLeg(bool hasLeg, float distanceToLeg, float legAge, float movedSinceCheck, float legThreat, float bestAlternative)
+        {
+            if (!hasLeg || distanceToLeg < DecoyArrive || legAge > DecoyMaxLegSeconds) return true;
+            if (legAge > 0.3f && movedSinceCheck < 0.05f) return true;
+            return legThreat > bestAlternative + DecoySwerveMargin;
+        }
+
+        /// <summary>Squire helmet clip prefix: none without Squire, pot helmet below Holy Knight, gold helmet from Holy Knight (6) up.</summary>
+        public static string CocoHelmetPrefix(bool squire, int junkanForm)
+        {
+            if (!squire) return "";
+            return junkanForm >= 6 ? "knight_" : "squire_";
+        }
+
+        private static float Distance(float ax, float ay, float bx, float by)
+        {
+            float dx = ax - bx, dy = ay - by;
+            return (float)Math.Sqrt(dx * dx + dy * dy);
+        }
     }
 }

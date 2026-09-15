@@ -13,7 +13,8 @@ namespace PlutoTheCat
     ///   Petting either one makes the other happy too.
     /// - Squire (Coco + Ser Junkan): +1 stuffing per Junkan form (CocoBlueController.MaxStuffing); while Coco
     ///   is a decoy, Junkan's OverrideTarget (which wins over PlayerTarget) is the enemy chasing him.
-    /// - Knighted (Squire tier): while Junkan is a Holy or Angelic Knight, Coco plays his helmeted clips.
+    /// - Squire helmet: while Squire is active Coco wears a helmet like Junkan's: the grey pot helmet below Holy Knight,
+    ///   the gold plumed helmet (Knighted) from Holy Knight up; it comes off when the synergy ends.
     /// Ownership: every field changed on the Dog or Junkan is restored to what it was before, and only while the
     /// value is still the one this code (or the Wolf behaviours it added) left there (CompanionOwnedValue).
     /// </summary>
@@ -78,8 +79,7 @@ namespace PlutoTheCat
             SackKnightController knight = SquireJunkan(owner);
             AIActor junkan = knight != null ? knight.aiActor : null;
 
-            coco.SetKnighted(knight != null && (knight.CurrentForm == SackKnightController.SackKnightPhase.HOLY_KNIGHT
-                                             || knight.CurrentForm == SackKnightController.SackKnightPhase.ANGELIC_KNIGHT));
+            coco.SetHelmet(CompanionKitRules.CocoHelmetPrefix(knight != null, knight != null ? (int)knight.CurrentForm : 0));
 
             if (coco.IsDecoy && (dog != null || junkan != null))
             {

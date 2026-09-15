@@ -188,6 +188,10 @@ def gun_and_items():
     for clip, frames in (('idle', V4.COCO_KNIGHT_IDLE), ('move', V4.COCO_KNIGHT_MOVE), ('pet', V4.COCO_KNIGHT_PET),
                          ('block', V4.COCO_KNIGHT_BLOCK), ('ko', V4.COCO_KNIGHT_KO)):
         write_clip(os.path.join(comp, 'knight_' + clip), margin(frames), 'coco_knight_' + clip, body=True)
+    # 2.16.3 Squire pot helmet (Ser Junkan below Holy Knight), same swap
+    for clip, frames in (('idle', V4.COCO_SQUIRE_IDLE), ('move', V4.COCO_SQUIRE_MOVE), ('pet', V4.COCO_SQUIRE_PET),
+                         ('block', V4.COCO_SQUIRE_BLOCK), ('ko', V4.COCO_SQUIRE_KO)):
+        write_clip(os.path.join(comp, 'squire_' + clip), margin(frames), 'coco_squire_' + clip, body=True)
     save(V4.SQUEAKER_ICON, os.path.join(items, 'squeaker_icon.png'))
     vfx = os.path.join(RES, 'VFX')
     clean(vfx)
@@ -231,6 +235,12 @@ def previews():
            [U.HAIRBALL] + V4.COCO_IDLE[:2] + V4.COCO_MOVE + [V4.BOWL_PICKUP] + V4.FUR_PUFF + V4.LOVE_BURST + U.FOYER_APPEAR,
            V5.FUR_HALO + [V5.PUFFED_ICON] + V5.ANGER_MARKS],
           os.path.join(PREVIEW, 'ui-sheet.png'), scale=5)
+    # Coco's Squire helmets: plain / pot helmet (below Holy Knight) / gold plumed helmet, runtime outline simulated
+    V.strip_sheet([('coco_idle', V4.COCO_IDLE), ('coco_squire_idle', V4.COCO_SQUIRE_IDLE), ('coco_squire_move', V4.COCO_SQUIRE_MOVE),
+                   ('coco_squire_pet', V4.COCO_SQUIRE_PET), ('coco_squire_block', V4.COCO_SQUIRE_BLOCK), ('coco_squire_ko', V4.COCO_SQUIRE_KO),
+                   ('coco_knight_idle', V4.COCO_KNIGHT_IDLE), ('coco_knight_move', V4.COCO_KNIGHT_MOVE)],
+                  os.path.join(PREVIEW, 'coco-helmets.png'), scale=4)
+    V.scale_check([V4.COCO_IDLE_1, V4.SQUIRE_IDLE_1, V4.KNIGHT_IDLE_1], os.path.join(PREVIEW, 'coco-helmets-scale.png'))
     import weapon_preview   # weapon alignment sheets (grip, muzzle, aim, reach) from tools/weapon_layout.py
     weapon_preview.main()
 

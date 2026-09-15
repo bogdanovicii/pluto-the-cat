@@ -65,12 +65,16 @@ namespace PlutoTheCat
             prefab.AddAnimation("ko", Plugin.COMPANION_ROOT + "/ko", 4, CompanionBuilder.AnimationType.Other,
                 DirectionalAnimation.DirectionType.Single).wrapMode = tk2dSpriteAnimationClip.WrapMode.Loop;
 
-            // Knighted: the helmeted set. Like Ser Junkan's armour clips, these are swapped in by name (SetKnighted).
-            AddKnightClip("idle", 4, tk2dSpriteAnimationClip.WrapMode.Loop);
-            AddKnightClip("move", 9, tk2dSpriteAnimationClip.WrapMode.Loop);
-            AddKnightClip("pet", 6, tk2dSpriteAnimationClip.WrapMode.Loop);
-            AddKnightClip("block", 12, tk2dSpriteAnimationClip.WrapMode.Once);
-            AddKnightClip("ko", 4, tk2dSpriteAnimationClip.WrapMode.Loop);
+            // Squire helmets: pot helmet (squire_) below Holy Knight, gold plumed helmet (knight_) from Holy Knight up.
+            // Like Ser Junkan's armour clips, these are swapped in by name (SetHelmet).
+            foreach (string helmet in new[] { "squire_", "knight_" })
+            {
+                AddHelmetClip(helmet, "idle", 4, tk2dSpriteAnimationClip.WrapMode.Loop);
+                AddHelmetClip(helmet, "move", 9, tk2dSpriteAnimationClip.WrapMode.Loop);
+                AddHelmetClip(helmet, "pet", 6, tk2dSpriteAnimationClip.WrapMode.Loop);
+                AddHelmetClip(helmet, "block", 12, tk2dSpriteAnimationClip.WrapMode.Once);
+                AddHelmetClip(helmet, "ko", 4, tk2dSpriteAnimationClip.WrapMode.Loop);
+            }
             prefab.AddComponent<CocoFriends>();
 
             BehaviorSpeculator bs = prefab.GetComponent<BehaviorSpeculator>();
@@ -91,9 +95,9 @@ namespace PlutoTheCat
             });
         }
 
-        private static void AddKnightClip(string clip, int fps, tk2dSpriteAnimationClip.WrapMode wrap)
+        private static void AddHelmetClip(string helmet, string clip, int fps, tk2dSpriteAnimationClip.WrapMode wrap)
         {
-            prefab.AddAnimation("knight_" + clip, Plugin.COMPANION_ROOT + "/knight_" + clip, fps, CompanionBuilder.AnimationType.Other,
+            prefab.AddAnimation(helmet + clip, Plugin.COMPANION_ROOT + "/" + helmet + clip, fps, CompanionBuilder.AnimationType.Other,
                 DirectionalAnimation.DirectionType.Single).wrapMode = wrap;
         }
 
@@ -112,9 +116,11 @@ namespace PlutoTheCat
             private float normalSpeed = 6.5f;
             private RoomHandler decoyRoom;
             private readonly HashSet<AIActor> ownedTargets = new HashSet<AIActor>();
-            private Vector2 dodgeTarget;
+            private Vector2 dodgeTarget, lastFleePosition;
             private bool hasDodgeTarget;
-            private float dodgeHold;
+            private float legAge;
+            private readonly float[] legX = new float[CompanionKitRules.DecoyCandidateCount], legY = new float[CompanionKitRules.DecoyCandidateCount];
+            private readonly float[] legThreat = new float[CompanionKitRules.DecoyCandidateCount], legJitter = new float[CompanionKitRules.DecoyCandidateCount];
             private readonly CompanionOwnedValue<bool> decoyFollow = new CompanionOwnedValue<bool>();
             private readonly CompanionOwnedValue<float> decoySpeed = new CompanionOwnedValue<float>();
 
@@ -138,14 +144,17 @@ namespace PlutoTheCat
                 }
             }
 
-            private bool knighted;
+            private string helmet = "";
 
-            /// <summary>Knighted: point the idle/move/pet/block/ko slots at the helmeted clips (or back), like Junkan does.</summary>
-            public void SetKnighted(bool on)
+            /// <summary>
+            /// Squire: point the idle/move/pet/block/ko slots at a helmeted clip set ("squire_" pot helmet, "knight_" gold
+            /// helmet) or back to the plain clips (""), like Junkan swaps his armour clips.
+            /// </summary>
+            public void SetHelmet(string prefix)
             {
-                if (on == knighted || aiAnimator == null) return;
-                knighted = on;
-                string prefix = on ? "knight_" : "";
+                if (prefix == null) prefix = "";
+                if (prefix == helmet || aiAnimator == null) return;
+                helmet = prefix;
                 SetClip(aiAnimator.IdleAnimation, prefix + "idle");
                 SetClip(aiAnimator.MoveAnimation, prefix + "move");
                 if (aiAnimator.OtherAnimations != null)
@@ -336,6 +345,7 @@ namespace PlutoTheCat
                 decoy = true;
                 decoyRoom = CurrentRoom();
                 hasDodgeTarget = false;
+                lastFleePosition = specRigidbody != null ? specRigidbody.UnitCenter : (Vector2)transform.position;
                 retargetTimer = 0f; fleeTimer = 0f;
                 CompanionFollowPlayerBehavior follow = Follow();
                 if (follow != null)
@@ -405,7 +415,7 @@ namespace PlutoTheCat
 
             private void DecoyUpdate(float dt)
             {
-                decoyLeft -= dt; retargetTimer -= dt; fleeTimer -= dt; dodgeHold -= dt;
+                decoyLeft -= dt; retargetTimer -= dt; fleeTimer -= dt; legAge += dt;
                 RoomHandler room = CurrentRoom();
                 if (decoyLeft <= 0f || room == null || room != decoyRoom || m_owner == null || (m_owner.CurrentRoom != null && m_owner.CurrentRoom != room))
                 {
@@ -424,43 +434,48 @@ namespace PlutoTheCat
                 }
             }
 
-            /// <summary>Score a bounded set of nearby floor routes against incoming trajectories.</summary>
+            /// <summary>
+            /// Keep running: always a leg to a floor spot 2.5-3.5 tiles away (random spin and jitter so it reads as panicky),
+            /// scored against incoming bullets and nearby enemies and kept within reach of the owner (CompanionKitRules).
+            /// A new leg starts on arrival, after a stall, after DecoyMaxLegSeconds, or when a bullet crosses the current one.
+            /// </summary>
             private void Flee(RoomHandler room)
             {
                 if (aiActor == null || m_owner == null || GameManager.Instance == null || GameManager.Instance.Dungeon == null) return;
                 Vector2 me = specRigidbody != null ? specRigidbody.UnitCenter : (Vector2)transform.position;
                 Vector2 owner = m_owner.CenterPosition;
                 DungeonData data = GameManager.Instance.Dungeon.data;
-                float bestScore = float.MaxValue;
-                Vector2 best = me;
-                bool found = false;
-                // Stay, eight local directions, return to the owner, and the previous destination.
-                for (int i = 0; i < 11; i++)
+                float moved = Vector2.Distance(me, lastFleePosition);
+                lastFleePosition = me;
+
+                CompanionKitRules.DecoyCandidates(me.x, me.y, owner.x, owner.y, Random.value * Mathf.PI * 2f, Random.Range(2.5f, 3.5f), legX, legY);
+                for (int i = 0; i < legX.Length; i++)
                 {
-                    Vector2 target;
-                    if (i == 0) target = me;
-                    else if (i <= 8)
-                    {
-                        float angle = (i - 1) * Mathf.PI / 4f;
-                        target = me + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * 2.5f;
-                    }
-                    else if (i == 9) target = me + (owner - me).normalized * Mathf.Min(2.5f, Vector2.Distance(me, owner));
-                    else { if (!hasDodgeTarget) continue; target = dodgeTarget; }
-                    // A companion outside the leash may choose only a route that brings it closer.
-                    float ownerDistance = Vector2.Distance(target, owner);
-                    if (ownerDistance > 8f && ownerDistance >= Vector2.Distance(me, owner)) continue;
-                    if (!ClearFloorRoute(data, room, me, target)) continue;
-                    float score = DodgeScore(room, me, target, owner);
-                    if (i == 10 && dodgeHold > 0f) score -= 5f; // resist small, harmless changes
-                    if (score < bestScore) { bestScore = score; best = target; found = true; }
+                    Vector2 target = new Vector2(legX[i], legY[i]);
+                    legJitter[i] = Random.value * 1.5f;
+                    if (!WalkableSpot(data, room, target)) { legX[i] = me.x; legY[i] = me.y; legThreat[i] = 0f; continue; }  // too short: rejected
+                    legThreat[i] = DodgeScore(room, me, target, owner);
                 }
-                if (!found) { aiActor.ClearPath(); hasDodgeTarget = false; return; }
-                if (hasDodgeTarget && Vector2.Distance(best, dodgeTarget) < 0.2f) return;
-                dodgeTarget = best;
+                int best = CompanionKitRules.PickDecoyLeg(me.x, me.y, owner.x, owner.y, legX, legY, legThreat, legJitter);
+                float bestScore = best >= 0
+                    ? CompanionKitRules.DecoyLegScore(me.x, me.y, legX[best], legY[best], owner.x, owner.y, legThreat[best], legJitter[best])
+                    : float.MaxValue;
+                float currentThreat = hasDodgeTarget ? DodgeScore(room, me, dodgeTarget, owner) : 0f;
+                if (!CompanionKitRules.NeedsNewDecoyLeg(hasDodgeTarget, Vector2.Distance(me, dodgeTarget), legAge, moved, currentThreat, bestScore)) return;
+
+                Vector2 next;
+                if (best >= 0) next = new Vector2(legX[best], legY[best]);
+                else
+                {
+                    // Boxed in (corner, narrow corridor): any open cell in the room, or back to the owner if that strays too far.
+                    IntVector2? alt = room.GetRandomAvailableCell(new IntVector2(1, 1), CellTypes.FLOOR, false, null);
+                    next = alt != null ? alt.Value.ToCenterVector2() : owner;
+                    if (Vector2.Distance(next, owner) > CompanionKitRules.DecoyLeash) next = owner;
+                }
+                dodgeTarget = next;
                 hasDodgeTarget = true;
-                dodgeHold = 0.75f;
-                if (Vector2.Distance(me, best) < 0.2f) aiActor.ClearPath();
-                else aiActor.PathfindToPosition(best);
+                legAge = 0f;
+                aiActor.PathfindToPosition(next);
             }
 
             private float DodgeScore(RoomHandler room, Vector2 me, Vector2 target, Vector2 owner)
@@ -468,7 +483,7 @@ namespace PlutoTheCat
                 Vector2 delta = target - me;
                 float travel = Mathf.Max(0.05f, delta.magnitude / Mathf.Max(1f, aiActor.MovementSpeed));
                 Vector2 velocity = delta / travel;
-                float score = Mathf.Max(0f, Vector2.Distance(target, owner) - 4f) * 3f;
+                float score = 0f;   // owner distance is scored by CompanionKitRules.DecoyLegScore
                 // Avoid pulling Coco's pursuers through Pluto's body.
                 float along = delta.sqrMagnitude < 0.01f ? 0f : Mathf.Clamp01(Vector2.Dot(owner - me, delta) / delta.sqrMagnitude);
                 score += Mathf.Max(0f, 1.5f - Vector2.Distance(owner, me + delta * along)) * 8f;
@@ -497,18 +512,15 @@ namespace PlutoTheCat
                 return score;
             }
 
-            // Sample the whole short route and Coco's footprint, not just its final cell. This
-            // deliberately rejects routes requiring a detour; pathfinding still handles dynamic actors.
-            private static bool ClearFloorRoute(DungeonData data, RoomHandler room, Vector2 from, Vector2 to)
+            // The spot itself must fit Coco's footprint on floor in this room; the pathfinder handles the route and any detour.
+            private static bool WalkableSpot(DungeonData data, RoomHandler room, Vector2 spot)
             {
-                int steps = Mathf.Max(1, Mathf.CeilToInt(Vector2.Distance(from, to) / 0.25f));
-                for (int i = 0; i <= steps; i++)
-                    for (int corner = 0; corner < 4; corner++)
-                    {
-                        Vector2 point = Vector2.Lerp(from, to, (float)i / steps) + new Vector2((corner % 2 == 0 ? -1f : 1f) * 0.4f, (corner < 2 ? -1f : 1f) * 0.3f);
-                        IntVector2 cell = point.ToIntVector2(VectorConversions.Floor);
-                        if (!data.CheckInBoundsAndValid(cell) || !data[cell].IsPassable || data[cell].type != CellType.FLOOR || data[cell].parentRoom != room) return false;
-                    }
+                for (int corner = 0; corner < 5; corner++)
+                {
+                    Vector2 point = corner == 4 ? spot : spot + new Vector2((corner % 2 == 0 ? -1f : 1f) * 0.4f, (corner < 2 ? -1f : 1f) * 0.3f);
+                    IntVector2 cell = point.ToIntVector2(VectorConversions.Floor);
+                    if (!data.CheckInBoundsAndValid(cell) || !data[cell].IsPassable || data[cell].type != CellType.FLOOR || data[cell].parentRoom != room) return false;
+                }
                 return true;
             }
         }
