@@ -166,8 +166,9 @@ for f in pngs:
     j = json.load(open(os.path.join(wc, f[:-4] + '.jtk2d')))
     if (j['width'], j['height']) != Image.open(os.path.join(wc, f)).size:
         err(f'{f}: jtk2d width/height does not match the PNG')
-if not os.path.exists(os.path.join(RES, 'SpriteRoot', 'Ammonomicon Encounter Icon Collection', 'pluto_kibble_sack_idle_001.png')):
-    err('ammonomicon page sprite missing')
+for gun_name in ('pluto_kibble_sack', 'pluto_taiyaki_cannon', 'pluto_katana'):
+    if not os.path.exists(os.path.join(RES, 'SpriteRoot', 'Ammonomicon Encounter Icon Collection', gun_name + '_idle_001.png')):
+        err(f'ammonomicon page sprite missing: {gun_name}')
 if not os.path.exists(os.path.join(RES, 'SpriteRoot', 'ProjectileCollection', 'pluto_kibble_001.png')):
     err('projectile sprite missing')
 ok(f'gun: {len(pngs)} frames with attach points')
@@ -277,7 +278,9 @@ if os.path.exists(DLL):
                 'PlutoTheCat.Resources.SpriteRoot.WeaponCollection.pluto_kibble_sack_idle_001.jtk2d',
                 'PlutoTheCat.Resources.SpriteRoot.ProjectileCollection.pluto_kibble_001.png',
                 'PlutoTheCat.Resources.Items.wet_food_can_icon.png',
-                'PlutoTheCat.Resources.SpriteRoot.Ammonomicon_Encounter_Icon_Collection.pluto_kibble_sack_idle_001.png']
+                'PlutoTheCat.Resources.SpriteRoot.Ammonomicon_Encounter_Icon_Collection.pluto_kibble_sack_idle_001.png',
+                'PlutoTheCat.Resources.SpriteRoot.Ammonomicon_Encounter_Icon_Collection.pluto_taiyaki_cannon_idle_001.png',
+                'PlutoTheCat.Resources.SpriteRoot.Ammonomicon_Encounter_Icon_Collection.pluto_katana_idle_001.png']
         for n in need:
             if n not in man:
                 err(f'DLL lacks embedded resource {n}')

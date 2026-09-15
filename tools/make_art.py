@@ -164,6 +164,10 @@ def gun_and_items():
     shutil.copy(os.path.join(ROOT, 'reference', 'art', 'katana', 'pluto_katana_wave_001.png'), os.path.join(pc, 'pluto_katana_wave_001.png'))
     # Same sprite name in the Ammonomicon collection = the picture shown on the gun's Ammonomicon page.
     save(U.GUN_AMMONOMICON, os.path.join(SPRITE_ROOT, 'Ammonomicon Encounter Icon Collection', 'pluto_kibble_sack_idle_001.png'))
+    # The samurai guns' pages use their approved idle sprite, the vanilla convention (2.16.4: they had no page icon).
+    for folder, gun_name in (('taiyaki_cannon', 'pluto_taiyaki_cannon'), ('katana', 'pluto_katana')):
+        shutil.copy(os.path.join(ROOT, 'reference', 'art', folder, gun_name + '_idle_001.png'),
+                    os.path.join(SPRITE_ROOT, 'Ammonomicon Encounter Icon Collection', gun_name + '_idle_001.png'))
 
     items = os.path.join(RES, 'Items')
     save(U.CAN_ICON, os.path.join(items, 'wet_food_can_icon.png'))
