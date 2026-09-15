@@ -47,8 +47,8 @@ namespace PlutoTheCat
             gun.gunClass = GunClass.PISTOL;
             gun.gunHandedness = GunHandedness.OneHanded;
 
-            // Mini taiyaki leave the bean-filled mouth: pixel (46, 15) of the 57x31 sprite, measured from the bottom-left.
-            gun.barrelOffset.transform.localPosition = new Vector3(46f / 16f, 15f / 16f, 0f);
+            // Mini taiyaki leave the bean-filled mouth (WeaponLayout, generated from tools/weapon_layout.py).
+            gun.barrelOffset.transform.localPosition = new Vector3(WeaponLayout.TAIYAKI_CANNON_MUZZLE_X / 16f, WeaponLayout.TAIYAKI_CANNON_MUZZLE_Y / 16f, 0f);
 
             // Starter-gun flags.
             gun.InfiniteAmmo = true;

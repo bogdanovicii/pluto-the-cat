@@ -21,6 +21,7 @@ import poses as P  # noqa: E402
 import art_v4 as V4  # noqa: E402
 import art_v5 as V5  # noqa: E402
 import fur as FUR  # noqa: E402
+import weapon_layout as WL  # noqa: E402
 
 CHAR = os.path.join(ROOT, 'PlutoTheCat', 'Characters', 'Pluto')
 RES = os.path.join(ROOT, 'PlutoTheCat', 'Resources')
@@ -132,26 +133,31 @@ def gun_and_items():
     clean(os.path.join(RES, 'Items'))
     wc = os.path.join(SPRITE_ROOT, 'WeaponCollection')
     pc = os.path.join(SPRITE_ROOT, 'ProjectileCollection')
+    # Attach points (PrimaryHand = grip, Casing = muzzle) come from tools/weapon_layout.py, which also generates
+    # src/WeaponLayout.cs for the gun classes, so the art and the runtime share one set of numbers.
+    sack = WL.WEAPONS['kibble_sack']
+    if (U.GUN_W, U.GUN_H) != sack['canvas']:
+        raise ValueError(f"kibble sack canvas {(U.GUN_W, U.GUN_H)} != weapon_layout {sack['canvas']}")
     frames = {'idle': [U.GUN_IDLE], 'fire': U.GUN_FIRE, 'reload': U.GUN_RELOAD}
     for anim, fr in frames.items():
         for i, f in enumerate(fr, 1):
-            name = f'pluto_kibble_sack_{anim}_{i:03d}'
+            name = f'{sack["sprite"]}_{anim}_{i:03d}'
             save(f, os.path.join(wc, name + '.png'))
-            # hand grips the bottom gusset (left end); casing/barrel at the torn-open top (right end)
             with open(os.path.join(wc, name + '.jtk2d'), 'w') as fh:
-                json.dump(jtk2d(U.GUN_W, U.GUN_H, (4, 5), (29, 9)), fh, indent=2)
+                json.dump(jtk2d(U.GUN_W, U.GUN_H, sack['hand'], sack['muzzle']), fh, indent=2)
     save(U.KIBBLE, os.path.join(pc, 'pluto_kibble_001.png'))
     # 2.16.0 samurai costume weapons: approved pluto-artist frames live in reference/art/<weapon>/ and are copied as-is.
-    # (hand, casing) in pixels from the bottom-left: taiyaki grip/mouth, katana handle/blade tip.
-    for gun_name, folder, hand, casing in (('pluto_taiyaki_cannon', 'taiyaki_cannon', (21, 4), (46, 15)),
-                                           ('pluto_katana', 'katana', (6, 13), (41, 13))):
+    for folder in ('taiyaki_cannon', 'katana'):
+        spec = WL.WEAPONS[folder]
+        gun_name = spec['sprite']
         src = os.path.join(ROOT, 'reference', 'art', folder)
         for f in sorted(os.listdir(src)):
             if f.startswith(gun_name + '_') and f.endswith('.png') and '_wave' not in f:
                 shutil.copy(os.path.join(src, f), os.path.join(wc, f))
                 w, h = Image.open(os.path.join(src, f)).size
                 with open(os.path.join(wc, f[:-4] + '.jtk2d'), 'w') as fh:
-                    json.dump(jtk2d(w, h, hand, casing), fh, indent=2)
+                    json.dump(jtk2d(w, h, spec['hand'], spec['muzzle']), fh, indent=2)
+    WL.write()
     shutil.copy(os.path.join(ROOT, 'reference', 'art', 'taiyaki_cannon', 'pluto_mini_taiyaki_001.png'), os.path.join(pc, 'pluto_mini_taiyaki_001.png'))
     shutil.copy(os.path.join(ROOT, 'reference', 'art', 'katana', 'pluto_katana_wave_001.png'), os.path.join(pc, 'pluto_katana_wave_001.png'))
     # Same sprite name in the Ammonomicon collection = the picture shown on the gun's Ammonomicon page.
@@ -225,6 +231,8 @@ def previews():
            [U.HAIRBALL] + V4.COCO_IDLE[:2] + V4.COCO_MOVE + [V4.BOWL_PICKUP] + V4.FUR_PUFF + V4.LOVE_BURST + U.FOYER_APPEAR,
            V5.FUR_HALO + [V5.PUFFED_ICON] + V5.ANGER_MARKS],
           os.path.join(PREVIEW, 'ui-sheet.png'), scale=5)
+    import weapon_preview   # weapon alignment sheets (grip, muzzle, aim, reach) from tools/weapon_layout.py
+    weapon_preview.main()
 
 
 if __name__ == '__main__':

@@ -17,8 +17,9 @@ namespace PlutoTheCat
         public const string ID = "pluto:katana";
 
         // Swing radius = 1.85 x |Casing - PrimaryHand| (Gun.HandleHeroSwordSlash). The jtk2d puts PrimaryHand on the
-        // handle (6, 13) and Casing at the blade tip (41, 13); CasingReach below pushes Casing further out.
-        private const float CasingReachUnits = 2.4f;
+        // handle and Casing at the blade tip (WeaponLayout, generated from tools/weapon_layout.py); CasingReach below
+        // pushes Casing further out.
+        private const float CasingReachUnits = WeaponLayout.KATANA_CASING_REACH_UNITS;
 
         public static void Add()
         {
@@ -51,7 +52,7 @@ namespace PlutoTheCat
             gun.reloadTime = 0.6f;
             gun.SetBaseMaxAmmo(1000);
             gun.gunHandedness = GunHandedness.OneHanded;
-            gun.barrelOffset.transform.localPosition = new Vector3(41f / 16f, 13f / 16f, 0f);
+            gun.barrelOffset.transform.localPosition = new Vector3(WeaponLayout.KATANA_MUZZLE_X / 16f, WeaponLayout.KATANA_MUZZLE_Y / 16f, 0f);
 
             // Starter flags.
             gun.InfiniteAmmo = true;
@@ -94,9 +95,9 @@ namespace PlutoTheCat
         }
 
         // The fire clip is the swing (2.16.1): the blade rotates around the grip, so its frames sit on a taller canvas
-        // (43x80, grip at (6, 40)) than idle/reload (43x33, grip at (6, 13)). Gun sprites are drawn from their
+        // (WeaponLayout.KATANA_SWING_*) than idle/reload (KATANA_W/H, grip KATANA_HAND_*). Gun sprites are drawn from their
         // bottom-left corner, so each fire frame is moved down by the difference to keep the grip in Pluto's paw.
-        private const int SwingGripOffsetPixels = 27;
+        private const int SwingGripOffsetPixels = WeaponLayout.KATANA_SWING_GRIP_OFFSET;
 
         private static void ShiftSwingFrames(Gun gun)
         {

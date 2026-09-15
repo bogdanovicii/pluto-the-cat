@@ -137,16 +137,29 @@ for prefix in ('pluto_kibble_sack', 'pluto_taiyaki_cannon', 'pluto_katana_idle',
     gun_sizes = {Image.open(os.path.join(wc, f)).size for f in pngs if f.startswith(prefix)}
     if len(gun_sizes) != 1:
         err(f'{prefix} frames must share one canvas size, got {gun_sizes}')
-# 2.16.1 katana swing: the fire frames use a taller canvas (grip at (6, 40)); KatanaGun.cs shifts them so the grip
-# stays at the idle grip (6, 13). Both numbers must match the constants there.
+# Attachment numbers: tools/weapon_layout.py is the one source; the jtk2d files and src/WeaponLayout.cs must match it.
+sys.path.insert(0, os.path.join(ROOT, 'tools'))
+import weapon_layout as WL  # noqa: E402
+if open(WL.CS_PATH).read() != WL.layout_cs():
+    err('WeaponLayout.cs is stale (run tools/make_art.py)')
+for f in pngs:
+    spec = WL.spec_for_frame(f)
+    if spec is None:
+        continue
+    pts = {a['name']: a['position'] for a in json.load(open(os.path.join(wc, f[:-4] + '.jtk2d')))['attachPoints'] if isinstance(a, dict) and 'position' in a}
+    if (pts['PrimaryHand']['x'] * 16, pts['PrimaryHand']['y'] * 16) != spec['hand'] or (pts['Casing']['x'] * 16, pts['Casing']['y'] * 16) != spec['muzzle']:
+        err(f'{f}: jtk2d attach points differ from tools/weapon_layout.py')
+# 2.16.1 katana swing: the fire frames use a taller canvas; KatanaGun.cs shifts them by WeaponLayout.KATANA_SWING_GRIP_OFFSET
+# so the grip stays at the idle grip.
+_kat = WL.WEAPONS['katana']
 _katana_fire = sorted(f for f in pngs if f.startswith('pluto_katana_fire_'))
 if len(_katana_fire) < 6:
     err(f'katana swing needs at least 6 fire frames, got {len(_katana_fire)}')
-if {Image.open(os.path.join(wc, f)).size for f in _katana_fire} != {(43, 80)}:
-    err('katana fire frames must all be 43x80 (swing canvas)')
+if {Image.open(os.path.join(wc, f)).size for f in _katana_fire} != {_kat['swing_canvas']}:
+    err(f"katana fire frames must all be {_kat['swing_canvas']} (swing canvas)")
 _katana_src = open(os.path.join(ROOT, 'PlutoTheCat', 'src', 'KatanaGun.cs')).read()
-if 'SwingGripOffsetPixels = 27' not in _katana_src:
-    err('KatanaGun.cs must shift the fire frames down by 27 px (SwingGripOffsetPixels = 27)')
+if 'SwingGripOffsetPixels = WeaponLayout.KATANA_SWING_GRIP_OFFSET' not in _katana_src:
+    err('KatanaGun.cs must shift the fire frames by WeaponLayout.KATANA_SWING_GRIP_OFFSET')
 for f in pngs:
     j = json.load(open(os.path.join(wc, f[:-4] + '.jtk2d')))
     if (j['width'], j['height']) != Image.open(os.path.join(wc, f)).size:
