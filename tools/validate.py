@@ -183,8 +183,7 @@ for f in ['coco_blue_icon.png', 'kibble_bowl_001.png', 'kibble_bowl_002.png']:
     if not os.path.exists(os.path.join(items, f)):
         err(f'item art missing: {f}')
 for sub, n in (('idle', 4), ('move', 6), ('pet', 4), ('block', 3), ('ko', 2),
-               ('knight_idle', 4), ('knight_move', 6), ('knight_pet', 4), ('knight_block', 3), ('knight_ko', 2),
-               ('squire_idle', 4), ('squire_move', 6), ('squire_pet', 4), ('squire_block', 3), ('squire_ko', 2)):
+               ('knight_idle', 4), ('knight_move', 6), ('knight_pet', 4), ('knight_block', 3), ('knight_ko', 2)):
     d = os.path.join(RES, 'Companions', 'coco', sub)
     if not os.path.isdir(d) or len([f for f in os.listdir(d) if f.endswith('.png')]) != n:
         err(f'companion clip {sub} should have {n} frames')

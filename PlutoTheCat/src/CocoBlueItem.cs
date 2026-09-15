@@ -65,9 +65,9 @@ namespace PlutoTheCat
             prefab.AddAnimation("ko", Plugin.COMPANION_ROOT + "/ko", 4, CompanionBuilder.AnimationType.Other,
                 DirectionalAnimation.DirectionType.Single).wrapMode = tk2dSpriteAnimationClip.WrapMode.Loop;
 
-            // Squire helmets: pot helmet (squire_) below Holy Knight, gold plumed helmet (knight_) from Holy Knight up.
+            // Squire: the gold plumed knight helmet (knight_) for every Junkan form.
             // Like Ser Junkan's armour clips, these are swapped in by name (SetHelmet).
-            foreach (string helmet in new[] { "squire_", "knight_" })
+            foreach (string helmet in new[] { "knight_" })
             {
                 AddHelmetClip(helmet, "idle", 4, tk2dSpriteAnimationClip.WrapMode.Loop);
                 AddHelmetClip(helmet, "move", 9, tk2dSpriteAnimationClip.WrapMode.Loop);
@@ -147,7 +147,7 @@ namespace PlutoTheCat
             private string helmet = "";
 
             /// <summary>
-            /// Squire: point the idle/move/pet/block/ko slots at a helmeted clip set ("squire_" pot helmet, "knight_" gold
+            /// Squire: point the idle/move/pet/block/ko slots at the helmeted clip set ("knight_", the gold plumed
             /// helmet) or back to the plain clips (""), like Junkan swaps his armour clips.
             /// </summary>
             public void SetHelmet(string prefix)

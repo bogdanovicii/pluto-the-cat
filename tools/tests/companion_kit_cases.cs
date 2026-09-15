@@ -74,9 +74,9 @@ class CompanionKitCases
         Check(!CompanionKitRules.NeedsNewDecoyLeg(true, 2f, 0.5f, 1f, 3f, 2f), "a slightly better leg does not cause jitter");
         // Squire helmet: grey pot helmet for every Junkan form below Holy Knight, the gold plumed helmet from Holy Knight up.
         Check(CompanionKitRules.CocoHelmetPrefix(false, 7) == "", "no Squire: no helmet");
-        Check(CompanionKitRules.CocoHelmetPrefix(true, 0) == "squire_", "Peasant Junkan: pot helmet");
-        Check(CompanionKitRules.CocoHelmetPrefix(true, 5) == "squire_", "Knight Commander: pot helmet");
-        Check(CompanionKitRules.CocoHelmetPrefix(true, 6) == "knight_" && CompanionKitRules.CocoHelmetPrefix(true, 7) == "knight_", "Holy and Angelic Knight: gold helmet");
+        Check(CompanionKitRules.CocoHelmetPrefix(true, 0) == "knight_", "Peasant Junkan: knight helmet");
+        Check(CompanionKitRules.CocoHelmetPrefix(true, 5) == "knight_", "Knight Commander: knight helmet");
+        Check(CompanionKitRules.CocoHelmetPrefix(true, 6) == "knight_" && CompanionKitRules.CocoHelmetPrefix(true, 7) == "knight_", "Holy and Angelic Knight: knight helmet");
         Check(CompanionKitRules.CocoHelmetPrefix(true, 8) == "knight_", "Mecha Junkan: gold helmet");
         Console.WriteLine(count + " companion behavior cases passed");
     }

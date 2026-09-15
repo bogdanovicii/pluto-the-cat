@@ -125,11 +125,10 @@ namespace PlutoTheCat
             return legThreat > bestAlternative + DecoySwerveMargin;
         }
 
-        /// <summary>Squire helmet clip prefix: none without Squire, pot helmet below Holy Knight, gold helmet from Holy Knight (6) up.</summary>
+        /// <summary>Squire helmet clip prefix: the gold plumed knight helmet for every Junkan form, none without Squire.</summary>
         public static string CocoHelmetPrefix(bool squire, int junkanForm)
         {
-            if (!squire) return "";
-            return junkanForm >= 6 ? "knight_" : "squire_";
+            return squire ? "knight_" : "";
         }
 
         private static float Distance(float ax, float ay, float bx, float by)

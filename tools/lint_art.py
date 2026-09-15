@@ -34,7 +34,6 @@ AIRBORNE = {
     'ghost_idle_left': ALL, 'ghost_idle_right': ALL, 'ghost_sneeze_left': ALL, 'ghost_sneeze_right': ALL,
     'death_coop': ALL, 'death': {5}, 'death_shot': {4}, 'item_get': {1}, 'select_choose': {1}, 'stretch': ALL,
     'coco_move': {1, 2, 3}, 'coco_block': {2}, 'coco_knight_move': {1, 2, 3}, 'coco_knight_block': {2},
-    'coco_squire_move': {1, 2, 3}, 'coco_squire_block': {2},
     'pet': {1}, 'slide_right': ALL, 'slide_up': ALL, 'slide_down': ALL, 'chest_recover': set(),
 }
 # clips where repeated frames are intentional holds
@@ -43,7 +42,7 @@ HOLDS = {'death', 'death_shot', 'item_get', 'chest_recover', 'select_choose', 'k
          'slide_up', 'slide_down', 'stretch', 'ghost_sneeze_left', 'ghost_sneeze_right', 'timefall', 'spinfall',
          'dodge', 'dodge_bw', 'dodge_left', 'dodge_left_bw', 'death_coop', 'tablekick_right', 'jetpack_down',
          'jetpack_right', 'jetpack_right_bw', 'jetpack_up', 'doorway', 'idle', 'idle_forward', 'idle_backward', 'idle_bw',
-         'select_idle', 'groom', 'coco_idle', 'coco_knight_idle', 'coco_squire_idle'}
+         'select_idle', 'groom', 'coco_idle', 'coco_knight_idle'}
 
 
 def bbox(f):
@@ -122,9 +121,7 @@ def main():
     plain = {'coco_idle': V4.COCO_IDLE, 'coco_move': V4.COCO_MOVE, 'coco_pet': V4.COCO_PET, 'coco_block': V4.COCO_BLOCK}
     e4, w4 = lint(plain, V4.COCO_W, V4.COCO_H, V4.COCO_H - 2, label='companion/')
     knight = {'coco_knight_idle': V4.COCO_KNIGHT_IDLE, 'coco_knight_move': V4.COCO_KNIGHT_MOVE,
-              'coco_knight_pet': V4.COCO_KNIGHT_PET, 'coco_knight_block': V4.COCO_KNIGHT_BLOCK,
-              'coco_squire_idle': V4.COCO_SQUIRE_IDLE, 'coco_squire_move': V4.COCO_SQUIRE_MOVE,
-              'coco_squire_pet': V4.COCO_SQUIRE_PET, 'coco_squire_block': V4.COCO_SQUIRE_BLOCK}
+              'coco_knight_pet': V4.COCO_KNIGHT_PET, 'coco_knight_block': V4.COCO_KNIGHT_BLOCK}
     e3, w3 = lint(knight, V4.KNIGHT_W, V4.KNIGHT_H, V4.KNIGHT_H - 2, label='companion/')
     errors, warnings = e1 + e2 + e3 + e4, w1 + w2 + w3 + w4
     for w in warnings:
