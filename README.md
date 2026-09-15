@@ -1,7 +1,7 @@
 # Pluto the Cat — Enter the Gungeon mod
 
 A BepInEx / Alexandria mod that adds Pluto (a real chunky tabby-and-white cat) as a playable Gungeoneer. Current
-version: **2.16.2** (`thunderstore/manifest.json`, `PlutoTheCat/src/Plugin.cs`). Player-facing feature list:
+version: **2.18.0** (`thunderstore/manifest.json`, `PlutoTheCat/src/Plugin.cs`). Player-facing feature list:
 `thunderstore/README.md`; full history: `thunderstore/CHANGELOG.md`.
 
 What ships today, in short:

@@ -16,6 +16,7 @@ Adds **Pluto the Cat** as a new playable Gungeoneer. He is a chunky brown tabby-
 - **Samurai Pluto** alt costume: beat Pluto's past (the Vet Visit), then touch the kimono stand just above him in the Breach. Samurai Pluto starts with the **Taiyaki Cannon** and the **Katana** (Blasphemy-style: cuts bullets, sakura wave at full health, reload clears nearby bullets) instead of the kibble bag, and gets his own boss-intro card.
 - Enemies that die while in love sometimes drop a kibble bowl that heals half a heart.
 - **Five cat items for every Gungeoneer** (found in chests and shops): Ball of Yarn, Catnip Pouch, Jingle Bell Collar, Hairball and Scratching Post, each with an Ammonomicon story and a synergy with Pluto's own kit.
+- **Yasupen** (found in the loot pool): Donpen's twin brother follows you, belly-slides into enemies, makes shops 10 % cheaper and sometimes finds a miracle bargain of 3-5 casings after a room is cleared. Pet him and Coco is happy too. Penguin Pals with Coco Blue makes him slide at the enemy chasing Coco.
 
 ## Install (r2modman)
 

@@ -163,7 +163,8 @@ namespace PlutoTheCat
                 lookTimer -= BraveTime.DeltaTime;
                 if (sliding || IsBeingPet || lookTimer > 0f) return;
                 lookTimer = 0.2f;
-                AIActor target = PenguinPalsTarget(out float distance) ?? NearestEnemy(out distance);
+                AIActor target = PenguinPalsTarget(out float distance);
+                if (target == null || distance > PlutoConfig.YasupenSlideRange) target = NearestEnemy(out distance);
                 if (YasupenRules.SlideReady(Time.time, lastSlide, PlutoConfig.YasupenSlideCooldown, m_owner.IsInCombat,
                     target != null ? distance : float.NaN, PlutoConfig.YasupenSlideRange))
                     SlideAt(target);
