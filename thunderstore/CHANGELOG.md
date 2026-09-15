@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.16.4 (test build, not released)
+- **Coco runs again during the Squeaky Toy decoy**: 2.16.3 let him stand still when no bullet threatened him. Every decoy leg now runs 2.5-3.5 tiles in a panicky zigzag, still steering away from incoming bullets and staying within about 8 tiles of Pluto.
+- **Coco wears the gold knight helmet** whenever Ser Junkan is with him (Squire), whatever Junkan's form; it comes off when the synergy ends and lies beside him when he is knocked out.
+- **Taiyaki Cannon reload redrawn**: 9 frames over the full 0.9 s reload. The Churu tube pushes into the tail, is squeezed flat, and a bead swells in the mouth.
+- **Churu drop** (like the Kibble Sack's hairball): finishing a reload from an empty clip flings a Churu drop toward your aim for 5 damage, with a 3-damage bonito splash within 1.5 tiles. Config `Balance/ChuruDrop` (on by default).
+
 ## 2.16.3 (test build, not released)
 - **Coco** spends one stuffing per enemy bullet (several bullets at once cost several), dodges by where bullets are heading instead of running at random, and his decoy only releases the enemies it retargeted.
 - **Crumbs** drop only after a kibble damages an enemy (not on walls), at most 12 per player, and are left on the floor when the gun cannot take ammo.
