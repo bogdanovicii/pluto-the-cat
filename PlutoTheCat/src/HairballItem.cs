@@ -102,7 +102,9 @@ namespace PlutoTheCat
         /// </summary>
         public class FurCloud : MonoBehaviour
         {
-            private class Slowed { public float speed; public float timeScale; public int clouds; }
+            // applied/bullet remember what the cloud set, so a pooled bullet reused for a new pattern is never "restored"
+            // to the previous bullet's speed.
+            private class Slowed { public float speed; public float applied; public float timeScale; public Brave.BulletScript.Bullet bullet; public int clouds; }
             private static readonly Dictionary<Projectile, Slowed> slowed = new Dictionary<Projectile, Slowed>();
             private const float Tick = 0.1f;
             private readonly HashSet<Projectile> mine = new HashSet<Projectile>();
@@ -161,12 +163,14 @@ namespace PlutoTheCat
                 Brave.BulletScript.Bullet bullet = p.braveBulletScript != null ? p.braveBulletScript.bullet : null;
                 if (bullet != null)
                 {
+                    s.bullet = bullet;
                     s.timeScale = bullet.TimeScale;
                     bullet.TimeScale = s.timeScale * PlutoConfig.HairballItemBulletSpeed;
                 }
                 else
                 {
                     p.Speed = CatItemRules.CloudBulletSpeed(s.speed, p.Speed, PlutoConfig.HairballItemBulletSpeed);
+                    s.applied = p.Speed;
                 }
             }
 
@@ -178,8 +182,8 @@ namespace PlutoTheCat
                 if (--s.clouds > 0) return;
                 slowed.Remove(p);
                 Brave.BulletScript.Bullet bullet = p.braveBulletScript != null ? p.braveBulletScript.bullet : null;
-                if (bullet != null) bullet.TimeScale = s.timeScale;
-                else p.Speed = Mathf.Max(p.Speed, s.speed);
+                if (s.bullet != null) { if (bullet == s.bullet) bullet.TimeScale = s.timeScale; }
+                else if (bullet == null && Mathf.Approximately(p.Speed, s.applied)) p.Speed = s.speed;
             }
 
             /// <summary>Destroyed bullets compare equal to null in Unity; drop their table entries.</summary>

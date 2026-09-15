@@ -125,18 +125,28 @@ Peer notes (enter-the-gungeon-pluto-37): the Kibble Sack already has a reload "H
 `pluto:hairball_item`, `HairballItem*` config, `hairball_item_icon`; description-only edits in Coco/Taiyaki/KibbleSack
 files; changelog under `2.17.0 (in progress)`, no version bump.
 
-- [ ] Research: vanilla APIs for root/slow, bullet erase, bullet slow, placed object, piercing, roll hook (subagent)
-- [ ] Research: mod item pipeline, descriptions, art export, tests (subagent)
-- [ ] Art: Gemini sheet (flash; pro credits depleted) -> pixel copy vs hand-drawn draft, pick per icon by rubric, review_art
-- [ ] Art: approved icons in reference/art/cat_items/, make_art.py copies them to Resources/Items, validate required list
-- [ ] C#: BallOfYarnItem (active throw, bounces, tangles: root then slow, re-bat on touch)
-- [ ] C#: CatnipPouchItem (active timed zoomies: speed + fire rate, afterimage, catnap slowdown after)
-- [ ] C#: JingleBellCollarItem (passive: dodge roll jingles, erases enemy bullets in a ring, cooldown)
-- [ ] C#: HairballItem (active grenade: fur cloud slows enemy bullets inside)
-- [ ] C#: ScratchingPostItem (active placed post: +damage and piercing near it for the room)
-- [ ] Pure rules class + C# test cases for timers/cooldowns/radius; config block with clamping
-- [ ] Loot pool: quality tiers, not EXCLUDED; five synergies with existing items
-- [ ] Lore: five new Ammonomicon entries + rewrite the existing items/guns in vanilla style (mechanic line, then a joke)
-- [ ] CHANGELOG 2.17.0 (in progress), README item list
-- [ ] ./build.sh in this worktree green (build, validate, tests, art lint); code review subagent
+- [x] Research: vanilla APIs for root/slow, bullet erase, bullet slow, placed object, piercing, roll hook (subagent)
+- [x] Research: mod item pipeline, descriptions, art export, tests (subagent)
+- [x] Art: Gemini unavailable (429 prepaid credits depleted on pro and flash, 2026-09-15) -> hand-drawn 16x16 row strings (small-sprite route), review_art pass
+- [x] Art: approved icons in reference/art/cat_items/, make_art.py copies them to Resources/Items, validate required list
+- [x] C#: BallOfYarnItem (active throw, bounces, tangles: root then slow, re-bat on touch)
+- [x] C#: CatnipPouchItem (active timed zoomies: speed + fire rate, afterimage, catnap slowdown after)
+- [x] C#: JingleBellCollarItem (passive: dodge roll jingles, erases enemy bullets in a ring, cooldown)
+- [x] C#: HairballItem (active grenade: fur cloud slows enemy bullets inside)
+- [x] C#: ScratchingPostItem (active placed post: +damage and piercing near it for the room)
+- [x] Pure rules class + C# test cases for timers/cooldowns/radius; config block with clamping
+- [x] Loot pool: quality tiers, not EXCLUDED; five synergies with existing items
+- [x] Lore: five new Ammonomicon entries + rewrite the existing items/guns in vanilla style (mechanic line, then a joke)
+- [x] CHANGELOG 2.17.0 (in progress), README item list
+- [x] ./build.sh in this worktree green (build, validate, tests, art lint); code review subagent
 - [ ] In-game checklist + test build to the Steam tester (read drop page first)
+
+### Review (2.17.0 cat items, 2026-09-15)
+Built green in ../pluto-cat-items: art lint 0/0, validate all checks passed, 15 cat item + 52 companion + 75 player kit/config cases, 8 tests OK.
+Code review subagent (decompiled-source checks of item lifecycle, active state, bounce+pierce, SilencerInstance signature,
+Projectile.Speed / Bullet.TimeScale, synergy registration order): no findings >= 80 %. Its sub-threshold note (a pooled enemy
+bullet reused inside a cloud could be "restored" to the old bullet's speed) is fixed: the cloud restores only the exact speed /
+bullet it changed.
+Previews: docs/art-preview/ammonomicon-cat-items.png (all 13 Ammonomicon pages), reference/gemini/cat_items/build/ (icons, world sprites, mock).
+Not verified (needs the game): everything in docs/cat-items-2170-test-checklist.md, in particular tk2dSprite depth of the placed post,
+AdditionalShotPiercing on Pluto's guns, the afterimage colour, Bullet.TimeScale on boss patterns, and that the loot pool offers the items.
