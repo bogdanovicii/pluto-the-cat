@@ -19,6 +19,9 @@ FUR_W, FUR_H = A.W + 2 * MARGIN_X, A.H + MARGIN_TOP
 WHITE = set('WwxKq')
 TABBY = set('BbdLlU')      # U/J wet keys are recoloured later; treat as fur
 DARK = set('J j'.split())
+# Samurai costume cloth (tools/samurai.py): haori indigo 5/6/7, hakama charcoal 4/0, obi crimson 8/r. Fur never grows from
+# cloth, so the kimono stays smooth while the head, ears, paws and tail still bristle.
+KIMONO = set('567408r')
 
 
 def _hash(x, y, v):
@@ -37,7 +40,7 @@ def fur_layer(rows, variant):
     for y in range(h):
         for x in range(w):
             ch = body[y][x]
-            if ch == '.':
+            if ch == '.' or ch in KIMONO:
                 continue
             # outward normal: sum of directions toward empty neighbours (8-connected)
             nx = ny = 0
@@ -63,6 +66,8 @@ def fur_layer(rows, variant):
                 # outline pixel: look one step inward for the fur colour
                 ix, iy = int(round(x - ux)), int(round(y - uy))
                 inner = body[iy][ix] if 0 <= ix < w and 0 <= iy < h else 'B'
+                if inner in KIMONO:
+                    continue
                 fur_ch, tip_ch = ('W', 'w') if inner in WHITE else ('B', 'b')
             for k in range(1, length + 1):
                 px = int(round(x + ux * k)) + MARGIN_X
@@ -87,12 +92,23 @@ FUR_CLIPS = [
 ]
 
 
-def all_fur():
-    """{clip: [[variant0, variant1, variant2, variant3] per frame]}"""
+def _fur_for(clips):
     result = {}
     for clip in FUR_CLIPS:
-        frames = A.CLIPS.get(clip)
+        frames = clips.get(clip)
         if not frames:
             continue
         result[clip] = [[fur_layer(f, v) for v in range(4)] for f in frames]
     return result
+
+
+def all_fur():
+    """{clip: [[variant0, variant1, variant2, variant3] per frame]}"""
+    return _fur_for(A.CLIPS)
+
+
+def all_samurai_fur():
+    """The same layers for the samurai costume's frames (exported as fur_sam_*): fur only where fur shows."""
+    import samurai
+    clips, _, _ = samurai.build()
+    return _fur_for({k: v for k, v in clips.items() if v})

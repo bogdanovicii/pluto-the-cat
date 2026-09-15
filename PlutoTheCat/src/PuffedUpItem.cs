@@ -8,8 +8,9 @@ namespace PlutoTheCat
     /// Puffed Up: Pluto's anger passive. Every hit (including one Nine Lives cancels) makes him bristle
     /// for a few seconds: the body sprite scales up, a ring of standing fur is drawn behind him, anger
     /// marks pop over his head, and he hits harder, fires faster and moves faster until he calms down.
-    /// The samurai kimono hides the fur ring, so in that costume the anger shows as a red flash on the
-    /// hit, a red pulse while it lasts and anger marks that keep popping over his head (AngerCueRules).
+    /// In the samurai costume the fur comes from its own layer set (PlutoFur fur_sam_*): the kimono stays smooth while his
+    /// head, ears, paws and tail bristle, and the anger also shows as a red flash on the hit, a red pulse while it lasts
+    /// and anger marks that keep popping over his head (AngerCueRules).
     /// </summary>
     public class PuffedUpItem : PassiveItem
     {
@@ -193,11 +194,11 @@ namespace PlutoTheCat
                 if (fur == null || player.sprite == null || player.spriteAnimator == null) return;
 
                 tk2dSpriteAnimationClip clip = player.spriteAnimator.CurrentClip;
-                // The samurai kimono covers the fur: no fur layer while the costume is worn (the layers follow the normal frames).
-                int id = clip == null || player.IsUsingAlternateCostume ? -1 : PlutoFur.Lookup(clip.name, player.spriteAnimator.CurrentFrame, Variant());
+                // The samurai costume has its own fur layers (grown from the kimono frames), so each costume follows its own frames.
+                int id = clip == null ? -1 : PlutoFur.Lookup(clip.name, player.spriteAnimator.CurrentFrame, Variant(), player.IsUsingAlternateCostume);
                 if (id < 0)
                 {
-                    fur.renderer.enabled = false;     // pits, deaths, ghosts, samurai costume: no fur layer
+                    fur.renderer.enabled = false;     // pits, deaths, ghosts: no fur layer
                     return;
                 }
                 fur.renderer.enabled = true;

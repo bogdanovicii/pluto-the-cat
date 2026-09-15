@@ -105,3 +105,8 @@
 - "Coco no longer runs in the room when the active is triggered": the scored-dodge rewrite let "stay" win whenever no bullet threatened him, so the decoy stood still. A behaviour a player can see (a panicky run) is part of the feature, not an implementation detail: when replacing movement logic, keep a test that the idle/no-threat case still moves, and list the visible behaviour in the in-game checklist.
 - "The Vet remains stuck a lot" after adding fairness gates (budget, recovery, repeat avoidance, distance bands): gates that remove attacks must never also remove movement. Simulate several seconds of selection with long-lived hazards before shipping.
 - Confirmed working: Playdate Dog bites enemies (2.16.2 Wolf behaviours).
+
+## Samurai Puffed Up had no fur (user, 2026-09-15: "pluto is no longer fluffy when getting damaged in the samurai skin, it only gets bigger")
+- a7dfe7d picked "turn the fur off for the costume" out of the spec's two options (mask where the kimono covers, or turn off) and swapped in a red tint cue. The user reads the fur as the item itself, so removing it for a costume was a regression, not a style choice.
+- When a costume or skin conflicts with an existing visual effect, keep the effect and adapt it to the costume (here: grow fur only from fur-coloured edges), or ask the user before dropping it.
+- "Gets bigger" comes only from `Balance/AngryScale` != 1 in the tester's cfg (the default has been 1.0 since 2.4.1), so a size change the defaults cannot produce points at a stale config value.

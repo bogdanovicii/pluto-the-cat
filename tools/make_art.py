@@ -220,6 +220,12 @@ def gun_and_items():
             for v, rows in enumerate(variants):
                 save(rows, os.path.join(furdir, clip, f'fur_{clip}_{fi:03d}_{v}.png'))
                 n += 1
+    # samurai costume: the same layers grown from the kimono frames, fur only where fur shows (tools/fur.py KIMONO)
+    for clip, frames in FUR.all_samurai_fur().items():
+        for fi, variants in enumerate(frames, 1):
+            for v, rows in enumerate(variants):
+                save(rows, os.path.join(furdir, 'sam_' + clip, f'fur_sam_{clip}_{fi:03d}_{v}.png'))
+                n += 1
     print(f'fur layers: {n}')
 
 

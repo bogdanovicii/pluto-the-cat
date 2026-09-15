@@ -201,6 +201,9 @@ fur_root = os.path.join(RES, 'Fur')
 fur_n = sum(len(fs) for _, _, fs in os.walk(fur_root)) if os.path.isdir(fur_root) else 0
 if fur_n < 100:
     err(f'fur layers missing or too few ({fur_n})')
+sam_fur_n = sum(len(fs) for d, _, fs in os.walk(fur_root) if os.path.basename(d).startswith('sam_')) if os.path.isdir(fur_root) else 0
+if sam_fur_n < 100:
+    err(f'samurai fur layers missing or too few ({sam_fur_n})')
 if not os.path.exists(os.path.join(items, 'squeaker_icon.png')):
     err('item art missing: squeaker_icon.png')
 if len([f for f in os.listdir(os.path.join(RES, 'VFX')) if f.startswith('spark')]) != 3:
