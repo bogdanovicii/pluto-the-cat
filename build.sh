@@ -17,6 +17,12 @@ echo "==> building"
 echo "==> validating"
 python3 tools/validate.py
 
+echo "==> testing"
+python3 -m unittest discover -s tools/tests -q
+
+echo "==> art lint"
+python3 tools/lint_art.py
+
 echo "==> packaging"
 rm -rf dist && mkdir -p dist/pkg/plugins
 cp PlutoTheCat/bin/Release/PlutoTheCat.dll dist/pkg/plugins/
