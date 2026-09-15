@@ -13,6 +13,8 @@ namespace PlutoTheCat
         public static float KibbleDamage = 3.5f;
         public static int KibbleClip = 10;
         public static float KibbleCritChance = 0.05f;
+        public static float TaiyakiDamage = 8f;
+        public static int TaiyakiClip = 10;
         public static float SecretDoorDamage = 15f;
         public static bool NoFallDamage = true;
         public static float CanSplashRadius = 2f;
@@ -48,6 +50,8 @@ namespace PlutoTheCat
             KibbleDamage = cfg.Bind("Balance", "KibbleDamage", KibbleDamage, "Damage per kibble (two kibble per shot).").Value;
             KibbleClip = cfg.Bind("Balance", "KibbleClip", KibbleClip, "Shots per clip for the Royal Kibble Sack.").Value;
             KibbleCritChance = cfg.Bind("Balance", "KibbleCritChance", KibbleCritChance, "Chance (0-1) that a kibble is a big chunk (3.5x damage).").Value;
+            TaiyakiDamage = cfg.Bind("Balance", "TaiyakiDamage", TaiyakiDamage, "Damage per mini taiyaki from the Taiyaki Cannon (samurai costume; one shot every 0.2 s).").Value;
+            TaiyakiClip = cfg.Bind("Balance", "TaiyakiClip", TaiyakiClip, "Shots per clip for the Taiyaki Cannon.").Value;
             SecretDoorDamage = cfg.Bind("Kibble Sack", "SecretDoorDamage", SecretDoorDamage, "Extra damage each kibble deals to a secret-room wall on top of its own (walls have 100 hit points; 0 = normal damage only).").Value;
             NoFallDamage = cfg.Bind("Balance", "NoFallDamage", NoFallDamage, "Pluto lands on his feet: falling into a pit costs no health.").Value;
             CanSplashRadius = cfg.Bind("Balance", "CanSplashRadius", CanSplashRadius, "Wet Food Can: radius in tiles of the gravy splash that charms enemies around the burst.").Value;

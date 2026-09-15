@@ -7,8 +7,10 @@ namespace PlutoTheCat
 {
     /// <summary>
     /// Coco Blue's friends. Lives on the Coco companion next to CocoBlueController and only reads its state.
-    /// - Playdate (Squeaky Toy + Dog): while Coco is a decoy the Dog runs at the enemy chasing him and bites it
-    ///   (vanilla Dog never attacks, so the bite is scripted); petting either one makes the other happy too.
+    /// - Playdate (Squeaky Toy + Dog): while Coco is a decoy the Dog fights like the vanilla Wolf: it gets the Wolf
+    ///   companion's SeekTargetBehavior + WolfCompanionAttackBehavior (bark, leap, bite) aimed at the enemy chasing
+    ///   Coco, and loses them when the decoy ends (vanilla Dog has no attack behaviours at all; 2.16.2).
+    ///   Petting either one makes the other happy too.
     /// - Squire (Coco + Ser Junkan): +1 stuffing per Junkan form (CocoBlueController.MaxStuffing); while Coco
     ///   is a decoy, Junkan's OverrideTarget (which wins over PlayerTarget) is the enemy chasing him.
     /// - Knighted (Squire tier): while Junkan is a Holy or Angelic Knight, Coco plays his helmeted clips.
@@ -17,12 +19,12 @@ namespace PlutoTheCat
     {
         public const int DogId = 300;
         public const int JunkanId = 580;
-        private const float BiteDamage = 6f, BiteCooldown = 1.2f, BiteReach = 1.25f;   // reach is measured from the enemy's edge
-
         private CocoBlueItem.CocoBlueController coco;
-        private float repathTimer, biteTimer, lookTimer;
+        private float lookTimer;
         private AIActor chaser;                      // the enemy the friends go after while Coco is a decoy
-        private AIActor heldDog;                     // the Dog whose follow behaviour is paused
+        private AIActor heldDog;                     // the Dog fighting as a Wolf (follow paused, attack behaviours added)
+        private SeekTargetBehavior dogSeek;
+        private WolfCompanionAttackBehavior dogBite;
         private AIActor aimedJunkan;                 // the Junkan pointed at the chaser
         private SpeculativeRigidbody aimedBody;
         private bool cocoWasPet, dogWasPet, wasDecoy;
@@ -58,8 +60,7 @@ namespace PlutoTheCat
             if (coco == null) return;
             PlayerController owner = coco.OwnerPlayer;
             if (owner == null) return;
-            float dt = BraveTime.DeltaTime;
-            repathTimer -= dt; biteTimer -= dt; lookTimer -= dt;
+            lookTimer -= BraveTime.DeltaTime;
 
             AIActor dog = owner.PlayerHasActiveSynergy(PlutoSynergies.Playdate) ? CompanionFrom(owner, DogId) : null;
             SackKnightController knight = SquireJunkan(owner);
@@ -128,31 +129,47 @@ namespace PlutoTheCat
             if (heldDog != dog)
             {
                 ReleaseDog();
+                if (dog.behaviorSpeculator == null) return;
                 heldDog = dog;
                 SetFollow(dog, false);
+                // The vanilla Wolf's (Dog_Past) combat behaviours, fresh instances with its prefab values. The Dog has no
+                // "attack" clip, so the leap plays its roll; the bite is WolfCompanionAttackBehavior's own 5 damage.
+                dogSeek = new SeekTargetBehavior { StopWhenInRange = false, LineOfSight = true, ReturnToSpawn = false, PathInterval = 0.25f, CustomRange = -1f };
+                dogBite = new WolfCompanionAttackBehavior
+                {
+                    minLeapDistance = 1f, leapDistance = 2f, maxTravelDistance = 5f, leadAmount = 1f,
+                    leapTime = 0.3f, maximumChargeTime = 0.25f, chargeAnim = "bark", leapAnim = "roll"
+                };
+                dog.behaviorSpeculator.MovementBehaviors.Add(dogSeek);
+                dog.behaviorSpeculator.AttackBehaviors.Add(dogBite);
+                dog.behaviorSpeculator.RefreshBehaviors();
+                Plugin.Log("Playdate: the Dog fights like a Wolf, target " + chaser.GetActorName());
             }
-            if (repathTimer <= 0f)
-            {
-                repathTimer = 0.3f;
-                dog.PathfindToPosition(chaser.CenterPosition);
-            }
-            float edge = chaser.specRigidbody != null ? 0.5f * Mathf.Max(chaser.specRigidbody.UnitDimensions.x, chaser.specRigidbody.UnitDimensions.y) : 0f;
-            if (biteTimer <= 0f && Vector2.Distance(dog.CenterPosition, chaser.CenterPosition) < BiteReach + edge)
-            {
-                biteTimer = BiteCooldown;
-                Vector2 dir = (chaser.CenterPosition - dog.CenterPosition).normalized;
-                chaser.healthHaver.ApplyDamage(BiteDamage, dir, "Playdate");
-                PlutoVFX.Spawn(PlutoVFX.BlockSpark, chaser.CenterPosition);
-                AkSoundEngine.PostEvent("Play_OBJ_item_throw_01", dog.gameObject);
-            }
+            // OverrideTarget wins over the companion's own nearest-enemy pick, so the Wolf bite goes to Coco's chaser.
+            if (chaser.specRigidbody != null) dog.OverrideTarget = chaser.specRigidbody;
         }
 
         private void ReleaseDog()
         {
-            if (heldDog == null) { heldDog = null; return; }
+            if (heldDog == null) { heldDog = null; dogSeek = null; dogBite = null; return; }
+            BehaviorSpeculator bs = heldDog.behaviorSpeculator;
+            if (bs != null)
+            {
+                bs.Interrupt();                              // a leap in progress would keep its velocity override
+                if (dogSeek != null) bs.MovementBehaviors.Remove(dogSeek);
+                if (dogBite != null) bs.AttackBehaviors.Remove(dogBite);
+                bs.RefreshBehaviors();
+            }
+            heldDog.BehaviorOverridesVelocity = false;
+            if (heldDog.aiAnimator != null) heldDog.aiAnimator.LockFacingDirection = false;
+            heldDog.PathableTiles = CellTypes.FLOOR;
+            heldDog.OverrideTarget = null;
             SetFollow(heldDog, true);
             heldDog.ClearPath();
+            Plugin.Log("Playdate: the Dog is a Dog again");
             heldDog = null;
+            dogSeek = null;
+            dogBite = null;
         }
 
         private static void SetFollow(AIActor actor, bool on)

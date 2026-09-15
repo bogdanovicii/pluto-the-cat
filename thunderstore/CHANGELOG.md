@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.16.2
+- **Taiyaki Cannon** is stronger: 8 damage per mini taiyaki (was 6), one shot every 0.20 s (was 0.24), 10 per clip (was 8), 0.9 s reload (was 1.1), faster taiyaki. About 40 damage per second against the Royal Kibble Sack's 35. New config keys `TaiyakiDamage` and `TaiyakiClip`.
+- **Playdate** (Squeaky Toy + Dog) fixed: while Coco is out as a decoy, the Dog now fights like the vanilla Wolf. It runs at the enemy chasing Coco, barks, leaps and bites, then goes back to being a normal Dog when the decoy ends. Before, the Dog never visibly attacked.
+
 ## 2.16.1
 - The **Katana** now swings like Blasphemy: the blade sweeps from raised to low around Pluto's paw over 8 frames, with a thin steel-white crescent trailing it. Before, the fire animation held the blade still and only showed a crescent.
 

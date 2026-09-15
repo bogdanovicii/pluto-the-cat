@@ -92,3 +92,7 @@
 - `IsHeroSword` only runs the slash logic and plays `shootAnimation` (Gun.cs HandleShootAnimation); nothing rotates the sword. The visible swing must be drawn: the blade sweeps around the grip over many frames (Blasphemy, Planetside's Crystalline).
 - A still blade plus a crescent reads as "no swing". Review a weapon's fire clip as motion (APNG at the real fps), not as a strip of stills.
 - Swing frames need a taller canvas; shift their sprite definitions in code (position0..3) so the grip pixel lands on the idle grip, and keep the jtk2d hand at the idle position.
+
+## Playdate still did nothing visible (2.16.1 user report: "the dog does not attack, it should attack like the wolf does")
+- Vanilla Dog (item 300, enemy Dog c07ef60a...) has no attack behaviours; the attacking "Wolf" is a separate companion prefab (Dog_Past ededff1d..., item 492) with SeekTargetBehavior + WolfCompanionAttackBehavior. A scripted ApplyDamage next to an idle-looking Dog reads as "no attack" even when it lands.
+- When the user names a vanilla behaviour to copy ("like the wolf"), reuse that behaviour class with its prefab values instead of scripting a look-alike; add it to the speculator lists, call RefreshBehaviors(), and on removal Interrupt() first and reset BehaviorOverridesVelocity, LockFacingDirection, PathableTiles and OverrideTarget.

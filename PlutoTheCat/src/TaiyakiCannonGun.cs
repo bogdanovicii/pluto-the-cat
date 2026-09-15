@@ -37,10 +37,12 @@ namespace PlutoTheCat
             gun.DefaultModule.sequenceStyle = ProjectileModule.ProjectileSequenceStyle.Random;
             gun.DefaultModule.ammoType = GameUIAmmoType.AmmoType.SMALL_BULLET;
             gun.DefaultModule.ammoCost = 1;
-            gun.DefaultModule.cooldownTime = 0.24f;
+            // 2.16.2 buff (user: "a little bit underpowered"): 8 dmg / 0.20 s = 40 DPS against the Kibble Sack's 35
+            // (2 x 3.5 / 0.20 s). One precise shot instead of two spread kibble, so it sits a notch above.
+            gun.DefaultModule.cooldownTime = 0.20f;
             gun.DefaultModule.angleVariance = 4f;
-            gun.DefaultModule.numberOfShotsInClip = 8;
-            gun.reloadTime = 1.1f;
+            gun.DefaultModule.numberOfShotsInClip = PlutoConfig.TaiyakiClip;
+            gun.reloadTime = 0.9f;
             gun.SetBaseMaxAmmo(300);
             gun.gunClass = GunClass.PISTOL;
             gun.gunHandedness = GunHandedness.OneHanded;
@@ -55,8 +57,8 @@ namespace PlutoTheCat
 
             Projectile taiyaki = ProjectileUtility.SetupProjectile(56); // clone the .38 Special bullet
             taiyaki.gameObject.name = "pluto_mini_taiyaki_projectile";
-            taiyaki.baseData.damage = 6f;
-            taiyaki.baseData.speed = 15f;
+            taiyaki.baseData.damage = PlutoConfig.TaiyakiDamage;
+            taiyaki.baseData.speed = 17f;
             taiyaki.baseData.range = 18f;
             taiyaki.baseData.force = 8f;
             taiyaki.shouldRotate = true;
