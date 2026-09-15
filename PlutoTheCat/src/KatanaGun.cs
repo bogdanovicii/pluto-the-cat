@@ -77,6 +77,7 @@ namespace PlutoTheCat
 
             ETGMod.Databases.Items.Add(gun, null, "ANY");
             ShiftSwingFrames(gun);
+            CopySwingAudio(gun, blasphemy);
 
             // Reach: push Casing outward after the sprite setup, then log what the game will use.
             Transform casing = gun.transform.Find("Casing");
@@ -98,6 +99,46 @@ namespace PlutoTheCat
         // (WeaponLayout.KATANA_SWING_*) than idle/reload (KATANA_W/H, grip KATANA_HAND_*). Gun sprites are drawn from their
         // bottom-left corner, so each fire frame is moved down by the difference to keep the grip in Pluto's paw.
         private const int SwingGripOffsetPixels = WeaponLayout.KATANA_SWING_GRIP_OFFSET;
+
+        /// <summary>
+        /// Swing sound. Gun.Attack's IsHeroSword branch only starts the slash and plays the shoot clip; it never reaches the
+        /// fire-audio code (HandleSpecificInitialGunShoot). Blasphemy's sound comes from audio events on its shoot clip frames,
+        /// which tk2dSpriteAnimator.ProcessEvents posts. The Katana's clip is built from our own frames and had none, so the
+        /// swing was silent. Copy Blasphemy's events onto the matching frames; if there are none, fall back to the normal
+        /// gun-shot event on frame 0 (Attack has already set the WPN_Guns switch to Blasphemy's group on the gun object).
+        /// </summary>
+        private static void CopySwingAudio(Gun gun, Gun blasphemy)
+        {
+            tk2dSpriteAnimationClip ours = gun.spriteAnimator != null ? gun.spriteAnimator.GetClipByName(gun.shootAnimation) : null;
+            if (ours == null || ours.frames == null || ours.frames.Length == 0)
+            {
+                Plugin.Log("katana sound: no fire clip found, swing stays silent");
+                return;
+            }
+            tk2dSpriteAnimator theirAnim = blasphemy != null ? blasphemy.GetComponent<tk2dSpriteAnimator>() : null;
+            tk2dSpriteAnimationClip theirs = theirAnim != null ? theirAnim.GetClipByName(blasphemy.shootAnimation) : null;
+            List<string> copied = new List<string>();
+            if (theirs != null && theirs.frames != null)
+            {
+                for (int i = 0; i < theirs.frames.Length; i++)
+                {
+                    tk2dSpriteAnimationFrame f = theirs.frames[i];
+                    if (f == null || string.IsNullOrEmpty(f.eventAudio)) continue;
+                    int j = Mathf.Min(ours.frames.Length - 1, Mathf.RoundToInt(i * (float)ours.frames.Length / theirs.frames.Length));
+                    ours.frames[j].eventAudio = f.eventAudio;
+                    ours.frames[j].triggerEvent = true;
+                    copied.Add(f.eventAudio + "@" + j);
+                }
+            }
+            if (copied.Count == 0)
+            {
+                ours.frames[0].eventAudio = "Play_WPN_gun_shot_01";
+                ours.frames[0].triggerEvent = true;
+                Plugin.Log("katana sound: Blasphemy's shoot clip has no audio events (" + (theirs == null ? "clip not found" : theirs.frames.Length + " frames") + "); using Play_WPN_gun_shot_01 on frame 0");
+                return;
+            }
+            Plugin.Log("katana sound: copied Blasphemy swing audio " + string.Join(", ", copied.ToArray()));
+        }
 
         private static void ShiftSwingFrames(Gun gun)
         {
