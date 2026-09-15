@@ -201,3 +201,7 @@ Spec: docs/superpowers/specs/2026-09-14-samurai-pluto-and-clinic-life-design.md 
 - [x] vet_reset_past console command (costume off, KILLED_PAST + alt flag cleared and saved, progress file deleted, trophy and stand hidden, warns on UnlockSamuraiCostume); released v0.14.1 (sha 5620c3bc...77d0)
 - [x] Drop page v44 (Vet Visit 0.14.1 merged on c4's Pluto 2.16.1 card), payload verified, tester messaged with the reset steps
 - [ ] Await tester results for vet_reset_past (log lines, stand gone after restart)
+
+## 0.14.2 (user, 2026-09-15, relayed via c4 and confirmed here): co-op doors, the rescue
+- [x] BringPartnersThrough before each zone door seals; RescueAnimals before the owners (freed kennel clips, FreedAnimal); review clean; released v0.14.2 (sha 742291d7...964f); drop page v46 next to Pluto 2.16.2
+- [ ] Tester message (tester session was offline per c4) and results
