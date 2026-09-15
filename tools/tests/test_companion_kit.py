@@ -34,6 +34,15 @@ class CompanionKitTests(unittest.TestCase):
     def test_yasupen_rules(self):
         run_cases(self, [SRC / 'YasupenRules.cs'], ROOT / 'tools/tests/yasupen_cases.cs')
 
+    def test_yasupen_wiring(self):
+        src = (SRC / 'YasupenItem.cs').read_text(encoding='utf-8')
+        for needle in ('YasupenRules.SlideReady(', 'YasupenRules.BargainCasings(', 'YasupenRules.PriceMultiplier(',
+                       'StatType.GlobalPriceMultiplier', 'OnRoomClearEvent', 'CanBePet = true',
+                       'BehaviorOverridesVelocity = false', '"slide"', '"cheer"'):
+            self.assertIn(needle, src, needle)
+        plugin = (SRC / 'Plugin.cs').read_text(encoding='utf-8')
+        self.assertIn('Step("yasupen", YasupenItem.Init)', plugin)
+
     def test_numeric_config_is_clamped_at_bind(self):
         """Wiring check: every numeric setting goes through PlutoConfigRules when it is bound."""
         text = (SRC / 'PlutoConfig.cs').read_text()

@@ -66,6 +66,7 @@ namespace PlutoTheCat
             Step("jingle bell collar", JingleBellCollarItem.Init);
             Step("hairball item", HairballItem.Init);
             Step("scratching post", ScratchingPostItem.Init);
+            Step("yasupen", YasupenItem.Init);
 
             CustomCharacterData built = null;
             Step("character", () =>
