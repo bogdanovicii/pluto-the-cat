@@ -1,5 +1,7 @@
 # Wet Food Can Projectile Implementation Plan
 
+> **Historical: implementation plan, shipped in Pluto the Cat 2.14.0.** Unchecked boxes are not open work.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Turn the Wet Food Can active into a thrown, tumbling projectile that charms what it hits and bursts into a charming gravy splash, with new hand-drawn can art.

@@ -1,5 +1,7 @@
 # The Vet Visit (Pluto's custom past) Implementation Plan
 
+> **Historical: implementation plan for the first Vet Visit releases.** Unchecked boxes are not open work.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build Pluto's custom past, The Vet Visit (one white vet-lab room plus The Vet boss), as a standalone BepInEx plugin in `PlutoVetVisit/` that attaches itself to Pluto at runtime and can be merged into the main mod once it passes in game.

@@ -1,5 +1,7 @@
 # The Vet Visit v2 — a past with the depth of a vanilla one (design)
 
+> **Historical: v2 design draft (2026-09-14), built out across Vet Visit 0.5.0-0.13.0.** Current behaviour: `PlutoVetVisit/thunderstore/CHANGELOG.md`.
+
 Status: DRAFT for the user's approval (2026-09-14). Builds on `2026-09-13-vet-visit-past-design.md` (v0.1–0.4, one room,
 one boss) and the research in `docs/research/04a-vanilla-pasts-structure.md` and `04b-alexandria-past-building-apis.md`.
 

@@ -1,5 +1,7 @@
 # 03c — Critique of the current sprite pipeline (tools/*.py) and what limits the art
 
+> **Historical research (2026-09-14):** critiques the pipeline before art passes A/B (2.9.0-2.10.0); many findings are already fixed.
+
 Reviewed 2026-09-14 against: `tools/pixel.py`, `poses.py`, `poses_extra.py`, `character_anims.py`, `art_v3.py`,
 `art_v4.py`, `art_v5.py`, `fur.py`, `ui_and_items.py`, `make_art.py`, `mock_scene.py`, `validate.py`; the rendered
 previews in `docs/art-preview/`; the generated PNGs; and the photos in `reference/photos/` (`white_spot_on_head.jpeg`,

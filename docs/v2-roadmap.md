@@ -1,5 +1,7 @@
 # Pluto the Cat — version 2 roadmap
 
+> **Historical (roadmap written after 1.0.1).** Kept for context; much of it shipped in a different form (Wet Pluto was later retired for Samurai Pluto). Current state: `README.md` and `thunderstore/CHANGELOG.md`.
+
 Goal: make Pluto feel as complete as a vanilla Gungeoneer (starting passive, personality in the Breach,
 alt skin, synergies, a past) while sitting a notch above the vanilla power curve. Everything below is
 achievable with Alexandria 0.5.10 (CharacterAPI + ItemAPI) and MtG API; effort is estimated in build

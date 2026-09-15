@@ -1,5 +1,7 @@
 # Samurai Pluto and a living clinic — design
 
+> **Historical: design shipped as Pluto the Cat 2.16.0 and Vet Visit 0.14.0.** Current behaviour: the two CHANGELOGs.
+
 Date: 2026-09-14. Status: design, awaiting the user's review. Nothing here is built yet.
 
 Two parts, two owners, one shared interface:

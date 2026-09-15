@@ -1,5 +1,7 @@
 # The Vet Visit — Pluto's custom past (design spec)
 
+> **Historical: the original one-room past design (Vet Visit 0.1-0.4).** The shipped past (0.14.2) is described in `PlutoVetVisit/README.md` and `PlutoVetVisit/thunderstore/CHANGELOG.md`.
+
 Status: approved by the user on 2026-09-13 (story, white vet-lab room with cat toys and syringes, custom art, merge into one DLL). Research behind every claim: `docs/research/03-alexandria-custom-past.md`,
 `04-past-level-and-dungeonapi.md`, `05-custom-boss-research.md`.
 

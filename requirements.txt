@@ -1,0 +1,4 @@
+# Python dependencies for tools/ (art pipeline, validate.py, lint_art.py) and tools/tests.
+# Pinned to the versions installed on the build Mac on 2026-09-15 (Python 3.11.5); the unit tests pass with them.
+# Install: python3 -m pip install -r requirements.txt
+Pillow==12.1.1

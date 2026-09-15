@@ -1,5 +1,7 @@
 # 03a — Pixel-art craft rules for the Pluto sprite pipeline
 
+> **Historical research (2026-09-14):** written for the old 24x20 canvas and `shade()` rim pass, both since replaced (24x26 canvas, no rim pass, see 2.9.0).
+
 Scope: hand-authored row-string sprites rendered by `tools/pixel.py` (character 24x20 canvas, 18x20 used;
 icons 16–34 px; guns 32x18; one dark outline key `o`; 47 opaque palette keys; `shade()` rim pass).
 Every rule carries a source tag; the tag → URL table is at the end. Numbers are the sources' numbers,

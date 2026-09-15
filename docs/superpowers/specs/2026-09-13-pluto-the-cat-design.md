@@ -1,5 +1,7 @@
 # Pluto the Cat — Enter the Gungeon character mod (design spec / master prompt)
 
+> **Historical: 1.0 design spec (2026-09-13).** The mod has moved on since; current behaviour is in `thunderstore/CHANGELOG.md` (2.16.2).
+
 Date: 2026-09-13. Status: approved for implementation (autonomous session; user asked for research → prompt → build).
 
 ## 1. Goal

@@ -1,5 +1,7 @@
 # Pluto the Cat 2.16.0 — in-game test checklist (Samurai Pluto)
 
+> **Historical: tester checklist for 2.16.0.** Pending items here are not current verification; record results per build.
+
 Install 2.16.0 together with Vet Visit 0.14.0 (the costume unlocks by beating the Vet). Delete
 `BepInEx/config/bogdan.etg.plutothecat.cfg` once so the new key appears. Report `[Pluto]` lines from LogOutput.log.
 

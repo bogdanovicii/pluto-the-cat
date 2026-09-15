@@ -1,5 +1,7 @@
 # Wet Food Can 2.0: thrown projectile — design
 
+> **Historical: design shipped in Pluto the Cat 2.14.0.** Current behaviour: `thunderstore/CHANGELOG.md`.
+
 Date: 2026-09-14 · Status: approved in chat · Main mod (PlutoTheCat), version after 2.13.0
 
 ## Goal
