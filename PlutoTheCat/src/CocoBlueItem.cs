@@ -31,8 +31,8 @@ namespace PlutoTheCat
                 "drops a kibble crumb to top up whatever else he is carrying. Bullets that hit Coco just stop. " +
                 "Pet him (interact next to him) for a happy wiggle and a burst of zoomies, or squeeze the " +
                 "Squeaky Toy to send him out as a decoy.\n\n" +
-                "Coco has been chewed, carried up the stairs by the ear, and left in the water bowl twice. " +
-                "Still smiling.",
+                "Coco has been chewed, carried up the stairs by one ear, and left in the water bowl twice. He has " +
+                "never once complained, which is more than can be said for any Gungeoneer. Still smiling.",
                 "pluto");
             item.quality = PickupObject.ItemQuality.EXCLUDED;
             item.CanBeDropped = false;

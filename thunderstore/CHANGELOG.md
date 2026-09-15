@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.17.0 (in progress)
+
+- **Five new cat items** in the loot pool for every character, each with its own Ammonomicon page and lore:
+  - **Ball of Yarn** (active, C): a bouncing ball that tangles enemies it touches (stunned, then slowed; bosses only slowed). Walk into it to bat it again. `YarnSeconds`, `YarnDamage`, `YarnTangleSeconds`, `YarnSlowSeconds`, `YarnCooldownDamage`.
+  - **Catnip Pouch** (active, C): zoomies (speed + rate of fire, afterimage, catnip leaves), then a short catnap at 80 % speed. `CatnipSeconds`, `CatnipSpeedBonus`, `CatnipFireRateMultiplier`, `CatnapSeconds`, `CatnipCooldownDamage`.
+  - **Jingle Bell Collar** (passive, B): a dodge roll rings the bell, erasing nearby enemy bullets and startling non-boss enemies. `BellRadius`, `BellCooldownSeconds`, `BellStunSeconds`.
+  - **Hairball** (active, C; id `pluto:hairball_item`, not the Kibble Sack's reload hairball): bursts into a fur cloud where enemy bullets crawl. Bullet patterns keep their shape. `HairballItemRadius`, `HairballItemSeconds`, `HairballItemBulletSpeed`, `HairballItemCooldownDamage`.
+  - **Scratching Post** (active, C, once per room): place a post; standing next to it gives more damage and piercing shots. `PostRadius`, `PostDamageMultiplier`, `PostPierce`.
+- **Synergies**: Cat's Cradle (Yarn + Coco Blue: the ball lasts twice as long), Nip And Tuck (Catnip + Puffed Up: zoomies start puffed up), Squeaky Clean (Collar + Squeaky Toy: wider jingle), Hack Attack (Hairball + Wet Food Can: the burst charms), Whetstone (Post + Katana: sharper claws).
+- **Lore**: funnier Ammonomicon stories for the Wet Food Can, Coco Blue, Squeaky Toy, Puffed Up and Katana.
+- Config: every new number lives in the `Cat Items` section and is range-checked at load.
+
 ## 2.16.5
 - **Coco's knight helmet really shows with Ser Junkan**: the helmet swap wrote the animation name the game ignores for Coco's one-direction clips, so he never changed (the Knighted helmet had never shown since 2.15.0). He now wears the gold plumed helmet at every Junkan form.
 - **Ammonomicon pages for the Taiyaki Cannon and Katana** show the gun's picture (they were blank).

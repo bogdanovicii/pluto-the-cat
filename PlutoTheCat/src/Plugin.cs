@@ -60,6 +60,12 @@ namespace PlutoTheCat
             Step("squeaky toy", SqueakyToyItem.Init);
             Step("puffed up", PuffedUpItem.Init);
             Step("kibble bowl", KibbleBowlPickup.Init);
+            // 2.17 cat items (loot pool for everyone)
+            Step("ball of yarn", BallOfYarnItem.Init);
+            Step("catnip pouch", CatnipPouchItem.Init);
+            Step("jingle bell collar", JingleBellCollarItem.Init);
+            Step("hairball item", HairballItem.Init);
+            Step("scratching post", ScratchingPostItem.Init);
 
             CustomCharacterData built = null;
             Step("character", () =>

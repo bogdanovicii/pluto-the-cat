@@ -31,7 +31,8 @@ namespace PlutoTheCat
                 "A curved blade with a gold guard and a black-and-white wrapped handle. Its swing cuts enemy bullets out " +
                 "of the air, and while Pluto is unhurt every swing sends a crescent of sakura petals flying ahead. " +
                 "Reloading is a quick flourish that knocks nearby bullets away.\n\n" +
-                "Samurai Pluto trained with it every morning on the laundry basket. The laundry basket did not survive.");
+                "Samurai Pluto trained with it every morning on the laundry basket. The laundry basket did not survive. " +
+                "Neither did the curtains, which he says were an accident, or the Blasphemy's pride, which he says was not.");
 
             gun.SetupSprite(null, "pluto_katana_idle_001", 12);
             gun.SetAnimationFPS(gun.shootAnimation, 20);   // 8-frame swing = 0.4 s, inside the 0.5 s hero sword cooldown

@@ -25,7 +25,8 @@ namespace PlutoTheCat
             ItemBuilder.SetupItem(item, "Do Not Touch",
                 "Hit Pluto and he puffs up: fur on end, twice the cat, and furious. While angry he hits harder, " +
                 "fires faster and moves faster. It wears off once he has decided you have learned your lesson.\n\n" +
-                "The vacuum cleaner has seen this face. So has the neighbour's dog.",
+                "The vacuum cleaner has seen this face. So have the neighbour's dog, the vet, and a Gun Nut who tried " +
+                "to pat him on the head. Only the vacuum cleaner came back.",
                 "pluto");
             item.quality = PickupObject.ItemQuality.EXCLUDED;
             item.CanBeDropped = false;

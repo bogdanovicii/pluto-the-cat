@@ -211,6 +211,16 @@ def gun_and_items():
     save(V5.FUR_HALO[1], os.path.join(items, 'fur_halo_002.png'))
     save(V5.PUFFED_ICON, os.path.join(items, 'puffed_up_icon.png'))
     write_clip(vfx, V5.ANGER_MARKS, 'anger')
+    # 2.17 cat items: approved art in reference/art/cat_items/ (reference/gemini/cat_items/draw_items.py, draw_world.py)
+    cat = os.path.join(ROOT, 'reference', 'art', 'cat_items')
+    for f in ('ball_of_yarn_icon', 'catnip_pouch_icon', 'jingle_bell_collar_icon', 'hairball_item_icon', 'scratching_post_icon',
+              'scratching_post_placed'):
+        shutil.copy(os.path.join(cat, f + '.png'), os.path.join(items, f + '.png'))
+    for f in ('pluto_yarn_ball_001', 'pluto_yarn_ball_002', 'pluto_hairball_item_001'):
+        shutil.copy(os.path.join(cat, f + '.png'), os.path.join(pc, f + '.png'))
+    for prefix in ('jingle', 'catnip'):
+        for i in range(1, 5):
+            shutil.copy(os.path.join(cat, f'{prefix}_{i:03d}.png'), os.path.join(vfx, f'{prefix}_{i:03d}.png'))
     # 2.5: frame-following fur layers for Puffed Up
     furdir = os.path.join(RES, 'Fur')
     clean(furdir)

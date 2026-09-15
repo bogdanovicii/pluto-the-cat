@@ -30,8 +30,10 @@ namespace PlutoTheCat
                 "hopelessly in love with Pluto, and the tin bursts open, so everything standing in the gravy falls in love " +
                 "too. Lovestruck enemies fight for Pluto and take more damage. Bosses are too proud to fall in love, but " +
                 "the smell stops them in their tracks for a few seconds.\n\n" +
-                "Pluto only gets the wet food on special occasions, which is why the sound of the lid peeling back " +
-                "makes him appear from anywhere in the house. It turns out the Gundead feel exactly the same way.",
+                "Pluto only gets the wet food on special occasions, which is why the sound of a lid peeling back " +
+                "summons him from anywhere in the house, including from inside a closed wardrobe.\n\n" +
+                "The Gundead hear it through six floors of solid stone. Even Bullet Kin have to eat, and none of them " +
+                "has ever been offered gravy.",
                 "pluto");
             ItemBuilder.SetCooldownType(item, ItemBuilder.CooldownType.Damage, PlutoConfig.CanCooldownDamage);
             item.consumable = false;

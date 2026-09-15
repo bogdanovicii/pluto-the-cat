@@ -13,6 +13,8 @@ namespace PlutoTheCat
         public static VFXPool BlockSpark;
         public static VFXPool GravyBurst;
         public static VFXPool Bonito;
+        public static VFXPool Jingle;   // 2.17 Jingle Bell Collar ring
+        public static VFXPool Catnip;   // 2.17 Catnip Pouch leaves
 
         public static void Init()
         {
@@ -27,6 +29,10 @@ namespace PlutoTheCat
             GravyBurst = VFXBuilder.CreateVFXPool("PlutoGravyBurst", Frames("gravyburst", 4), 10, new IntVector2(20, 20),
                 tk2dBaseSprite.Anchor.MiddleCenter, false, 0f);
             Bonito = VFXBuilder.CreateVFXPool("PlutoBonito", Frames("bonito", 4), 12, new IntVector2(16, 16),
+                tk2dBaseSprite.Anchor.MiddleCenter, false, 0f);
+            Jingle = VFXBuilder.CreateVFXPool("PlutoJingle", Frames("jingle", 4), 14, new IntVector2(24, 24),
+                tk2dBaseSprite.Anchor.MiddleCenter, false, 0f);
+            Catnip = VFXBuilder.CreateVFXPool("PlutoCatnip", Frames("catnip", 4), 8, new IntVector2(12, 12),
                 tk2dBaseSprite.Anchor.MiddleCenter, false, 0f);
         }
 

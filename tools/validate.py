@@ -211,6 +211,20 @@ if len([f for f in os.listdir(os.path.join(RES, 'VFX')) if f.startswith('spark')
 for prefix in ('furpuff', 'loveburst', 'anger', 'gravyburst'):
     if len([f for f in os.listdir(os.path.join(RES, 'VFX')) if f.startswith(prefix)]) != 4:
         err(f'VFX {prefix} should have 4 frames')
+# 2.17 cat items: icons, the placed post, projectiles and VFX
+for f, size in (('ball_of_yarn_icon.png', (16, 16)), ('catnip_pouch_icon.png', (16, 16)), ('jingle_bell_collar_icon.png', (16, 16)),
+                ('hairball_item_icon.png', (16, 16)), ('scratching_post_icon.png', (16, 16)), ('scratching_post_placed.png', (16, 24))):
+    fp = os.path.join(items, f)
+    if not os.path.exists(fp):
+        err(f'item art missing: {f}')
+    elif Image.open(fp).size != size:
+        err(f'{f} should be {size[0]}x{size[1]}')
+for f in ('pluto_yarn_ball_001.png', 'pluto_yarn_ball_002.png', 'pluto_hairball_item_001.png'):
+    if not os.path.exists(os.path.join(RES, 'SpriteRoot', 'ProjectileCollection', f)):
+        err(f'cat item projectile missing: {f}')
+for prefix in ('jingle', 'catnip'):
+    if len([f for f in os.listdir(os.path.join(RES, 'VFX')) if f.startswith(prefix + '_')]) != 4:
+        err(f'VFX {prefix} should have 4 frames')
 ok('item art')
 
 # 4b. boss intro card: the game draws the player's card over the boss art (BossCardUIController.playerSprite),

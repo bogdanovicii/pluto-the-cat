@@ -47,6 +47,28 @@ namespace PlutoTheCat
         public static float CocoKnockoutSeconds = 10f;
         public static float CocoStuffingRegenSeconds = 4f;
 
+        // 2.17 cat items (section "Cat Items")
+        public static float YarnSeconds = 6f;
+        public static float YarnDamage = 4f;
+        public static float YarnTangleSeconds = 1.5f;
+        public static float YarnSlowSeconds = 3f;
+        public static float YarnCooldownDamage = 300f;
+        public static float CatnipSeconds = 7f;
+        public static float CatnipSpeedBonus = 2f;
+        public static float CatnipFireRateMultiplier = 1.25f;
+        public static float CatnapSeconds = 2f;
+        public static float CatnipCooldownDamage = 450f;
+        public static float BellRadius = 2.5f;
+        public static float BellCooldownSeconds = 4f;
+        public static float BellStunSeconds = 1f;
+        public static float HairballItemRadius = 3f;
+        public static float HairballItemSeconds = 5f;
+        public static float HairballItemBulletSpeed = 0.35f;
+        public static float HairballItemCooldownDamage = 350f;
+        public static float PostRadius = 2.5f;
+        public static float PostDamageMultiplier = 1.3f;
+        public static int PostPierce = 1;
+
         private static readonly Action<string> Warn = message => Debug.LogWarning("[Pluto] config: " + message);
 
         public static void Bind(ConfigFile cfg)
@@ -83,8 +105,34 @@ namespace PlutoTheCat
             CocoStuffing = PlutoConfigRules.Clamp("CocoStuffing", cfg.Bind("Balance", "CocoStuffing", CocoStuffing, "Bullets Coco can block before he is knocked out (regenerates one every CocoStuffingRegenSeconds).").Value, CocoStuffing, Warn);
             CocoKnockoutSeconds = PlutoConfigRules.Clamp("CocoKnockoutSeconds", cfg.Bind("Balance", "CocoKnockoutSeconds", CocoKnockoutSeconds, "How long Coco stays knocked out (petting him ends it early).").Value, CocoKnockoutSeconds, Warn);
             CocoStuffingRegenSeconds = PlutoConfigRules.Clamp("CocoStuffingRegenSeconds", cfg.Bind("Balance", "CocoStuffingRegenSeconds", CocoStuffingRegenSeconds, "Seconds per point of stuffing regained while not knocked out.").Value, CocoStuffingRegenSeconds, Warn);
+            BindCatItems(cfg);
             LogPunchoutNames = cfg.Bind("Debug", "LogPunchoutNames", LogPunchoutNames, "Write the Pilot's Punch-Out sprite names to the log at startup.").Value;
             UnlockSamuraiCostume = cfg.Bind("Debug", "UnlockSamuraiCostume", UnlockSamuraiCostume, "Testing only: unlock the samurai costume in the Breach without beating Pluto's past (normally it appears after the Vet is beaten).").Value;
+        }
+
+        private static void BindCatItems(ConfigFile cfg)
+        {
+            const string S = "Cat Items";
+            YarnSeconds = PlutoConfigRules.Clamp("YarnSeconds", cfg.Bind(S, "YarnSeconds", YarnSeconds, "Ball of Yarn: how long the thrown ball keeps bouncing around the room.").Value, YarnSeconds, Warn);
+            YarnDamage = PlutoConfigRules.Clamp("YarnDamage", cfg.Bind(S, "YarnDamage", YarnDamage, "Ball of Yarn: damage each time the ball hits an enemy.").Value, YarnDamage, Warn);
+            YarnTangleSeconds = PlutoConfigRules.Clamp("YarnTangleSeconds", cfg.Bind(S, "YarnTangleSeconds", YarnTangleSeconds, "Ball of Yarn: seconds a tangled enemy cannot move (bosses are only slowed).").Value, YarnTangleSeconds, Warn);
+            YarnSlowSeconds = PlutoConfigRules.Clamp("YarnSlowSeconds", cfg.Bind(S, "YarnSlowSeconds", YarnSlowSeconds, "Ball of Yarn: seconds a tangled enemy stays slowed after it can move again.").Value, YarnSlowSeconds, Warn);
+            YarnCooldownDamage = PlutoConfigRules.Clamp("YarnCooldownDamage", cfg.Bind(S, "YarnCooldownDamage", YarnCooldownDamage, "Ball of Yarn: damage dealt to recharge it.").Value, YarnCooldownDamage, Warn);
+            CatnipSeconds = PlutoConfigRules.Clamp("CatnipSeconds", cfg.Bind(S, "CatnipSeconds", CatnipSeconds, "Catnip Pouch: length of the zoomies.").Value, CatnipSeconds, Warn);
+            CatnipSpeedBonus = PlutoConfigRules.Clamp("CatnipSpeedBonus", cfg.Bind(S, "CatnipSpeedBonus", CatnipSpeedBonus, "Catnip Pouch: movement speed added during the zoomies (shares the MaxSpeedBonus cap).").Value, CatnipSpeedBonus, Warn);
+            CatnipFireRateMultiplier = PlutoConfigRules.Clamp("CatnipFireRateMultiplier", cfg.Bind(S, "CatnipFireRateMultiplier", CatnipFireRateMultiplier, "Catnip Pouch: rate-of-fire multiplier during the zoomies.").Value, CatnipFireRateMultiplier, Warn);
+            CatnapSeconds = PlutoConfigRules.Clamp("CatnapSeconds", cfg.Bind(S, "CatnapSeconds", CatnapSeconds, "Catnip Pouch: the drowsy slowdown after the zoomies (0 disables).").Value, CatnapSeconds, Warn);
+            CatnipCooldownDamage = PlutoConfigRules.Clamp("CatnipCooldownDamage", cfg.Bind(S, "CatnipCooldownDamage", CatnipCooldownDamage, "Catnip Pouch: damage dealt to recharge it.").Value, CatnipCooldownDamage, Warn);
+            BellRadius = PlutoConfigRules.Clamp("BellRadius", cfg.Bind(S, "BellRadius", BellRadius, "Jingle Bell Collar: radius in tiles of the jingle that erases enemy bullets (0 disables).").Value, BellRadius, Warn);
+            BellCooldownSeconds = PlutoConfigRules.Clamp("BellCooldownSeconds", cfg.Bind(S, "BellCooldownSeconds", BellCooldownSeconds, "Jingle Bell Collar: seconds between jingles.").Value, BellCooldownSeconds, Warn);
+            BellStunSeconds = PlutoConfigRules.Clamp("BellStunSeconds", cfg.Bind(S, "BellStunSeconds", BellStunSeconds, "Jingle Bell Collar: seconds non-boss enemies inside the jingle are startled (0 disables).").Value, BellStunSeconds, Warn);
+            HairballItemRadius = PlutoConfigRules.Clamp("HairballItemRadius", cfg.Bind(S, "HairballItemRadius", HairballItemRadius, "Hairball (item): radius in tiles of the fur cloud.").Value, HairballItemRadius, Warn);
+            HairballItemSeconds = PlutoConfigRules.Clamp("HairballItemSeconds", cfg.Bind(S, "HairballItemSeconds", HairballItemSeconds, "Hairball (item): how long the fur cloud lasts.").Value, HairballItemSeconds, Warn);
+            HairballItemBulletSpeed = PlutoConfigRules.Clamp("HairballItemBulletSpeed", cfg.Bind(S, "HairballItemBulletSpeed", HairballItemBulletSpeed, "Hairball (item): enemy bullets inside the cloud move at this fraction of their speed.").Value, HairballItemBulletSpeed, Warn);
+            HairballItemCooldownDamage = PlutoConfigRules.Clamp("HairballItemCooldownDamage", cfg.Bind(S, "HairballItemCooldownDamage", HairballItemCooldownDamage, "Hairball (item): damage dealt to recharge it.").Value, HairballItemCooldownDamage, Warn);
+            PostRadius = PlutoConfigRules.Clamp("PostRadius", cfg.Bind(S, "PostRadius", PostRadius, "Scratching Post: how close (tiles) to stand to get sharpened claws.").Value, PostRadius, Warn);
+            PostDamageMultiplier = PlutoConfigRules.Clamp("PostDamageMultiplier", cfg.Bind(S, "PostDamageMultiplier", PostDamageMultiplier, "Scratching Post: damage multiplier while sharpened.").Value, PostDamageMultiplier, Warn);
+            PostPierce = PlutoConfigRules.Clamp("PostPierce", cfg.Bind(S, "PostPierce", PostPierce, "Scratching Post: extra enemies each shot pierces while sharpened.").Value, PostPierce, Warn);
         }
 
         private static Vector3 Vec(string text, Vector3 fallback)

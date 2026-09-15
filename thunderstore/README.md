@@ -15,6 +15,7 @@ Adds **Pluto the Cat** as a new playable Gungeoneer. He is a chunky brown tabby-
 - **Squeaky Toy** (second starter active; Pluto has two active slots, swap with the active-swap key): sends Coco out as a decoy for a few seconds; enemies chase him while he dodges around the room. Pluto can never drop it. It also appears in chests and shops for every other character: pick it up and Coco follows you too, drop it and he leaves.
 - **Samurai Pluto** alt costume: beat Pluto's past (the Vet Visit), then touch the kimono stand just above him in the Breach. Samurai Pluto starts with the **Taiyaki Cannon** and the **Katana** (Blasphemy-style: cuts bullets, sakura wave at full health, reload clears nearby bullets) instead of the kibble bag, and gets his own boss-intro card.
 - Enemies that die while in love sometimes drop a kibble bowl that heals half a heart.
+- **Five cat items for every Gungeoneer** (found in chests and shops): Ball of Yarn, Catnip Pouch, Jingle Bell Collar, Hairball and Scratching Post, each with an Ammonomicon story and a synergy with Pluto's own kit.
 
 ## Install (r2modman)
 

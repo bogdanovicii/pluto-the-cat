@@ -28,6 +28,9 @@ class CompanionKitTests(unittest.TestCase):
     def test_player_kit_and_config_rules(self):
         run_cases(self, [SRC / 'PlayerKitRules.cs', SRC / 'PlutoConfigRules.cs'], ROOT / 'tools/tests/player_kit_cases.cs')
 
+    def test_cat_item_rules(self):
+        run_cases(self, [SRC / 'CatItemRules.cs'], ROOT / 'tools/tests/cat_item_cases.cs')
+
     def test_numeric_config_is_clamped_at_bind(self):
         """Wiring check: every numeric setting goes through PlutoConfigRules when it is bound."""
         text = (SRC / 'PlutoConfig.cs').read_text()

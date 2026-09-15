@@ -25,7 +25,9 @@ namespace PlutoTheCat
                 "bullets, drops kibble crumbs when you get hurt, and can be petted. Squeeze the toy and Coco " +
                 "springs into action: every enemy in the room turns on him while he zips around dodging their " +
                 "shots. He cannot be hurt, and he loves it.\n\n" +
-                "Pluto would never part with it. Anyone else who finds one gets a friend for as long as they keep it.",
+                "It squeaks at a pitch only cats, dogs and the Gundead can hear, which is why every Bullet Kin in the " +
+                "room drops what it is doing. Pluto would never part with it. Anyone else who finds one gets a friend " +
+                "for as long as they keep it.",
                 "pluto");
             ItemBuilder.SetCooldownType(item, ItemBuilder.CooldownType.Damage, PlutoConfig.DecoyCooldownDamage);
             item.consumable = false;

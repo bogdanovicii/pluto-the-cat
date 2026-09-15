@@ -63,6 +63,12 @@ class PlayerKitCases
             {"CanCooldownDamage", 200}, {"TailWhipDamage", 6}, {"ZoomiesSeconds", 4}, {"ZoomiesSpeedBonus", 2.5}, {"InvulnerableRollFrames", 6},
             {"AngrySeconds", 6}, {"AngryDamageMultiplier", 1.5}, {"AngryFireRateMultiplier", 1.3}, {"AngryScale", 1}, {"MaxSpeedBonus", 4},
             {"DecoySeconds", 8}, {"DecoyCooldownDamage", 150}, {"CocoStuffing", 8}, {"CocoKnockoutSeconds", 10}, {"CocoStuffingRegenSeconds", 4},
+            // 2.17 cat items
+            {"YarnSeconds", 6}, {"YarnDamage", 4}, {"YarnTangleSeconds", 1.5}, {"YarnSlowSeconds", 3}, {"YarnCooldownDamage", 300},
+            {"CatnipSeconds", 7}, {"CatnipSpeedBonus", 2}, {"CatnipFireRateMultiplier", 1.25}, {"CatnapSeconds", 2}, {"CatnipCooldownDamage", 450},
+            {"BellRadius", 2.5}, {"BellCooldownSeconds", 4}, {"BellStunSeconds", 1},
+            {"HairballItemRadius", 3}, {"HairballItemSeconds", 5}, {"HairballItemBulletSpeed", 0.35}, {"HairballItemCooldownDamage", 350},
+            {"PostRadius", 2.5}, {"PostDamageMultiplier", 1.3}, {"PostPierce", 1},
         };
         foreach (var d in defaults) Check(PlutoConfigRules.Contains(d.Key, d.Value), "default in range: " + d.Key);
         Check(PlutoConfigRules.Keys.Count == defaults.Count, "every ranged setting has a default case");

@@ -114,3 +114,29 @@ User after testing 2.16.3: "Taiyaki reload animation should be improved; also ad
       stretches reload clips to reloadTime nothing changes, the clip is already 0.9 s); empty the clip -> one drop flies from the mouth at
       the end of the reload, the splash puffs flakes and hurts a neighbour; a partial-clip reload gives no drop; switching guns mid-reload
       gives no drop; both log lines present.
+
+## 2.17.0 cat items (branch feat/cat-items from codex/combat-polish 42dae88, worktree ../pluto-cat-items, 2026-09-15)
+
+User: "do all of them, create lore and ammonomicon image for all of them, make sure also the existing ones have funny
+story like the other ones, look at the other items that are in the enter the gungeon. You can make all of them a little
+bit better. make sure they work properly in the game"
+
+Peer notes (enter-the-gungeon-pluto-37): the Kibble Sack already has a reload "Hairball" -> new item uses
+`pluto:hairball_item`, `HairballItem*` config, `hairball_item_icon`; description-only edits in Coco/Taiyaki/KibbleSack
+files; changelog under `2.17.0 (in progress)`, no version bump.
+
+- [ ] Research: vanilla APIs for root/slow, bullet erase, bullet slow, placed object, piercing, roll hook (subagent)
+- [ ] Research: mod item pipeline, descriptions, art export, tests (subagent)
+- [ ] Art: Gemini sheet (flash; pro credits depleted) -> pixel copy vs hand-drawn draft, pick per icon by rubric, review_art
+- [ ] Art: approved icons in reference/art/cat_items/, make_art.py copies them to Resources/Items, validate required list
+- [ ] C#: BallOfYarnItem (active throw, bounces, tangles: root then slow, re-bat on touch)
+- [ ] C#: CatnipPouchItem (active timed zoomies: speed + fire rate, afterimage, catnap slowdown after)
+- [ ] C#: JingleBellCollarItem (passive: dodge roll jingles, erases enemy bullets in a ring, cooldown)
+- [ ] C#: HairballItem (active grenade: fur cloud slows enemy bullets inside)
+- [ ] C#: ScratchingPostItem (active placed post: +damage and piercing near it for the room)
+- [ ] Pure rules class + C# test cases for timers/cooldowns/radius; config block with clamping
+- [ ] Loot pool: quality tiers, not EXCLUDED; five synergies with existing items
+- [ ] Lore: five new Ammonomicon entries + rewrite the existing items/guns in vanilla style (mechanic line, then a joke)
+- [ ] CHANGELOG 2.17.0 (in progress), README item list
+- [ ] ./build.sh in this worktree green (build, validate, tests, art lint); code review subagent
+- [ ] In-game checklist + test build to the Steam tester (read drop page first)

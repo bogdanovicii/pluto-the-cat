@@ -46,6 +46,27 @@ namespace PlutoTheCat
             { "CocoStuffing", new Range(1, 99) },
             { "CocoKnockoutSeconds", new Range(0.1, 120) },
             { "CocoStuffingRegenSeconds", new Range(0.1, 120) },
+            // 2.17 cat items
+            { "YarnSeconds", new Range(0.5, 30) },
+            { "YarnDamage", new Range(0, Damage) },
+            { "YarnTangleSeconds", new Range(0, 10) },
+            { "YarnSlowSeconds", new Range(0, 30) },
+            { "YarnCooldownDamage", new Range(1, Cooldown) },
+            { "CatnipSeconds", new Range(0.5, 60) },
+            { "CatnipSpeedBonus", new Range(0, 20) },
+            { "CatnipFireRateMultiplier", new Range(0.1, 10) },
+            { "CatnapSeconds", new Range(0, 30) },
+            { "CatnipCooldownDamage", new Range(1, Cooldown) },
+            { "BellRadius", new Range(0, 20) },
+            { "BellCooldownSeconds", new Range(0, 120) },
+            { "BellStunSeconds", new Range(0, 10) },
+            { "HairballItemRadius", new Range(0.5, 20) },
+            { "HairballItemSeconds", new Range(0.5, 60) },
+            { "HairballItemBulletSpeed", new Range(0.05, 1) },
+            { "HairballItemCooldownDamage", new Range(1, Cooldown) },
+            { "PostRadius", new Range(0.5, 20) },
+            { "PostDamageMultiplier", new Range(1, 10) },
+            { "PostPierce", new Range(0, 10) },
         };
 
         public static ICollection<string> Keys { get { return Ranges.Keys; } }

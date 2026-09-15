@@ -18,6 +18,12 @@ namespace PlutoTheCat
         public const string BoxFort = "Box Fort";
         public const string Playdate = "Playdate";
         public const string Squire = "Squire";
+        // 2.17 cat items
+        public const string CatsCradle = "Cat's Cradle";
+        public const string NipAndTuck = "Nip And Tuck";
+        public const string SqueakyClean = "Squeaky Clean";
+        public const string HackAttack = "Hack Attack";
+        public const string Whetstone = "Whetstone";
         // Knighted is a tier of Squire, not a registered synergy: Alexandria cannot require six junk, so CocoFriends
         // turns it on while Squire is active and Ser Junkan is a Holy (or Angelic) Knight.
         public const string Knighted = "Knighted";
@@ -34,6 +40,11 @@ namespace PlutoTheCat
             Register(BoxFort, new List<string> { NineLivesItem.ID, "box" });   // "box" is the Cardboard Box
             Register(Playdate, new List<string> { SqueakyToyItem.ID, "dog" }); // the toy sends Coco out; effects in CocoFriends
             Register(Squire, new List<string> { CocoBlueItem.ID, "junkan" }); // "junkan" is Ser Junkan
+            Register(CatsCradle, new List<string> { BallOfYarnItem.ID, CocoBlueItem.ID });            // the ball lasts twice as long
+            Register(NipAndTuck, new List<string> { CatnipPouchItem.ID, PuffedUpItem.ID });           // zoomies start puffed up
+            Register(SqueakyClean, new List<string> { JingleBellCollarItem.ID, SqueakyToyItem.ID });  // wider jingle
+            Register(HackAttack, new List<string> { HairballItem.ID, WetFoodCanItem.ID });            // the burst charms
+            Register(Whetstone, new List<string> { ScratchingPostItem.ID, KatanaGun.ID });             // sharper claws
 
             CustomActions.OnNewPlayercontrollerSpawned += OnPlayerSpawned;
         }
