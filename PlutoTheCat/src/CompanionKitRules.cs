@@ -32,6 +32,11 @@ namespace PlutoTheCat
             if (!held) { original = before; held = true; }
             written = after;
         }
+        /// <summary>For fields a behaviour we added writes (not our own code): claim a change seen since the baseline.</summary>
+        public void Observe(T baseline, T current)
+        {
+            if (!EqualityComparer<T>.Default.Equals(current, baseline)) Record(baseline, current);
+        }
         public T Restore(T current)
         {
             T result = held && EqualityComparer<T>.Default.Equals(current, written) ? original : current;

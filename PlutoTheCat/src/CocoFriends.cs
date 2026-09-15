@@ -14,6 +14,8 @@ namespace PlutoTheCat
     /// - Squire (Coco + Ser Junkan): +1 stuffing per Junkan form (CocoBlueController.MaxStuffing); while Coco
     ///   is a decoy, Junkan's OverrideTarget (which wins over PlayerTarget) is the enemy chasing him.
     /// - Knighted (Squire tier): while Junkan is a Holy or Angelic Knight, Coco plays his helmeted clips.
+    /// Ownership: every field changed on the Dog or Junkan is restored to what it was before, and only while the
+    /// value is still the one this code (or the Wolf behaviours it added) left there (CompanionOwnedValue).
     /// </summary>
     public class CocoFriends : MonoBehaviour
     {
@@ -25,8 +27,18 @@ namespace PlutoTheCat
         private AIActor heldDog;                     // the Dog fighting as a Wolf (follow paused, attack behaviours added)
         private SeekTargetBehavior dogSeek;
         private WolfCompanionAttackBehavior dogBite;
+        // Written by this code.
+        private readonly CompanionOwnedValue<SpeculativeRigidbody> dogTarget = new CompanionOwnedValue<SpeculativeRigidbody>();
+        private readonly CompanionOwnedValue<bool> dogFollow = new CompanionOwnedValue<bool>();
+        // Written by the Wolf behaviours we add (a leap overrides velocity and locks facing). The vanilla Dog has no
+        // attack behaviours, so a change seen while the Dog is held is theirs; baselines are taken when it is held.
+        private readonly CompanionOwnedValue<bool> dogVelocity = new CompanionOwnedValue<bool>();
+        private readonly CompanionOwnedValue<bool> dogFacing = new CompanionOwnedValue<bool>();
+        private readonly CompanionOwnedValue<CellTypes> dogTiles = new CompanionOwnedValue<CellTypes>();
+        private bool dogVelocityBefore, dogFacingBefore;
+        private CellTypes dogTilesBefore;
         private AIActor aimedJunkan;                 // the Junkan pointed at the chaser
-        private SpeculativeRigidbody aimedBody;
+        private readonly CompanionOwnedValue<SpeculativeRigidbody> junkanTarget = new CompanionOwnedValue<SpeculativeRigidbody>();
         private bool cocoWasPet, dogWasPet, wasDecoy;
 
         /// <summary>The live companion spawned by the owner's passive item with this pickup id, or null.</summary>
@@ -131,7 +143,15 @@ namespace PlutoTheCat
                 ReleaseDog();
                 if (dog.behaviorSpeculator == null) return;
                 heldDog = dog;
-                SetFollow(dog, false);
+                dogVelocityBefore = dog.BehaviorOverridesVelocity;
+                dogFacingBefore = dog.aiAnimator != null && dog.aiAnimator.LockFacingDirection;
+                dogTilesBefore = dog.PathableTiles;
+                CompanionFollowPlayerBehavior follow = Follow(dog);
+                if (follow != null)
+                {
+                    dogFollow.Record(follow.TemporarilyDisabled, true);
+                    follow.TemporarilyDisabled = true;
+                }
                 // The vanilla Wolf's (Dog_Past) combat behaviours, fresh instances with its prefab values. The Dog has no
                 // "attack" clip, so the leap plays its roll; the bite is WolfCompanionAttackBehavior's own 5 damage.
                 dogSeek = new SeekTargetBehavior { StopWhenInRange = false, LineOfSight = true, ReturnToSpawn = false, PathInterval = 0.25f, CustomRange = -1f };
@@ -145,14 +165,38 @@ namespace PlutoTheCat
                 dog.behaviorSpeculator.RefreshBehaviors();
                 Plugin.Log("Playdate: the Dog fights like a Wolf, target " + chaser.GetActorName());
             }
+            ObserveDog(dog);
             // OverrideTarget wins over the companion's own nearest-enemy pick, so the Wolf bite goes to Coco's chaser.
-            if (chaser.specRigidbody != null) dog.OverrideTarget = chaser.specRigidbody;
+            // If something else has re-aimed the Dog since our last write, leave its target alone.
+            SpeculativeRigidbody want = chaser.specRigidbody;
+            if (want != null && dogTarget.CanWrite(dog.OverrideTarget))
+            {
+                dogTarget.Record(dog.OverrideTarget, want);
+                dog.OverrideTarget = want;
+            }
+        }
+
+        private void ObserveDog(AIActor dog)
+        {
+            dogVelocity.Observe(dogVelocityBefore, dog.BehaviorOverridesVelocity);
+            if (dog.aiAnimator != null) dogFacing.Observe(dogFacingBefore, dog.aiAnimator.LockFacingDirection);
+            dogTiles.Observe(dogTilesBefore, dog.PathableTiles);
         }
 
         private void ReleaseDog()
         {
-            if (heldDog == null) { heldDog = null; dogSeek = null; dogBite = null; return; }
-            BehaviorSpeculator bs = heldDog.behaviorSpeculator;
+            AIActor dog = heldDog;
+            heldDog = null;
+            if (dog == null)
+            {
+                // Never held, or the Dog was destroyed: nothing to put back, forget any ownership.
+                dogTarget.Restore(null); dogFollow.Restore(false);
+                dogVelocity.Restore(false); dogFacing.Restore(false); dogTiles.Restore(CellTypes.FLOOR);
+                dogSeek = null; dogBite = null;
+                return;
+            }
+            ObserveDog(dog);                                 // a leap may have started since the last Update
+            BehaviorSpeculator bs = dog.behaviorSpeculator;
             if (bs != null)
             {
                 bs.Interrupt();                              // a leap in progress would keep its velocity override
@@ -160,26 +204,29 @@ namespace PlutoTheCat
                 if (dogBite != null) bs.AttackBehaviors.Remove(dogBite);
                 bs.RefreshBehaviors();
             }
-            heldDog.BehaviorOverridesVelocity = false;
-            if (heldDog.aiAnimator != null) heldDog.aiAnimator.LockFacingDirection = false;
-            heldDog.PathableTiles = CellTypes.FLOOR;
-            heldDog.OverrideTarget = null;
-            SetFollow(heldDog, true);
-            heldDog.ClearPath();
+            dog.BehaviorOverridesVelocity = dogVelocity.Restore(dog.BehaviorOverridesVelocity);
+            if (dog.aiAnimator != null) dog.aiAnimator.LockFacingDirection = dogFacing.Restore(dog.aiAnimator.LockFacingDirection);
+            else dogFacing.Restore(false);
+            dog.PathableTiles = dogTiles.Restore(dog.PathableTiles);
+            dog.OverrideTarget = dogTarget.Restore(dog.OverrideTarget);
+            CompanionFollowPlayerBehavior follow = Follow(dog);
+            if (follow != null) follow.TemporarilyDisabled = dogFollow.Restore(follow.TemporarilyDisabled);
+            else dogFollow.Restore(false);
+            dog.ClearPath();
             Plugin.Log("Playdate: the Dog is a Dog again");
-            heldDog = null;
             dogSeek = null;
             dogBite = null;
         }
 
-        private static void SetFollow(AIActor actor, bool on)
+        private static CompanionFollowPlayerBehavior Follow(AIActor actor)
         {
-            if (actor.behaviorSpeculator == null) return;
+            if (actor.behaviorSpeculator == null) return null;
             for (int i = 0; i < actor.behaviorSpeculator.MovementBehaviors.Count; i++)
             {
                 CompanionFollowPlayerBehavior f = actor.behaviorSpeculator.MovementBehaviors[i] as CompanionFollowPlayerBehavior;
-                if (f != null) f.TemporarilyDisabled = !on;
+                if (f != null) return f;
             }
+            return null;
         }
 
         /// <summary>Petting one friend makes the other wiggle with hearts; petting the Dog also gives Coco's speed burst.</summary>
@@ -212,16 +259,17 @@ namespace PlutoTheCat
             SpeculativeRigidbody want = junkan != null && Alive(chaser) ? chaser.specRigidbody : null;
             if (aimedJunkan != junkan || want == null) ReleaseJunkan();
             if (want == null) return;
+            if (!junkanTarget.CanWrite(junkan.OverrideTarget)) return;   // something else re-aimed Junkan: leave it
+            junkanTarget.Record(junkan.OverrideTarget, want);
             junkan.OverrideTarget = want;
             aimedJunkan = junkan;
-            aimedBody = want;
         }
 
         private void ReleaseJunkan()
         {
-            if (aimedJunkan != null && aimedJunkan.OverrideTarget == aimedBody) aimedJunkan.OverrideTarget = null;
+            if (aimedJunkan != null) aimedJunkan.OverrideTarget = junkanTarget.Restore(aimedJunkan.OverrideTarget);
+            else junkanTarget.Restore(null);
             aimedJunkan = null;
-            aimedBody = null;
         }
     }
 }
