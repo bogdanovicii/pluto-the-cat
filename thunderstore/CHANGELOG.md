@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.18.0 (test build, not released)
+- **Yasupen**, Donpen's twin brother, joins the loot pool as a companion (item "Yasupen's Price Tag", quality B). He follows you, belly-slides into enemies every few seconds, makes shops 10 % cheaper while he is with you, and sometimes finds a miracle bargain of 3-5 casings after a room is cleared. Pet him to make Coco happy too.
+- **Penguin Pals** (Coco Blue + Yasupen): while Coco is a decoy, Yasupen slides at the enemy chasing him.
+- Config section `Yasupen`: `YasupenSlideCooldown`, `YasupenSlideRange`, `YasupenSlideDamage`, `YasupenSlideKnockback`, `YasupenShopDiscount`, `YasupenBargainChance`.
+
 ## 2.17.1 (test build, not released)
 - **Coco's knight helmet really shows with Ser Junkan**: the helmet swap wrote the animation name the game ignores for Coco's one-direction clips, so he never changed (the Knighted helmet had never shown since 2.15.0). He now wears the gold plumed helmet at every Junkan form.
 - **Samurai Puffed Up is fluffy again**: the samurai costume gets its own standing-fur ring that stays off the kimono, alongside the red anger cue.

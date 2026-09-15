@@ -11,6 +11,7 @@ What ships today, in short:
   pit damage.
 - **Coco Blue**: plush companion that blocks enemy bullets, can be knocked out and petted; synergies Playdate,
   Squire and Knighted.
+- **Yasupen** (loot pool, 2.18.0): Donpen's twin brother. Belly slides, a shop discount and miracle bargains; Penguin Pals with Coco Blue.
 - **Samurai Pluto** (alternate costume, 2.16.0): unlocked by beating Pluto's past (the Vet Visit), switched at the
   kimono stand in the Breach. Starts with the **Taiyaki Cannon** and the **Katana** instead of the kibble sack, and has
   his own boss-intro card.
