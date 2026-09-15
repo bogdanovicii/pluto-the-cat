@@ -41,16 +41,39 @@ namespace PlutoTheCat
             BuildPrefab();
         }
 
+        private PlayerController wearer;
+
         public override void Pickup(PlayerController player)
         {
             base.Pickup(player);
-            player.OnRoomClearEvent += OnRoomClear;
+            wearer = player;
+            if (player != null) player.OnRoomClearEvent += OnRoomClear;
         }
 
         public override void DisableEffect(PlayerController player)   // PassiveItem declares it public virtual (not protected)
         {
-            if (player != null) player.OnRoomClearEvent -= OnRoomClear;
+            Unhook();
             base.DisableEffect(player);
+        }
+
+        // PassiveItem.Drop and PassiveItem.OnDestroy are both public virtual (verified with ikdasm against
+        // Assembly-CSharp.dll), same as JingleBellCollarItem's Unhook pattern.
+        public override DebrisObject Drop(PlayerController player)
+        {
+            Unhook();
+            return base.Drop(player);
+        }
+
+        public override void OnDestroy()
+        {
+            Unhook();
+            base.OnDestroy();
+        }
+
+        private void Unhook()
+        {
+            if (wearer != null) wearer.OnRoomClearEvent -= OnRoomClear;
+            wearer = null;
         }
 
         private void OnRoomClear(PlayerController player)
@@ -106,11 +129,12 @@ namespace PlutoTheCat
         public class YasupenController : CompanionController
         {
             public static readonly List<YasupenController> Instances = new List<YasupenController>();
-            private const float SlideSpeed = 14f, SlideSeconds = 0.35f, HitRadius = 1.1f;
+            private const float SlideSpeed = 14f, MaxSlideSeconds = 0.6f, BodyRadius = 0.6f;
 
             private float lastSlide = float.NegativeInfinity;
             private bool sliding, wasPet;
             private float lookTimer;
+            private Coroutine slideCoroutine;
 
             public PlayerController OwnerPlayer { get { return m_owner; } }
 
@@ -148,12 +172,12 @@ namespace PlutoTheCat
             public void SlideAt(AIActor target)
             {
                 if (sliding || target == null || aiActor == null || specRigidbody == null) return;
-                StartCoroutine(Slide(target));
+                slideCoroutine = StartCoroutine(Slide(target));
             }
 
             public void Cheer()
             {
-                if (aiAnimator != null && !sliding) aiAnimator.PlayForDuration("cheer", 1.2f);
+                if (aiAnimator != null && !sliding && !IsBeingPet) aiAnimator.PlayForDuration("cheer", 1.2f);
                 PlutoVFX.Spawn(PlutoVFX.LoveBurst, (Vector2)transform.position + new Vector2(0.5f, 1.4f));
             }
 
@@ -162,14 +186,18 @@ namespace PlutoTheCat
                 sliding = true;
                 lastSlide = Time.time;
                 Vector2 from = specRigidbody.UnitCenter;
-                Vector2 dir = ((Vector2)target.CenterPosition - from).normalized;
+                Vector2 to = (Vector2)target.CenterPosition;
+                Vector2 dir = (to - from).normalized;
                 if (dir.sqrMagnitude < 0.01f) dir = Vector2.right;
+                // Travel a bit past the target instead of a fixed duration, so the slide reaches enemies near
+                // the edge of YasupenSlideRange instead of stopping short of them.
+                float duration = Mathf.Min(MaxSlideSeconds, (Vector2.Distance(from, to) + 1.5f) / SlideSpeed);
                 aiActor.BehaviorOverridesVelocity = true;
                 aiActor.BehaviorVelocity = dir * SlideSpeed;
-                if (aiAnimator != null) aiAnimator.PlayForDuration("slide", SlideSeconds + 0.1f);
+                if (aiAnimator != null) aiAnimator.PlayForDuration("slide", duration + 0.1f);
                 HashSet<AIActor> hit = new HashSet<AIActor>();
                 float t = 0f;
-                while (t < SlideSeconds && aiActor != null)
+                while (t < duration && aiActor != null)
                 {
                     HitAlongSlide(dir, hit);
                     t += BraveTime.DeltaTime;
@@ -178,6 +206,8 @@ namespace PlutoTheCat
                 StopSlide();
             }
 
+            // Hit on body overlap (Yasupen's centre against the enemy's own hitbox), not centre-to-centre distance,
+            // so bosses and other large enemies actually get hit by the slide.
             private void HitAlongSlide(Vector2 dir, HashSet<AIActor> hit)
             {
                 RoomHandler room = m_owner != null ? m_owner.CurrentRoom : null;
@@ -188,17 +218,28 @@ namespace PlutoTheCat
                 {
                     AIActor e = enemies[i];
                     if (e == null || e == aiActor || e.CompanionOwner != null || hit.Contains(e) || e.healthHaver == null || e.healthHaver.IsDead) continue;
-                    if (Vector2.Distance(me, e.CenterPosition) > HitRadius) continue;
+                    if (e.specRigidbody == null || e.specRigidbody.HitboxPixelCollider == null) continue;
+                    PixelCollider box = e.specRigidbody.HitboxPixelCollider;
+                    if (DistanceToBox(me, box.UnitBottomLeft, box.UnitTopRight) > BodyRadius) continue;
                     hit.Add(e);
                     e.healthHaver.ApplyDamage(PlutoConfig.YasupenSlideDamage, dir, "Yasupen", CoreDamageTypes.None, DamageCategory.Normal);
                     if (!e.healthHaver.IsBoss && e.knockbackDoer != null) e.knockbackDoer.ApplyKnockback(dir, PlutoConfig.YasupenSlideKnockback);
                 }
             }
 
+            /// <summary>Distance from a point to the closest point of an axis-aligned box (0 when the point is inside it).</summary>
+            private static float DistanceToBox(Vector2 point, Vector2 bottomLeft, Vector2 topRight)
+            {
+                float dx = Mathf.Max(0f, Mathf.Max(bottomLeft.x - point.x, point.x - topRight.x));
+                float dy = Mathf.Max(0f, Mathf.Max(bottomLeft.y - point.y, point.y - topRight.y));
+                return Mathf.Sqrt(dx * dx + dy * dy);
+            }
+
             private void StopSlide()
             {
                 if (!sliding) return;
                 sliding = false;
+                if (slideCoroutine != null) { StopCoroutine(slideCoroutine); slideCoroutine = null; }
                 if (aiActor != null)
                 {
                     aiActor.BehaviorOverridesVelocity = false;
