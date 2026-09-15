@@ -100,3 +100,8 @@
 ## Narrowing an automatic repair (combat polish, 2026-09-15 review finding)
 - The Vet Visit loadout watchdog was narrowed to respect foreign input/gun/render locks, but the broad repair became console-only (`vet_loadout`). That silently removed the automatic fix for the 0.10.0 in-game "Pluto cannot fire" bug; tests passed because they only checked the narrowing.
 - Rule: when making a recovery path less aggressive, keep an escalation path (persistent + unexplained state for N checks -> the broad repair, logged), and add a test that the escalation is still wired. A fix verified in game must not become manual-only without the user's say.
+
+## 2.16.3 / 0.14.3 in-game report (2026-09-15, user)
+- "Coco no longer runs in the room when the active is triggered": the scored-dodge rewrite let "stay" win whenever no bullet threatened him, so the decoy stood still. A behaviour a player can see (a panicky run) is part of the feature, not an implementation detail: when replacing movement logic, keep a test that the idle/no-threat case still moves, and list the visible behaviour in the in-game checklist.
+- "The Vet remains stuck a lot" after adding fairness gates (budget, recovery, repeat avoidance, distance bands): gates that remove attacks must never also remove movement. Simulate several seconds of selection with long-lived hazards before shipping.
+- Confirmed working: Playdate Dog bites enemies (2.16.2 Wolf behaviours).
