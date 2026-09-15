@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.17.1 (test build, not released)
+- **Coco's knight helmet really shows with Ser Junkan**: the helmet swap wrote the animation name the game ignores for Coco's one-direction clips, so he never changed (the Knighted helmet had never shown since 2.15.0). He now wears the gold plumed helmet at every Junkan form.
+- **Samurai Puffed Up is fluffy again**: the samurai costume gets its own standing-fur ring that stays off the kimono, alongside the red anger cue.
+- **The Katana makes a sound when it swings** (it borrows Blasphemy's swing sound).
+
 ## 2.17.0 (test build, not released)
 
 - **Five new cat items** in the loot pool for every character, each with its own Ammonomicon page and lore:
@@ -10,13 +15,8 @@
   - **Scratching Post** (active, C, once per room): place a post; standing next to it gives more damage and piercing shots. `PostRadius`, `PostDamageMultiplier`, `PostPierce`.
 - **Synergies**: Cat's Cradle (Yarn + Coco Blue: the ball lasts twice as long), Nip And Tuck (Catnip + Puffed Up: zoomies start puffed up), Squeaky Clean (Collar + Squeaky Toy: wider jingle), Hack Attack (Hairball + Wet Food Can: the burst charms), Whetstone (Post + Katana: sharper claws).
 - **Lore**: funnier Ammonomicon stories for the Wet Food Can, Coco Blue, Squeaky Toy, Puffed Up and Katana.
-- Config: every new number lives in the `Cat Items` section and is range-checked at load.
-
-## 2.16.5
-- **Coco's knight helmet really shows with Ser Junkan**: the helmet swap wrote the animation name the game ignores for Coco's one-direction clips, so he never changed (the Knighted helmet had never shown since 2.15.0). He now wears the gold plumed helmet at every Junkan form.
 - **Ammonomicon pages for the Taiyaki Cannon and Katana** show the gun's picture (they were blank).
-- **Samurai Puffed Up is fluffy again**: the samurai costume gets its own standing-fur ring that stays off the kimono, alongside the red anger cue.
-- **The Katana makes a sound when it swings** (it borrows Blasphemy's swing sound).
+- Config: every new number lives in the `Cat Items` section and is range-checked at load.
 
 ## 2.16.4 (test build, not released)
 - **Coco runs again during the Squeaky Toy decoy**: 2.16.3 let him stand still when no bullet threatened him. Every decoy leg now runs 2.5-3.5 tiles in a panicky zigzag, still steering away from incoming bullets and staying within about 8 tiles of Pluto.
