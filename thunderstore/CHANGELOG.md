@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.16.3 (test build, not released)
+- **Coco** spends one stuffing per enemy bullet (several bullets at once cost several), dodges by where bullets are heading instead of running at random, and his decoy only releases the enemies it retargeted.
+- **Crumbs** drop only after a kibble damages an enemy (not on walls), at most 12 per player, and are left on the floor when the gun cannot take ammo.
+- **Nine Lives** shows the current life in the item subtitle and a short notice on each new floor ("Seventh life. Two to spare.").
+- **Samurai Pluto** gets a red flash, pulse and repeating anger marks while Puffed Up (the fur ring stays hidden for that costume). Damage and fire rate unchanged.
+- **Playdate/Squire**: the Dog and Junkan get back exactly what they had before a decoy instead of assumed defaults.
+- Config values out of range are clamped with a warning in the log. Weapon grip/muzzle numbers come from one generated table (no change in game).
+
 ## 2.16.2
 - **Taiyaki Cannon** is stronger: 8 damage per mini taiyaki (was 6), one shot every 0.20 s (was 0.24), 10 per clip (was 8), 0.9 s reload (was 1.1), faster taiyaki. About 40 damage per second against the Royal Kibble Sack's 35. New config keys `TaiyakiDamage` and `TaiyakiClip`.
 - **Playdate** (Squeaky Toy + Dog) fixed: while Coco is out as a decoy, the Dog now fights like the vanilla Wolf. It runs at the enemy chasing Coco, barks, leaps and bites, then goes back to being a normal Dog when the decoy ends. Before, the Dog never visibly attacked.
