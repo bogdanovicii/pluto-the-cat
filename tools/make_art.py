@@ -159,6 +159,8 @@ def gun_and_items():
                     json.dump(jtk2d(w, h, spec['hand'], spec['muzzle']), fh, indent=2)
     WL.write()
     shutil.copy(os.path.join(ROOT, 'reference', 'art', 'taiyaki_cannon', 'pluto_mini_taiyaki_001.png'), os.path.join(pc, 'pluto_mini_taiyaki_001.png'))
+    # Churu drop: the Taiyaki Cannon's empty-reload finisher (reference/gemini/taiyaki_cannon/reload_v2.py)
+    shutil.copy(os.path.join(ROOT, 'reference', 'art', 'taiyaki_cannon', 'pluto_churu_drop_001.png'), os.path.join(pc, 'pluto_churu_drop_001.png'))
     shutil.copy(os.path.join(ROOT, 'reference', 'art', 'katana', 'pluto_katana_wave_001.png'), os.path.join(pc, 'pluto_katana_wave_001.png'))
     # Same sprite name in the Ammonomicon collection = the picture shown on the gun's Ammonomicon page.
     save(U.GUN_AMMONOMICON, os.path.join(SPRITE_ROOT, 'Ammonomicon Encounter Icon Collection', 'pluto_kibble_sack_idle_001.png'))

@@ -28,6 +28,7 @@ namespace PlutoTheCat
         public static float ZoomiesSeconds = 4f;
         public static float ZoomiesSpeedBonus = 2.5f;
         public static bool HairballEnabled = true;
+        public static bool ChuruDropEnabled = true;
         public static int InvulnerableRollFrames = 6;
         public static Vector3 FoyerPosition = new Vector3(14.6f, 22.1f, 0f);
         public static Vector3 BathtubOffset = new Vector3(0f, 2.1f, 0f);
@@ -67,6 +68,7 @@ namespace PlutoTheCat
             ZoomiesSeconds = PlutoConfigRules.Clamp("ZoomiesSeconds", cfg.Bind("Balance", "ZoomiesSeconds", ZoomiesSeconds, "Speed burst duration after clearing a room (0 disables).").Value, ZoomiesSeconds, Warn);
             ZoomiesSpeedBonus = PlutoConfigRules.Clamp("ZoomiesSpeedBonus", cfg.Bind("Balance", "ZoomiesSpeedBonus", ZoomiesSpeedBonus, "Movement speed added during zoomies.").Value, ZoomiesSpeedBonus, Warn);
             HairballEnabled = cfg.Bind("Balance", "Hairball", HairballEnabled, "Reloading an empty clip coughs up a slow stunning hairball.").Value;
+            ChuruDropEnabled = cfg.Bind("Balance", "ChuruDrop", ChuruDropEnabled, "Taiyaki Cannon: finishing a reload of an empty clip spits a Churu drop (5 damage, 3 splash within 1.5 tiles).").Value;
             InvulnerableRollFrames = PlutoConfigRules.Clamp("InvulnerableRollFrames", cfg.Bind("Balance", "InvulnerableRollFrames", InvulnerableRollFrames, "Dodge-roll frames (of 9) that are invulnerable.").Value, InvulnerableRollFrames, Warn);
             FoyerPosition = Vec(cfg.Bind("Breach", "FoyerPosition", "14.6,22.1", "Where Pluto stands in the Breach (x,y).").Value, FoyerPosition);
             BathtubOffset = Vec(cfg.Bind("Breach", "BathtubOffset", "0,2.1", "Where the samurai costume's kimono stand stands, relative to Pluto (dx,dy); positive dy is above him. (The key keeps its old name so existing configs still work.)").Value, BathtubOffset);

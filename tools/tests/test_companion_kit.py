@@ -31,7 +31,7 @@ class CompanionKitTests(unittest.TestCase):
     def test_numeric_config_is_clamped_at_bind(self):
         """Wiring check: every numeric setting goes through PlutoConfigRules when it is bound."""
         text = (SRC / 'PlutoConfig.cs').read_text()
-        unranged = {'NoFallDamage', 'Hairball', 'FoyerPosition', 'BathtubOffset', 'CocoBlocksBullets',
+        unranged = {'NoFallDamage', 'Hairball', 'ChuruDrop', 'FoyerPosition', 'BathtubOffset', 'CocoBlocksBullets',
                     'LogPunchoutNames', 'UnlockSamuraiCostume'}
         bound = 0
         for line in text.splitlines():
