@@ -75,7 +75,9 @@ for clip in REQUIRED_CLIPS:
 OUTLINE = (0x1E, 0x16, 0x14, 255)
 for d in [os.path.join(NSS, c) for c in ('idle', 'run_right', 'dodge')] + [os.path.join(RES, 'Companions', 'coco', c) for c in ('idle', 'ko')]:
     for f in sorted(os.listdir(d))[:1]:
-        if OUTLINE in set(Image.open(os.path.join(d, f)).convert('RGBA').getdata()):
+        with Image.open(os.path.join(d, f)) as im:
+            pixels = set(im.convert('RGBA').get_flattened_data())
+        if OUTLINE in pixels:
             err(f'{os.path.basename(d)}/{f}: actor frame contains the baked outline colour')
 ok('body and companion frames carry no baked outline')
 
