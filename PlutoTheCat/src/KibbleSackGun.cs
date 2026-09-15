@@ -29,7 +29,7 @@ namespace PlutoTheCat
             gun.SetLongDescription(
                 "A 2 kg bag of ROYAL CANIN Sterilised 37, the dry food Pluto has eaten every day of his life. " +
                 "Thrown two kibble at a time. Each kibble bounces once, because kibble always ends up under the fridge, " +
-                "and one in twenty is a big chunk from the bottom of the bag. Kibble that lands leaves crumbs; " +
+                "and one in twenty is a big chunk from the bottom of the bag. Kibble that hits enemies can leave crumbs; " +
                 "walk over them to top up whatever else you are carrying.\n\n" +
                 "Pluto was a small, hungry tabby when the vet first handed him a sample of this stuff. " +
                 "He has defended the bag ever since: from the dog next door, from the vacuum cleaner, and now " +
@@ -174,37 +174,60 @@ namespace PlutoTheCat
             }
         }
 
-        /// <summary>When a kibble dies against something, 25 % of the time it leaves crumbs for 8 s.</summary>
+        /// <summary>One crumb roll per projectile after a damaging enemy hit; walls earn nothing.</summary>
         public class KibbleCrumbDropper : MonoBehaviour
         {
+            private bool rolled;
+            private HealthHaver hitHealth;
+            private float healthBefore;
+
             private void Start()
             {
                 Projectile p = GetComponent<Projectile>();
-                if (p != null) p.OnDestruction += OnGone;
+                if (p == null) return;
+                p.OnHitEnemy += OnHit;
+                if (p.specRigidbody != null) p.specRigidbody.OnPreRigidbodyCollision += BeforeHit;
             }
 
-            private void OnGone(Projectile p)
+            private void BeforeHit(SpeculativeRigidbody mine, PixelCollider mineCollider, SpeculativeRigidbody other, PixelCollider otherCollider)
             {
-                if (p == null || Random.value > 0.25f) return;
-                if (!(p.Owner is PlayerController)) return;
-                SpawnCrumb(p.transform.position);
+                hitHealth = other != null ? other.healthHaver : null;
+                healthBefore = hitHealth != null ? hitHealth.GetCurrentHealth() : 0f;
+            }
+
+            private void OnHit(Projectile p, SpeculativeRigidbody body, bool fatal)
+            {
+                if (rolled || p == null || body == null || body.aiActor == null || body.aiActor.CompanionOwner != null || body.aiActor.IsHarmlessEnemy) return;
+                if (!fatal && (body.healthHaver != hitHealth || hitHealth == null || hitHealth.GetCurrentHealth() >= healthBefore)) return;
+                rolled = true;
+                PlayerController owner = p.Owner as PlayerController;
+                if (owner != null && Random.value < 0.25f) SpawnCrumb(p.transform.position, owner);
             }
         }
 
-        public static void SpawnCrumb(Vector3 position)
+        private static readonly System.Collections.Generic.List<KibbleCrumb> liveCrumbs = new System.Collections.Generic.List<KibbleCrumb>();
+
+        public static void SpawnCrumb(Vector3 position, PlayerController owner)
         {
-            if (CrumbSpriteId < 0) return;
-            GameObject crumb = new GameObject("pluto_kibble_crumb");
-            crumb.transform.position = position;
-            tk2dSprite sprite = crumb.AddComponent<tk2dSprite>();
+            liveCrumbs.RemoveAll(crumb => crumb == null);
+            int count = 0;
+            for (int i = 0; i < liveCrumbs.Count; i++) if (liveCrumbs[i].DropOwner == owner) count++;
+            if (CrumbSpriteId < 0 || !CompanionKitRules.CanDropCrumb(true, owner != null, count)) return;
+            GameObject crumbObject = new GameObject("pluto_kibble_crumb");
+            crumbObject.transform.position = position;
+            tk2dSprite sprite = crumbObject.AddComponent<tk2dSprite>();
             sprite.SetSprite(SpriteBuilder.itemCollection, CrumbSpriteId);
-            crumb.AddComponent<KibbleCrumb>();
+            KibbleCrumb crumb = crumbObject.AddComponent<KibbleCrumb>();
+            crumb.DropOwner = owner;
+            liveCrumbs.Add(crumb);
         }
 
         /// <summary>Walk over crumbs: +1 ammo to the held gun if it is not the sack itself.</summary>
         public class KibbleCrumb : MonoBehaviour
         {
             private float life = 8f;
+            public PlayerController DropOwner;
+            private void OnDestroy() { liveCrumbs.Remove(this); }
 
             private void Update()
             {
@@ -216,8 +239,10 @@ namespace PlutoTheCat
                     if (player == null || player.healthHaver.IsDead) continue;
                     if (Vector2.Distance(player.CenterPosition, transform.position) > 0.6f) continue;
                     Gun gun = player.CurrentGun;
-                    if (gun != null && !gun.InfiniteAmmo && gun.PickupObjectId != PickupId && gun.ammo < gun.AdjustedMaxAmmo)
-                        gun.GainAmmo(1);
+                    if (gun == null || gun.PickupObjectId == PickupId || !CompanionKitRules.CanCollectCrumb(gun.InfiniteAmmo, gun.ammo, gun.AdjustedMaxAmmo)) continue;
+                    int before = gun.ammo;
+                    gun.GainAmmo(1);
+                    if (gun.ammo <= before) continue;
                     AkSoundEngine.PostEvent("Play_OBJ_ammo_pickup_01", player.gameObject);
                     Destroy(gameObject);
                     return;

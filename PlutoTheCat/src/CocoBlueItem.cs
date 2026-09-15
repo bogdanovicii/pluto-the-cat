@@ -110,16 +110,23 @@ namespace PlutoTheCat
             private bool decoy;
             private float decoyLeft, retargetTimer, fleeTimer;
             private float normalSpeed = 6.5f;
+            private RoomHandler decoyRoom;
+            private readonly HashSet<AIActor> ownedTargets = new HashSet<AIActor>();
+            private Vector2 dodgeTarget;
+            private bool hasDodgeTarget;
+            private float dodgeHold;
+            private readonly CompanionOwnedValue<bool> decoyFollow = new CompanionOwnedValue<bool>();
+            private readonly CompanionOwnedValue<float> decoySpeed = new CompanionOwnedValue<float>();
 
             // stuffing: how many bullets he can take before he is knocked out for a while
-            private int stuffing;
+            private CocoShieldCharges charges = new CocoShieldCharges(0);
             private bool ko;
             private float koLeft, regenTimer;
 
             public PlayerController OwnerPlayer { get { return m_owner; } }
             public bool IsDecoy { get { return decoy; } }
             public bool IsKnockedOut { get { return ko; } }
-            public int Stuffing { get { return stuffing; } }
+            public int Stuffing { get { return charges.Remaining; } }
 
             /// <summary>Squire: +1 stuffing per Ser Junkan form, capped at the Holy Knight's +6 (Mecha is form 8 from one gold junk).</summary>
             public int MaxStuffing
@@ -166,7 +173,7 @@ namespace PlutoTheCat
             }
 
             private void OnEnable() { if (!Instances.Contains(this)) Instances.Add(this); }
-            private void OnDisable() { Instances.Remove(this); }
+            private void OnDisable() { EndDecoy(); Instances.Remove(this); }
 
             private bool hooked;
             private SpeculativeRigidbody shield;
@@ -204,7 +211,7 @@ namespace PlutoTheCat
                     // CompanionController's own Start is not virtual, so hook up on the first frame instead.
                     hooked = true;
                     if (aiActor != null) normalSpeed = aiActor.MovementSpeed;
-                    stuffing = MaxStuffing;
+                    charges.Refill(MaxStuffing);
                     BuildShield();
                 }
                 if (shield != null)
@@ -214,6 +221,7 @@ namespace PlutoTheCat
                 }
                 float dt = BraveTime.DeltaTime;
                 cooldown -= dt; blockCooldown -= dt;
+                charges.ForgetDestroyed(delegate(object shot) { return (Projectile)shot == null; });
                 if (ko)
                 {
                     koLeft -= dt;
@@ -222,11 +230,11 @@ namespace PlutoTheCat
                 else
                 {
                     int max = MaxStuffing;                          // grows and shrinks with Squire
-                    if (stuffing > max) stuffing = max;
-                    else if (stuffing < max)
+                    if (charges.Remaining > max) charges.Clamp(max);
+                    else if (charges.Remaining < max)
                     {
                         regenTimer -= dt;
-                        if (regenTimer <= 0f) { regenTimer = PlutoConfig.CocoStuffingRegenSeconds; stuffing++; }
+                        if (regenTimer <= 0f) { regenTimer = PlutoConfig.CocoStuffingRegenSeconds; charges.Regenerate(max); }
                     }
                 }
                 if (watched == null && m_owner != null)
@@ -254,7 +262,7 @@ namespace PlutoTheCat
             {
                 if (watched != null && watched.healthHaver != null) watched.healthHaver.OnDamaged -= OnOwnerDamaged;
                 if (shield != null) { shield.OnPreRigidbodyCollision -= OnPreCollision; Destroy(shield.gameObject); shield = null; }
-                if (decoy) EndDecoy();
+                EndDecoy();
                 Instances.Remove(this);
                 base.OnDestroy();
             }
@@ -263,7 +271,7 @@ namespace PlutoTheCat
             {
                 if (cooldown > 0f || watched == null) return;
                 cooldown = 1.5f;
-                KibbleSackGun.SpawnCrumb(transform.position);
+                KibbleSackGun.SpawnCrumb(transform.position, watched);
                 AkSoundEngine.PostEvent("Play_OBJ_item_throw_01", gameObject);
             }
 
@@ -277,16 +285,16 @@ namespace PlutoTheCat
                     PhysicsEngine.SkipCollision = true;    // Pluto's own shots pass through; a knocked-out Coco blocks nothing
                     return;
                 }
-                // Enemy bullet: it dies against the blocker layer; Coco squishes and a spark pops.
+                // Account for each distinct projectile, even inside the cosmetic cooldown.
+                if (!charges.TryBlock(p)) return;
+                regenTimer = PlutoConfig.CocoStuffingRegenSeconds;
                 if (blockCooldown <= 0f)
                 {
                     blockCooldown = 0.15f;
                     if (aiAnimator != null) aiAnimator.PlayUntilFinished("block", true);
                     PlutoVFX.Spawn(PlutoVFX.BlockSpark, other.UnitCenter);
-                    stuffing--;
-                    regenTimer = PlutoConfig.CocoStuffingRegenSeconds;
-                    if (stuffing <= 0) KnockOut();
                 }
+                if (charges.Remaining <= 0) KnockOut();
             }
 
             // ---------------------------------------------------------------- knocked out
@@ -308,7 +316,7 @@ namespace PlutoTheCat
             {
                 if (!ko) return;
                 ko = false;
-                stuffing = MaxStuffing;
+                charges.Refill(MaxStuffing);
                 CompanionFollowPlayerBehavior follow = Follow();
                 if (follow != null) follow.TemporarilyDisabled = false;
                 if (aiAnimator != null)
@@ -326,25 +334,39 @@ namespace PlutoTheCat
                 decoyLeft = seconds;
                 if (decoy) return;
                 decoy = true;
+                decoyRoom = CurrentRoom();
+                hasDodgeTarget = false;
                 retargetTimer = 0f; fleeTimer = 0f;
                 CompanionFollowPlayerBehavior follow = Follow();
-                if (follow != null) follow.TemporarilyDisabled = true;
-                if (aiActor != null) aiActor.MovementSpeed = normalSpeed * 1.4f;
+                if (follow != null)
+                {
+                    decoyFollow.Record(follow.TemporarilyDisabled, true);
+                    follow.TemporarilyDisabled = true;
+                }
+                if (aiActor != null)
+                {
+                    decoySpeed.Record(aiActor.MovementSpeed, normalSpeed * 1.4f);
+                    aiActor.MovementSpeed = normalSpeed * 1.4f;
+                }
                 PlutoVFX.Spawn(PlutoVFX.AngerMarks, (Vector2)transform.position + new Vector2(0.5f, 1f));
             }
 
             private void EndDecoy()
             {
+                foreach (AIActor enemy in ownedTargets)
+                    if (enemy != null && enemy.OverrideTarget == specRigidbody) enemy.OverrideTarget = null;
+                ownedTargets.Clear();
+                if (!decoy) return;
                 decoy = false;
+                decoyRoom = null;
+                hasDodgeTarget = false;
                 CompanionFollowPlayerBehavior follow = Follow();
-                if (follow != null) follow.TemporarilyDisabled = false;
+                if (follow != null) follow.TemporarilyDisabled = decoyFollow.Restore(follow.TemporarilyDisabled);
                 if (aiActor != null)
                 {
-                    aiActor.MovementSpeed = normalSpeed;
+                    aiActor.MovementSpeed = decoySpeed.Restore(aiActor.MovementSpeed);
                     aiActor.ClearPath();
                 }
-                RoomHandler room = CurrentRoom();
-                if (room != null) SetOverrides(room, false);
             }
 
             private CompanionFollowPlayerBehavior Follow()
@@ -365,24 +387,27 @@ namespace PlutoTheCat
             }
 
             /// <summary>Same mechanism as the vanilla Decoy item: every enemy in the room targets Coco's body.</summary>
-            private void SetOverrides(RoomHandler room, bool on)
+            private void SetOverrides(RoomHandler room)
             {
                 List<AIActor> enemies = room.GetActiveEnemies(RoomHandler.ActiveEnemyType.All);
                 if (enemies == null) return;
                 for (int i = 0; i < enemies.Count; i++)
                 {
                     AIActor e = enemies[i];
-                    if (e == null || e == aiActor) continue;
-                    if (on) { if (e.OverrideTarget == null) e.OverrideTarget = specRigidbody; }
-                    else if (e.OverrideTarget == specRigidbody) e.OverrideTarget = null;
+                    if (e == null || e == aiActor || e.CompanionOwner != null || ownedTargets.Contains(e)) continue;
+                    if (e.OverrideTarget == null)
+                    {
+                        ownedTargets.Add(e);
+                        e.OverrideTarget = specRigidbody;
+                    }
                 }
             }
 
             private void DecoyUpdate(float dt)
             {
-                decoyLeft -= dt; retargetTimer -= dt; fleeTimer -= dt;
+                decoyLeft -= dt; retargetTimer -= dt; fleeTimer -= dt; dodgeHold -= dt;
                 RoomHandler room = CurrentRoom();
-                if (decoyLeft <= 0f || room == null || m_owner == null || (m_owner.CurrentRoom != null && m_owner.CurrentRoom != room))
+                if (decoyLeft <= 0f || room == null || room != decoyRoom || m_owner == null || (m_owner.CurrentRoom != null && m_owner.CurrentRoom != room))
                 {
                     EndDecoy();
                     return;
@@ -390,7 +415,7 @@ namespace PlutoTheCat
                 if (retargetTimer <= 0f)
                 {
                     retargetTimer = 0.5f;
-                    SetOverrides(room, true);
+                    SetOverrides(room);
                 }
                 if (fleeTimer <= 0f)
                 {
@@ -399,50 +424,92 @@ namespace PlutoTheCat
                 }
             }
 
-            /// <summary>Run away from nearby enemy bullets and enemies; wander if nothing is close.</summary>
+            /// <summary>Score a bounded set of nearby floor routes against incoming trajectories.</summary>
             private void Flee(RoomHandler room)
             {
-                if (aiActor == null) return;
+                if (aiActor == null || m_owner == null || GameManager.Instance == null || GameManager.Instance.Dungeon == null) return;
                 Vector2 me = specRigidbody != null ? specRigidbody.UnitCenter : (Vector2)transform.position;
-                Vector2 away = Vector2.zero;
-                System.Collections.ObjectModel.ReadOnlyCollection<Projectile> shots = StaticReferenceManager.AllProjectiles;
-                if (shots != null)
+                Vector2 owner = m_owner.CenterPosition;
+                DungeonData data = GameManager.Instance.Dungeon.data;
+                float bestScore = float.MaxValue;
+                Vector2 best = me;
+                bool found = false;
+                // Stay, eight local directions, return to the owner, and the previous destination.
+                for (int i = 0; i < 11; i++)
                 {
+                    Vector2 target;
+                    if (i == 0) target = me;
+                    else if (i <= 8)
+                    {
+                        float angle = (i - 1) * Mathf.PI / 4f;
+                        target = me + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * 2.5f;
+                    }
+                    else if (i == 9) target = me + (owner - me).normalized * Mathf.Min(2.5f, Vector2.Distance(me, owner));
+                    else { if (!hasDodgeTarget) continue; target = dodgeTarget; }
+                    // A companion outside the leash may choose only a route that brings it closer.
+                    float ownerDistance = Vector2.Distance(target, owner);
+                    if (ownerDistance > 8f && ownerDistance >= Vector2.Distance(me, owner)) continue;
+                    if (!ClearFloorRoute(data, room, me, target)) continue;
+                    float score = DodgeScore(room, me, target, owner);
+                    if (i == 10 && dodgeHold > 0f) score -= 5f; // resist small, harmless changes
+                    if (score < bestScore) { bestScore = score; best = target; found = true; }
+                }
+                if (!found) { aiActor.ClearPath(); hasDodgeTarget = false; return; }
+                if (hasDodgeTarget && Vector2.Distance(best, dodgeTarget) < 0.2f) return;
+                dodgeTarget = best;
+                hasDodgeTarget = true;
+                dodgeHold = 0.75f;
+                if (Vector2.Distance(me, best) < 0.2f) aiActor.ClearPath();
+                else aiActor.PathfindToPosition(best);
+            }
+
+            private float DodgeScore(RoomHandler room, Vector2 me, Vector2 target, Vector2 owner)
+            {
+                Vector2 delta = target - me;
+                float travel = Mathf.Max(0.05f, delta.magnitude / Mathf.Max(1f, aiActor.MovementSpeed));
+                Vector2 velocity = delta / travel;
+                float score = Mathf.Max(0f, Vector2.Distance(target, owner) - 4f) * 3f;
+                // Avoid pulling Coco's pursuers through Pluto's body.
+                float along = delta.sqrMagnitude < 0.01f ? 0f : Mathf.Clamp01(Vector2.Dot(owner - me, delta) / delta.sqrMagnitude);
+                score += Mathf.Max(0f, 1.5f - Vector2.Distance(owner, me + delta * along)) * 8f;
+                var shots = StaticReferenceManager.AllProjectiles;
+                if (shots != null)
                     for (int i = 0; i < shots.Count; i++)
                     {
                         Projectile p = shots[i];
-                        if (p == null || p.Owner is PlayerController) continue;
-                        Vector2 d = me - (Vector2)p.transform.position;
-                        float dist = d.magnitude;
-                        if (dist < 0.05f || dist > 5f) continue;
-                        away += d / (dist * dist);
+                        if (p == null || p.Owner is PlayerController || p.specRigidbody == null) continue;
+                        Vector2 position = p.specRigidbody.UnitCenter;
+                        Vector2 bulletVelocity = p.specRigidbody.Velocity;
+                        if (Vector2.Distance(position, me) > 12f) continue;
+                        Vector2 relative = position - me, speed = bulletVelocity - velocity;
+                        score += CompanionKitRules.ProjectileRisk(relative.x, relative.y, speed.x, speed.y, travel);
+                        relative = position + bulletVelocity * travel - target;
+                        score += CompanionKitRules.ProjectileRisk(relative.x, relative.y, bulletVelocity.x, bulletVelocity.y, 0.4f);
                     }
-                }
                 List<AIActor> enemies = room.GetActiveEnemies(RoomHandler.ActiveEnemyType.All);
                 if (enemies != null)
-                {
                     for (int i = 0; i < enemies.Count; i++)
                     {
-                        AIActor e = enemies[i];
-                        if (e == null || e == aiActor) continue;
-                        Vector2 d = me - e.CenterPosition;
-                        float dist = d.magnitude;
-                        if (dist < 0.05f || dist > 6f) continue;
-                        away += 0.5f * d / (dist * dist);
+                        AIActor enemy = enemies[i];
+                        if (enemy == null || enemy == aiActor || enemy.CompanionOwner != null) continue;
+                        score += Mathf.Max(0f, 3f - Vector2.Distance(target, enemy.CenterPosition)) * 4f;
                     }
-                }
-                Vector2 dir = away.sqrMagnitude > 0.0001f ? away.normalized : Random.insideUnitCircle.normalized;
-                dir = (dir + Random.insideUnitCircle * 0.35f).normalized;      // a little wobble so it reads as panicky
-                Vector2 target = me + dir * 3.5f;
-                IntVector2 cell = target.ToIntVector2(VectorConversions.Floor);
-                DungeonData data = GameManager.Instance.Dungeon.data;
-                if (!data.CheckInBoundsAndValid(cell) || !data[cell].IsPassable || data[cell].parentRoom != room)
-                {
-                    IntVector2? alt = room.GetRandomAvailableCell(new IntVector2(1, 1), CellTypes.FLOOR, false, null);
-                    if (alt == null) return;
-                    target = alt.Value.ToCenterVector2();
-                }
-                aiActor.PathfindToPosition(target);
+                return score;
+            }
+
+            // Sample the whole short route and Coco's footprint, not just its final cell. This
+            // deliberately rejects routes requiring a detour; pathfinding still handles dynamic actors.
+            private static bool ClearFloorRoute(DungeonData data, RoomHandler room, Vector2 from, Vector2 to)
+            {
+                int steps = Mathf.Max(1, Mathf.CeilToInt(Vector2.Distance(from, to) / 0.25f));
+                for (int i = 0; i <= steps; i++)
+                    for (int corner = 0; corner < 4; corner++)
+                    {
+                        Vector2 point = Vector2.Lerp(from, to, (float)i / steps) + new Vector2((corner % 2 == 0 ? -1f : 1f) * 0.4f, (corner < 2 ? -1f : 1f) * 0.3f);
+                        IntVector2 cell = point.ToIntVector2(VectorConversions.Floor);
+                        if (!data.CheckInBoundsAndValid(cell) || !data[cell].IsPassable || data[cell].type != CellType.FLOOR || data[cell].parentRoom != room) return false;
+                    }
+                return true;
             }
         }
     }
