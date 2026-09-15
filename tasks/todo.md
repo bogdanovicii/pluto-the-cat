@@ -94,3 +94,23 @@ Engine facts (Re-ETG decompiled): `SackKnightController.CurrentForm` (HOLY_KNIGH
 Built green 2026-09-14: dist/Pluto_The_Cat-2.15.0.zip sha256 380fb7241bd1843d8ea980aee1b8a29954b2725e30851fd38482e54fbd890611 (combined release with the peer's Wet Food Can rework).
 Verified statically: compiles, lint 0/0 (knight clips included), validate ok (dog/junkan ids, knight clip counts, no baked outline), 19 knight frames embedded.
 Not verified (needs the game): Dog pathing with its follow behaviour paused (the Dog prefab's behaviour list is prefab data), Junkan's SeekTargetBehavior walking to OverrideTarget, `AIAnimator.PlayForDuration("pet")` on the Dog, the helmet clip swap mid-pet/KO.
+
+## Taiyaki Cannon reload v2 + Churu drop finisher (branch taiyaki-reload, 2026-09-15)
+
+User after testing 2.16.3: "Taiyaki reload animation should be improved; also add something at the end like the hairball."
+
+- [x] Reload clip redrawn (reference/gemini/taiyaki_cannon/reload_v2.py): 9 frames at 10 fps = 0.9 s = reloadTime (was 4 frames at 8 fps = 0.5 s,
+      and two frames pasted a differently shaped Gemini fish). The approved idle gun stays pixel-for-pixel, so the grip never moves; a Churu
+      stick pack arrives at the tail, pushes in, is squeezed flat while a shine runs tail to mouth, pulls out, a bead swells in the mouth,
+      the drop falls from the jaw, a glint on the fin.
+- [x] Churu drop finisher (TaiyakiCannonGun): a reload that started from an empty clip ends with a drop spat toward the aim
+      (5 damage, speed 11, range 7) that splashes where it stops: bonito puff + 3 damage to other enemies within 1.5 tiles.
+      ~+1.8 DPS single target on a 40 DPS gun (10 shots in ~1.9 s + 0.9 s reload). Config `Balance/ChuruDrop` (default on).
+      GunBehaviour has no reload-ended hook, so OnAutoReload starts a coroutine that waits for Gun.IsReloading to clear and
+      only spits if the gun is still in hand with a refilled clip.
+      Log lines: `taiyaki churu drop: empty-clip reload ended, drop spawned ...` and `taiyaki churu drop: first splash ...`.
+- [x] Previews: docs/art-preview/weapons/taiyaki_cannon-reload-strip.png, -reload.png (APNG 10 fps) / .gif, -reload-inhand.png (APNG) + -still.
+- [ ] In-game (Steam machine): the tube reads at 1x and the grip stays in the paw; the clip ends as the gun becomes usable (if the engine
+      stretches reload clips to reloadTime nothing changes, the clip is already 0.9 s); empty the clip -> one drop flies from the mouth at
+      the end of the reload, the splash puffs flakes and hurts a neighbour; a partial-clip reload gives no drop; switching guns mid-reload
+      gives no drop; both log lines present.

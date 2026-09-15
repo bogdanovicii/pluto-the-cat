@@ -132,7 +132,7 @@ if 'pluto_kibble_sack_idle_001.png' not in pngs:
 for need in ('pluto_taiyaki_cannon_idle_001.png', 'pluto_katana_idle_001.png'):
     if need not in pngs:
         err(f'samurai gun sprite missing: {need}')
-for need in ('pluto_mini_taiyaki_001.png', 'pluto_katana_wave_001.png'):
+for need in ('pluto_mini_taiyaki_001.png', 'pluto_katana_wave_001.png', 'pluto_churu_drop_001.png'):
     if not os.path.exists(os.path.join(RES, 'SpriteRoot', 'ProjectileCollection', need)):
         err(f'samurai projectile sprite missing: {need}')
 for prefix in ('pluto_kibble_sack', 'pluto_taiyaki_cannon', 'pluto_katana_idle', 'pluto_katana_reload'):
