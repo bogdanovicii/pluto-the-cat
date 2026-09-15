@@ -204,4 +204,5 @@ Spec: docs/superpowers/specs/2026-09-14-samurai-pluto-and-clinic-life-design.md 
 
 ## 0.14.2 (user, 2026-09-15, relayed via c4 and confirmed here): co-op doors, the rescue
 - [x] BringPartnersThrough before each zone door seals; RescueAnimals before the owners (freed kennel clips, FreedAnimal); review clean; released v0.14.2 (sha 742291d7...964f); drop page v46 next to Pluto 2.16.2
-- [ ] Tester message (tester session was offline per c4) and results
+- [x] Payload verified; tester messaged (co-op doors, rescue, controls after the credits)
+- [ ] Await tester results for 0.14.2
