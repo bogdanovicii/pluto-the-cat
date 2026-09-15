@@ -18,6 +18,7 @@ namespace PlutoTheCat
         public const string BoxFort = "Box Fort";
         public const string Playdate = "Playdate";
         public const string Squire = "Squire";
+        public const string PenguinPals = "Penguin Pals";   // Coco Blue + Yasupen: Yasupen slides at Coco's decoy chaser
         // 2.17 cat items
         public const string CatsCradle = "Cat's Cradle";
         public const string NipAndTuck = "Nip And Tuck";
@@ -40,6 +41,7 @@ namespace PlutoTheCat
             Register(BoxFort, new List<string> { NineLivesItem.ID, "box" });   // "box" is the Cardboard Box
             Register(Playdate, new List<string> { SqueakyToyItem.ID, "dog" }); // the toy sends Coco out; effects in CocoFriends
             Register(Squire, new List<string> { CocoBlueItem.ID, "junkan" }); // "junkan" is Ser Junkan
+            Register(PenguinPals, new List<string> { CocoBlueItem.ID, YasupenItem.ID });
             Register(CatsCradle, new List<string> { BallOfYarnItem.ID, CocoBlueItem.ID });            // the ball lasts twice as long
             Register(NipAndTuck, new List<string> { CatnipPouchItem.ID, PuffedUpItem.ID });           // zoomies start puffed up
             Register(SqueakyClean, new List<string> { JingleBellCollarItem.ID, SqueakyToyItem.ID });  // wider jingle

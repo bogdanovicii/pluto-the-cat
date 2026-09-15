@@ -42,6 +42,9 @@ class CompanionKitTests(unittest.TestCase):
             self.assertIn(needle, src, needle)
         plugin = (SRC / 'Plugin.cs').read_text(encoding='utf-8')
         self.assertIn('Step("yasupen", YasupenItem.Init)', plugin)
+        synergies = (SRC / 'PlutoSynergies.cs').read_text(encoding='utf-8')
+        self.assertIn('Register(PenguinPals, new List<string> { CocoBlueItem.ID, YasupenItem.ID });', synergies)
+        self.assertIn('PlutoSynergies.PenguinPals', src)
 
     def test_numeric_config_is_clamped_at_bind(self):
         """Wiring check: every numeric setting goes through PlutoConfigRules when it is bound."""

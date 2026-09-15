@@ -163,7 +163,7 @@ namespace PlutoTheCat
                 lookTimer -= BraveTime.DeltaTime;
                 if (sliding || IsBeingPet || lookTimer > 0f) return;
                 lookTimer = 0.2f;
-                AIActor target = NearestEnemy(out float distance);
+                AIActor target = PenguinPalsTarget(out float distance) ?? NearestEnemy(out distance);
                 if (YasupenRules.SlideReady(Time.time, lastSlide, PlutoConfig.YasupenSlideCooldown, m_owner.IsInCombat,
                     target != null ? distance : float.NaN, PlutoConfig.YasupenSlideRange))
                     SlideAt(target);
@@ -259,6 +259,28 @@ namespace PlutoTheCat
                 {
                     AIActor e = enemies[i];
                     if (e == null || e.CompanionOwner != null || e.healthHaver == null || e.healthHaver.IsDead) continue;
+                    float d = Vector2.Distance(me, e.CenterPosition);
+                    if (d < distance) { distance = d; best = e; }
+                }
+                return best;
+            }
+
+            /// <summary>Penguin Pals: while Coco is a decoy, the nearest enemy targeting Coco.</summary>
+            private AIActor PenguinPalsTarget(out float distance)
+            {
+                distance = float.MaxValue;
+                if (!m_owner.PlayerHasActiveSynergy(PlutoSynergies.PenguinPals)) return null;
+                CocoBlueItem.CocoBlueController coco = CocoBlueItem.CocoBlueController.For(m_owner);
+                RoomHandler room = m_owner.CurrentRoom;
+                if (coco == null || !coco.IsDecoy || coco.specRigidbody == null || room == null || specRigidbody == null) return null;
+                List<AIActor> enemies = room.GetActiveEnemies(RoomHandler.ActiveEnemyType.All);
+                if (enemies == null) return null;
+                AIActor best = null;
+                Vector2 me = specRigidbody.UnitCenter;
+                for (int i = 0; i < enemies.Count; i++)
+                {
+                    AIActor e = enemies[i];
+                    if (e == null || e.OverrideTarget != coco.specRigidbody || e.healthHaver == null || e.healthHaver.IsDead) continue;
                     float d = Vector2.Distance(me, e.CenterPosition);
                     if (d < distance) { distance = d; best = e; }
                 }
