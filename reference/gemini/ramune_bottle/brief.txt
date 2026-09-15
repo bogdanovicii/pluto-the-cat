@@ -2,6 +2,8 @@ Pixel-art weapon sprite sheet for the video game Enter the Gungeon, in exactly t
 
 The weapon: "RAMUNE BOTTLE", a Japanese ramune soda bottle used as a gun. Held sideways with the neck pointing RIGHT, the round bottom at the lower left where a paw holds it. Proportions of a 30x16 pixel gun sprite. Classic codd-neck bottle of pale aqua glass (#A8E0DC, shade #6FB8B4, deep #3E8A88) with clear fizzy soda inside showing small white bubbles, the pinched neck holding a clear glass marble (#E6F4F8 with a white shine pixel), a blue plastic cap ring (#2E6FD0) at the mouth, and a small paper label with a simple red and blue wave stripe (#C0392B, #2E3F6E).
 
+IMPORTANT: in EVERY frame the bottle lies HORIZONTAL (sideways), neck to the RIGHT, bottom to the LEFT, never upright and never tilted more than 15 degrees, like a gun held level. The glass marble must be visible inside the pinched neck in every frame except MARBLE SHOT. Draw no hand, no paw, no arm and no labels or captions.
+
 Draw these separate frames in one row, spaced far apart, all on the same canvas size with the grip in the same place:
 1. IDLE: bottle at rest, a few bubbles.
 2. SHAKE 1: bottle tilted up, bubbles multiplying, two short shake lines.

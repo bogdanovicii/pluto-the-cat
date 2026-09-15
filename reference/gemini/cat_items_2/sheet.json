@@ -1,0 +1,11 @@
+{
+  "model": "gemini-3-pro-image",
+  "prompt": "Pixel-art item icon sheet for the video game Enter the Gungeon, in exactly the same pixel style, pixel size, outline weight and shading as the attached reference icons (existing 16x16 item icons of this mod shown at 16x zoom): chunky square pixels, a crisp 1-pixel dark brown-black outline (#1E1614) around every object, flat cel shading with 3 tones per material, light from the top-left, no gradients, no anti-aliasing, no blur, no text.\n\nTop row: THREE separate cat-themed item icons, spaced far apart, each drawn LARGE so every pixel is a clear big square, each with the proportions of a 16x16 pixel icon:\n1. \"TOILET PAPER ROLL\": a white toilet paper roll (white #F4F0E8, shade #D8D0C4, deep shade #A89C8C) seen at a slight angle, the cardboard tube hole visible (tan #B4A180), with a torn strip of paper hanging down from the front and a few tiny shredded paper bits beside it, as if a cat has attacked it.\n2. \"CONE OF SHAME\": a veterinary recovery cone (elizabethan collar) seen from the front, a translucent pale-blue plastic funnel (#CFE6F2, shade #9FC4D8, edge #6E97AE) with a white shine streak, a thin blue binding tape along the wide rim and small snap buttons at the narrow neck.\n3. \"COFFEE MUG\": a white ceramic coffee mug (white #F4F0E8, shade #C9C0B4) with a hand-drawn red heart on its side (#C0392B), tipping over at a 30-degree angle with a small splash of brown coffee (#6B4A2E, light #9C7050) flying out of the rim.\n\nBottom row: small effect sprites for the same items, each with the proportions of a 6 to 12 pixel sprite, spaced apart:\n- four different small white ceramic mug shards (jagged triangles, one with a red heart fragment),\n- a short straight segment of torn toilet paper streamer (for a wall made of paper),\n- a small round brown coffee puddle seen from above.\n\nAll pieces share one palette family with the reference icons (tabby browns, cream whites, soft pink, hazel green). Chunky, readable silhouettes at tiny size, like vanilla Gungeon item icons.\n\nBackground: one flat solid chroma green (#00B140), no scenery, no text, no labels, no shadows on the background.\n",
+  "refs": [
+    "reference/gemini/cat_items/ref_existing_icons_16x.png"
+  ],
+  "ratio": "16:9",
+  "size": "2K",
+  "seconds": 22.4,
+  "time": "2026-09-16 00:07:10"
+}

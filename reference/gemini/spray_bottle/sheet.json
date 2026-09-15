@@ -1,0 +1,12 @@
+{
+  "model": "gemini-3-pro-image",
+  "prompt": "Pixel-art weapon sprite sheet for the video game Enter the Gungeon, in exactly the same pixel style, pixel size, outline weight and shading as the attached reference gun sprites of this mod (shown zoomed): chunky square pixels, a crisp 1-pixel dark brown-black outline (#1E1614), flat cel shading with 3 tones per material, light from the top-left, no gradients, no anti-aliasing, no blur, no text.\n\nThe weapon: \"SPRAY BOTTLE\", the plastic water spray bottle cat owners use to stop a cat from jumping on the table, now used as a gun. Held sideways, nozzle pointing RIGHT, handle at the lower left where a paw holds it. Proportions of a 26x20 pixel gun sprite. Translucent pale-blue plastic body (#BFE3EE, shade #8CC3D6, deep #5E97B0) showing the water level inside (#6FB7D8) with one white shine streak, a white trigger-sprayer head (#F4F0E8, shade #C9C0B4) with a squeeze trigger in front of the grip and a short nozzle, a small handwritten-style label patch in soft pink (#F5C6D0) with a tiny paw print.\n\nDraw these separate frames in one row, spaced far apart, all at exactly the same size and position so they can be overlaid:\n1. IDLE: the bottle at rest.\n2. FIRE 1: trigger squeezed, a small cone of white-cyan mist bursting from the nozzle.\n3. FIRE 2: trigger releasing, the mist puff drifting away and breaking into droplets.\n4. RELOAD 1: bottle tilted back, the sprayer head unscrewed and lifted.\n5. RELOAD 2: water pouring in from above as a short stream of blue droplets.\n6. RELOAD 3: sprayer head screwed back on with a tiny shine, water level full.\n\nBelow the frames, the projectile and effects, each with the proportions of a 6 to 12 pixel sprite: a round mist cloud projectile (white-cyan, soft 3-tone cel shading, still with a dark outline), three small water droplets, and a small splash burst for when it hits.\n\nBackground: one flat solid chroma magenta (#FF00FF), no scenery, no text, no labels, no shadows on the background.\n",
+  "refs": [
+    "reference/gemini/taiyaki_cannon/ref_kibble_sack_16x.png",
+    "reference/gemini/taiyaki_cannon/sheet.png"
+  ],
+  "ratio": "16:9",
+  "size": "2K",
+  "seconds": 24.4,
+  "time": "2026-09-16 00:07:12"
+}

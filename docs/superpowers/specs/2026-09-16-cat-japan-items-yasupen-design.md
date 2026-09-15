@@ -252,6 +252,8 @@ Pixel-art weapon sprite sheet for the video game Enter the Gungeon, in exactly t
 
 The weapon: "RAMUNE BOTTLE", a Japanese ramune soda bottle used as a gun. Held sideways with the neck pointing RIGHT, the round bottom at the lower left where a paw holds it. Proportions of a 30x16 pixel gun sprite. Classic codd-neck bottle of pale aqua glass (#A8E0DC, shade #6FB8B4, deep #3E8A88) with clear fizzy soda inside showing small white bubbles, the pinched neck holding a clear glass marble (#E6F4F8 with a white shine pixel), a blue plastic cap ring (#2E6FD0) at the mouth, and a small paper label with a simple red and blue wave stripe (#C0392B, #2E3F6E).
 
+IMPORTANT: in EVERY frame the bottle lies HORIZONTAL (sideways), neck to the RIGHT, bottom to the LEFT, never upright and never tilted more than 15 degrees, like a gun held level. The glass marble must be visible inside the pinched neck in every frame except MARBLE SHOT. Draw no hand, no paw, no arm and no labels or captions.
+
 Draw these separate frames in one row, spaced far apart, all on the same canvas size with the grip in the same place:
 1. IDLE: bottle at rest, a few bubbles.
 2. SHAKE 1: bottle tilted up, bubbles multiplying, two short shake lines.
@@ -265,6 +267,20 @@ Below the frames, the projectiles, each with the proportions of a 4 to 10 pixel 
 Background: one flat solid chroma magenta (#FF00FF), no scenery, no text, no labels, no shadows on the background.
 ```
 
+
+## Chosen concepts (2026-09-16, reviewed against the artist rubric)
+
+Candidates are local references (`reference/gemini/<sheet>/sheet.png`, `sheet_c2.png`; the PNGs stay untracked like earlier sheets, the `.json` sidecars record model, prompt and refs). Cost: 16 images with `gemini-3-pro-image` at 2K, about $2.14 (7 sheets x 2 plus one Ramune re-roll x 2).
+
+| Sheet | Pick | Why | Fix when copying into pixels |
+|---|---|---|---|
+| Yasupen | c1 | Faithful Donpen twin; ヤ belly and 激安 tag read; all poses plus the icon | Keep one of the two belly-slide frames; the CHEER sign reads "POP": make it a blank neon sign or 激安 |
+| Cat items | c1 icons + c2 effects | c1: mug tips with a splash, cone reads as a cone. c2: paper streamer segment and the heart-fragment shard | Drop c1's extra mini mug and mini roll |
+| Japan items | c1 | Maneki-neko with a raised left paw and an oval koban, clean daruma, good gust wisps | Fill the chroma-green gaps between the fan's ribs; paint the daruma's own left eye |
+| Spray Bottle | c2 | Real trigger sprayer; clear unscrew, refill, screw-on reload; no labels | Remove the drawn paw (the game draws Pluto's hand) |
+| Feather Teaser | c2 | Sideways pointing right as briefed; all frames and both projectile angles | Remove the drawn paw |
+| Takoyaki Launcher | c1 | Reads as a gun: cast-iron mortar with cups and a lantern (c2 is a frying pan) | None beyond the pixel copy |
+| Ramune Bottle | re-roll c2 | Horizontal in every frame, marble in the neck except the marble shot, no hand or labels (first roll failed: tilted or upright bottles, marble missing) | Drop the grey smudge in SHAKE 1 |
 
 ## Testing and acceptance
 
