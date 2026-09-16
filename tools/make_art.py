@@ -21,6 +21,9 @@ import poses as P  # noqa: E402
 import art_v4 as V4  # noqa: E402
 import art_yasupen as PEN  # noqa: E402
 import art_v5 as V5  # noqa: E402
+import art_cat_set as CAT219  # noqa: E402
+import art_spray_bottle as SPRAY  # noqa: E402
+import art_feather_teaser as FEATHER  # noqa: E402
 import fur as FUR  # noqa: E402
 import weapon_layout as WL  # noqa: E402
 
@@ -147,6 +150,21 @@ def gun_and_items():
             with open(os.path.join(wc, name + '.jtk2d'), 'w') as fh:
                 json.dump(jtk2d(U.GUN_W, U.GUN_H, sack['hand'], sack['muzzle']), fh, indent=2)
     save(U.KIBBLE, os.path.join(pc, 'pluto_kibble_001.png'))
+    # 2.19.0 Cat Set guns.  Row strings remain the source; this loop owns every
+    # frame, attach file, projectile and 24x32 Ammonomicon encounter sprite.
+    for key, art in (('spray_bottle', SPRAY), ('feather_teaser', FEATHER)):
+        spec = WL.WEAPONS[key]
+        if (art.W, art.H) != spec['canvas']:
+            raise ValueError(f"{key} canvas {(art.W, art.H)} != weapon_layout {spec['canvas']}")
+        for anim, clip in art.CLIPS.items():
+            for i, frame in enumerate(clip, 1):
+                name = f'{spec["sprite"]}_{anim}_{i:03d}'
+                save(frame, os.path.join(wc, name + '.png'))
+                with open(os.path.join(wc, name + '.jtk2d'), 'w') as fh:
+                    json.dump(jtk2d(art.W, art.H, spec['hand'], spec['muzzle']), fh, indent=2)
+        for name, rows in art.PROJECTILES.items():
+            save(rows, os.path.join(pc, name + '.png'))
+        save(art.PAGE, os.path.join(SPRITE_ROOT, 'Ammonomicon Encounter Icon Collection', spec['sprite'] + '_idle_001.png'))
     # 2.16.0 samurai costume weapons: approved pluto-artist frames live in reference/art/<weapon>/ and are copied as-is.
     for folder in ('taiyaki_cannon', 'katana'):
         spec = WL.WEAPONS[folder]
@@ -195,6 +213,10 @@ def gun_and_items():
     for clip, frames in (('idle', V4.COCO_KNIGHT_IDLE), ('move', V4.COCO_KNIGHT_MOVE), ('pet', V4.COCO_KNIGHT_PET),
                          ('block', V4.COCO_KNIGHT_BLOCK), ('ko', V4.COCO_KNIGHT_KO)):
         write_clip(os.path.join(comp, 'knight_' + clip), margin(frames), 'coco_knight_' + clip, body=True)
+    # Matching Cones uses the knight counterpart canvases/counts but never its
+    # helmet.  As with every AIActor clip, the exporter strips the source outline.
+    for clip, frames in CAT219.CONE_CLIPS.items():
+        write_clip(os.path.join(comp, 'cone_' + clip), margin(frames), 'coco_cone_' + clip, body=True)
     # 2.18.0 Yasupen companion (same margin and outline stripping as Coco)
     pen = os.path.join(RES, 'Companions', 'yasupen')
     clean(pen)
@@ -229,6 +251,14 @@ def gun_and_items():
     for prefix in ('jingle', 'catnip'):
         for i in range(1, 5):
             shutil.copy(os.path.join(cat, f'{prefix}_{i:03d}.png'), os.path.join(vfx, f'{prefix}_{i:03d}.png'))
+    # 2.19.0 Cat Set icons and world effects.  BlockSpark is deliberately
+    # reused for the cone-ready glint, so no duplicate cone-glint resource exists.
+    for name, rows in CAT219.ICONS.items():
+        save(rows, os.path.join(items, name + '.png'))
+    cat_effects = os.path.join(RES, 'Effects', 'cat_set')
+    clean(cat_effects)
+    for name, rows in CAT219.EFFECTS.items():
+        save(rows, os.path.join(cat_effects, name + '.png'))
     # 2.5: frame-following fur layers for Puffed Up
     furdir = os.path.join(RES, 'Fur')
     clean(furdir)
@@ -252,6 +282,42 @@ def thunderstore():
     U.thunderstore_icon().save(os.path.join(TS, 'icon.png'))
 
 
+def review_preview(rows, path, actor=False):
+    """Three real-size floor panels plus a 4x inspection panel.
+
+    Actor rows simulate the outline that the game adds after the source outline
+    has been stripped; guns/items/effects keep their authored outline.
+    """
+    ims = []
+    for frame in rows:
+        im = img_from_rows(strip_outline(frame)) if actor else img_from_rows(frame)
+        ims.append(outline_img(im) if actor else im)
+    gap = 3
+    row_h = max(im.height for im in ims) + gap * 2
+    one_w = gap + sum(im.width + gap for im in ims)
+    zoom = 4
+    zoom_w = gap + sum(im.width * zoom + gap for im in ims)
+    zoom_h = max(im.height for im in ims) * zoom + gap * 2
+    floors = ((74, 72, 88, 255), (150, 140, 128, 255), (28, 26, 34, 255))
+    out = Image.new('RGBA', (max(one_w, zoom_w), row_h * len(floors) + zoom_h), floors[-1])
+    for ri, floor in enumerate(floors):
+        panel = Image.new('RGBA', (out.width, row_h), floor)
+        x = gap
+        for im in ims:
+            panel.alpha_composite(im, (x, row_h - gap - im.height))
+            x += im.width + gap
+        out.alpha_composite(panel, (0, ri * row_h))
+    x = gap
+    y = row_h * len(floors) + gap
+    for im in ims:
+        big = im.resize((im.width * zoom, im.height * zoom), Image.NEAREST)
+        out.alpha_composite(big, (x, y + max(i.height for i in ims) * zoom - big.height))
+        x += big.width + gap
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    out.save(path)
+    return out
+
+
 def previews():
     os.makedirs(PREVIEW, exist_ok=True)
     V.main()   # character sheet, breach/variants sheet, scale check, APNG clips (with the runtime outline simulated)
@@ -270,6 +336,13 @@ def previews():
                    ('yasupen_pet', PEN.PEN_PET), ('yasupen_cheer', PEN.PEN_CHEER)],
                   os.path.join(PREVIEW, 'yasupen.png'), scale=4)
     V.scale_check([V4.COCO_IDLE_1, PEN.PEN_IDLE_1], os.path.join(PREVIEW, 'yasupen-scale.png'))
+    review_preview(list(CAT219.ICONS.values()) + list(CAT219.EFFECTS.values()),
+                   os.path.join(PREVIEW, 'cat-set-items-2190.png'))
+    review_preview(sum(SPRAY.CLIPS.values(), []) + list(SPRAY.PROJECTILES.values()) + [SPRAY.PAGE],
+                   os.path.join(PREVIEW, 'spray-bottle-2190.png'))
+    review_preview(sum(FEATHER.CLIPS.values(), []) + list(FEATHER.PROJECTILES.values()) + [FEATHER.PAGE],
+                   os.path.join(PREVIEW, 'feather-teaser-2190.png'))
+    review_preview(sum(CAT219.CONE_CLIPS.values(), []), os.path.join(PREVIEW, 'coco-cones-2190.png'), actor=True)
     import weapon_preview   # weapon alignment sheets (grip, muzzle, aim, reach) from tools/weapon_layout.py
     weapon_preview.main()
 

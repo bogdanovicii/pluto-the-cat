@@ -135,7 +135,8 @@ for need in ('pluto_taiyaki_cannon_idle_001.png', 'pluto_katana_idle_001.png'):
 for need in ('pluto_mini_taiyaki_001.png', 'pluto_katana_wave_001.png', 'pluto_churu_drop_001.png'):
     if not os.path.exists(os.path.join(RES, 'SpriteRoot', 'ProjectileCollection', need)):
         err(f'samurai projectile sprite missing: {need}')
-for prefix in ('pluto_kibble_sack', 'pluto_taiyaki_cannon', 'pluto_katana_idle', 'pluto_katana_reload'):
+for prefix in ('pluto_kibble_sack', 'pluto_spray_bottle', 'pluto_feather_teaser',
+               'pluto_taiyaki_cannon', 'pluto_katana_idle', 'pluto_katana_reload'):
     gun_sizes = {Image.open(os.path.join(wc, f)).size for f in pngs if f.startswith(prefix)}
     if len(gun_sizes) != 1:
         err(f'{prefix} frames must share one canvas size, got {gun_sizes}')
@@ -166,6 +167,20 @@ for f in pngs:
     j = json.load(open(os.path.join(wc, f[:-4] + '.jtk2d')))
     if (j['width'], j['height']) != Image.open(os.path.join(wc, f)).size:
         err(f'{f}: jtk2d width/height does not match the PNG')
+# Common gun manifest validation.  Keeping both Cat Set guns in this loop makes
+# frame counts, canvases, attach files and encounter icons one shared contract.
+for gun_name, clips in (
+        ('pluto_spray_bottle', {'idle': 1, 'fire': 2, 'reload': 3}),
+        ('pluto_feather_teaser', {'idle': 1, 'charge': 1, 'fire': 1, 'empty': 1, 'return': 1})):
+    for clip, count in clips.items():
+        got = [f for f in pngs if re.match(r'^' + re.escape(gun_name + '_' + clip) + r'_\d{3}\.png$', f)]
+        if len(got) != count:
+            err(f'{gun_name} {clip}: expected {count} frame(s), got {len(got)}')
+    page = os.path.join(RES, 'SpriteRoot', 'Ammonomicon Encounter Icon Collection', gun_name + '_idle_001.png')
+    if not os.path.exists(page):
+        err(f'ammonomicon page sprite missing: {gun_name}')
+    elif Image.open(page).size != (24, 32):
+        err(f'{gun_name} ammonomicon page sprite must be 24x32')
 for gun_name in ('pluto_kibble_sack', 'pluto_taiyaki_cannon', 'pluto_katana'):
     if not os.path.exists(os.path.join(RES, 'SpriteRoot', 'Ammonomicon Encounter Icon Collection', gun_name + '_idle_001.png')):
         err(f'ammonomicon page sprite missing: {gun_name}')
@@ -184,7 +199,8 @@ for f in ['coco_blue_icon.png', 'kibble_bowl_001.png', 'kibble_bowl_002.png']:
     if not os.path.exists(os.path.join(items, f)):
         err(f'item art missing: {f}')
 for sub, n in (('idle', 4), ('move', 6), ('pet', 4), ('block', 3), ('ko', 2),
-               ('knight_idle', 4), ('knight_move', 6), ('knight_pet', 4), ('knight_block', 3), ('knight_ko', 2)):
+               ('knight_idle', 4), ('knight_move', 6), ('knight_pet', 4), ('knight_block', 3), ('knight_ko', 2),
+               ('cone_idle', 4), ('cone_move', 6), ('cone_pet', 4), ('cone_block', 3), ('cone_ko', 2)):
     d = os.path.join(RES, 'Companions', 'coco', sub)
     if not os.path.isdir(d) or len([f for f in os.listdir(d) if f.endswith('.png')]) != n:
         err(f'companion clip {sub} should have {n} frames')
@@ -194,6 +210,20 @@ for sub in ('idle', 'move', 'pet', 'block'):
     sizes = {Image.open(os.path.join(d, f)).size for f in os.listdir(d) if f.endswith('.png')} if os.path.isdir(d) else set()
     if sizes != {(19, 18)}:
         err(f'companion clip {sub}: frame sizes {sizes} != 19x18')
+# Matching Cones is drawn on the exact knight counterpart canvases (including
+# the wider KO), with the source outline stripped for AIActor runtime outlining.
+for sub in ('idle', 'move', 'pet', 'block', 'ko'):
+    cone = os.path.join(RES, 'Companions', 'coco', 'cone_' + sub)
+    knight = os.path.join(RES, 'Companions', 'coco', 'knight_' + sub)
+    cone_files = sorted(f for f in os.listdir(cone) if f.endswith('.png')) if os.path.isdir(cone) else []
+    knight_files = sorted(f for f in os.listdir(knight) if f.endswith('.png')) if os.path.isdir(knight) else []
+    cone_sizes = {Image.open(os.path.join(cone, f)).size for f in cone_files}
+    knight_sizes = {Image.open(os.path.join(knight, f)).size for f in knight_files}
+    if len(cone_files) != len(knight_files) or cone_sizes != knight_sizes:
+        err(f'cone_{sub} count/canvas must match knight_{sub}')
+    for f in cone_files:
+        if OUTLINE in set(Image.open(os.path.join(cone, f)).convert('RGBA').get_flattened_data()):
+            err(f'cone_{sub}/{f}: actor frame contains the baked outline colour')
 for sub, n in (('idle', 4), ('move', 4), ('slide', 2), ('pet', 4), ('cheer', 2)):
     d = os.path.join(RES, 'Companions', 'yasupen', sub)
     frames = [f for f in os.listdir(d) if f.endswith('.png')] if os.path.isdir(d) else []
@@ -234,6 +264,41 @@ for f in ('pluto_yarn_ball_001.png', 'pluto_yarn_ball_002.png', 'pluto_hairball_
 for prefix in ('jingle', 'catnip'):
     if len([f for f in os.listdir(os.path.join(RES, 'VFX')) if f.startswith(prefix + '_')]) != 4:
         err(f'VFX {prefix} should have 4 frames')
+# 2.19 Cat Set: exact icons, gun projectiles and world effects.
+for f in ('toilet_paper_roll_icon.png', 'cone_of_shame_icon.png', 'coffee_mug_icon.png'):
+    fp = os.path.join(items, f)
+    if not os.path.exists(fp):
+        err(f'item art missing: {f}')
+    elif Image.open(fp).size != (16, 16):
+        err(f'{f} should be 16x16')
+for f in ('pluto_spray_mist_001.png', 'pluto_water_drop_001.png', 'pluto_water_splash_001.png',
+          'pluto_feather_lure_001.png', 'pluto_feather_lure_002.png', 'pluto_loose_feather_burst_001.png'):
+    if not os.path.exists(os.path.join(RES, 'SpriteRoot', 'ProjectileCollection', f)):
+        err(f'Cat Set projectile missing: {f}')
+cat_effects = os.path.join(RES, 'Effects', 'cat_set')
+effect_names = ('toilet_paper_streamer_001.png', 'toilet_paper_bits_001.png', 'toilet_paper_confetti_001.png',
+                'coffee_shard_001.png', 'coffee_shard_002.png', 'coffee_shard_003.png', 'coffee_shard_004.png',
+                'coffee_puddle_001.png')
+for f in effect_names:
+    if not os.path.exists(os.path.join(cat_effects, f)):
+        err(f'Cat Set effect missing: {f}')
+# Row-generated Cat Set art is fixed-palette and hard-alpha.  Check the shipped
+# resources too, so a later manual PNG edit cannot bypass the source contract.
+from pixel import PALETTE  # noqa: E402
+allowed = {c for c in PALETTE.values() if c is not None}
+new_art = [os.path.join(items, f) for f in ('toilet_paper_roll_icon.png', 'cone_of_shame_icon.png', 'coffee_mug_icon.png')]
+new_art += [os.path.join(RES, 'SpriteRoot', 'ProjectileCollection', f) for f in
+            ('pluto_spray_mist_001.png', 'pluto_water_drop_001.png', 'pluto_water_splash_001.png',
+             'pluto_feather_lure_001.png', 'pluto_feather_lure_002.png', 'pluto_loose_feather_burst_001.png')]
+new_art += [os.path.join(cat_effects, f) for f in effect_names]
+for fp in new_art:
+    if not os.path.exists(fp):
+        continue
+    pixels = set(Image.open(fp).convert('RGBA').get_flattened_data())
+    if any(0 < p[3] < 255 for p in pixels):
+        err(f'{os.path.basename(fp)} contains semi-transparent pixels')
+    if any(p[3] == 255 and p not in allowed for p in pixels):
+        err(f'{os.path.basename(fp)} contains a colour outside tools/pixel.py PALETTE')
 ok('item art')
 
 # 4b. boss intro card: the game draws the player's card over the boss art (BossCardUIController.playerSprite),

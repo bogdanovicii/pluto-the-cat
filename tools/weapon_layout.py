@@ -14,6 +14,10 @@ CS_PATH = os.path.join(ROOT, 'PlutoTheCat', 'src', 'WeaponLayout.cs')
 WEAPONS = OrderedDict([
     # Royal Canin bag: the paw grips the bottom gusset (left end); kibble leaves the torn-open zip top (right end).
     ('kibble_sack', dict(sprite='pluto_kibble_sack', costume='normal', canvas=(32, 18), hand=(4, 5), muzzle=(29, 9))),
+    # Spray Bottle: Pluto grips the bottle neck; mist leaves the right-facing sprayer nozzle.
+    ('spray_bottle', dict(sprite='pluto_spray_bottle', costume='normal', canvas=(26, 20), hand=(10, 9), muzzle=(18, 16))),
+    # Feather Teaser: grip at the pink handle, lure leaves the bell/feather end of the wand.
+    ('feather_teaser', dict(sprite='pluto_feather_teaser', costume='normal', canvas=(40, 20), hand=(5, 10), muzzle=(36, 8))),
     # Golden taiyaki held like a pistol: grip under the belly, mini taiyaki leave the bean-filled mouth.
     ('taiyaki_cannon', dict(sprite='pluto_taiyaki_cannon', costume='samurai', canvas=(57, 31), hand=(21, 4), muzzle=(46, 15))),
     # Katana: handle grip and blade tip. The swing (fire clip) sits on a taller canvas with the grip at swing_grip;

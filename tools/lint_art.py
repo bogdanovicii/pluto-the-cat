@@ -34,6 +34,7 @@ AIRBORNE = {
     'ghost_idle_left': ALL, 'ghost_idle_right': ALL, 'ghost_sneeze_left': ALL, 'ghost_sneeze_right': ALL,
     'death_coop': ALL, 'death': {5}, 'death_shot': {4}, 'item_get': {1}, 'select_choose': {1}, 'stretch': ALL,
     'coco_move': {1, 2, 3}, 'coco_block': {2}, 'coco_knight_move': {1, 2, 3}, 'coco_knight_block': {2},
+    'coco_cone_move': {1, 2, 3}, 'coco_cone_block': {2},
     'yasupen_move': {1, 3}, 'yasupen_pet': {3}, 'yasupen_cheer': {1},   # 2.18.0 Yasupen hop frames (shifted up 1 px)
     'pet': {1}, 'slide_right': ALL, 'slide_up': ALL, 'slide_down': ALL, 'chest_recover': set(),
 }
@@ -43,7 +44,7 @@ HOLDS = {'death', 'death_shot', 'item_get', 'chest_recover', 'select_choose', 'k
          'slide_up', 'slide_down', 'stretch', 'ghost_sneeze_left', 'ghost_sneeze_right', 'timefall', 'spinfall',
          'dodge', 'dodge_bw', 'dodge_left', 'dodge_left_bw', 'death_coop', 'tablekick_right', 'jetpack_down',
          'jetpack_right', 'jetpack_right_bw', 'jetpack_up', 'doorway', 'idle', 'idle_forward', 'idle_backward', 'idle_bw',
-         'select_idle', 'groom', 'coco_idle', 'coco_knight_idle', 'yasupen_idle'}
+         'select_idle', 'groom', 'coco_idle', 'coco_knight_idle', 'coco_cone_idle', 'yasupen_idle'}
 
 
 def bbox(f):
@@ -124,10 +125,52 @@ def main():
     knight = {'coco_knight_idle': V4.COCO_KNIGHT_IDLE, 'coco_knight_move': V4.COCO_KNIGHT_MOVE,
               'coco_knight_pet': V4.COCO_KNIGHT_PET, 'coco_knight_block': V4.COCO_KNIGHT_BLOCK}
     e3, w3 = lint(knight, V4.KNIGHT_W, V4.KNIGHT_H, V4.KNIGHT_H - 2, label='companion/')
+    import art_cat_set as CAT219
+    cone = {'coco_cone_idle': CAT219.COCO_CONE_IDLE, 'coco_cone_move': CAT219.COCO_CONE_MOVE,
+            'coco_cone_pet': CAT219.COCO_CONE_PET, 'coco_cone_block': CAT219.COCO_CONE_BLOCK}
+    e6, w6 = lint(cone, V4.KNIGHT_W, V4.KNIGHT_H, V4.KNIGHT_H - 2, label='companion/')
     import art_yasupen as PEN
     pen = {'yasupen_idle': PEN.PEN_IDLE, 'yasupen_move': PEN.PEN_MOVE, 'yasupen_pet': PEN.PEN_PET, 'yasupen_cheer': PEN.PEN_CHEER}
     e5, w5 = lint(pen, PEN.PEN_W, PEN.PEN_H, PEN.PEN_H - 2, label='companion/')
-    errors, warnings = e1 + e2 + e3 + e4 + e5, w1 + w2 + w3 + w4 + w5
+    errors, warnings = e1 + e2 + e3 + e4 + e5 + e6, w1 + w2 + w3 + w4 + w5 + w6
+    # Static item/gun/VFX contracts are intentionally checked at the row source,
+    # before make_art can turn a malformed frame into a resource.
+    from pixel import img_from_rows
+    import art_spray_bottle as SPRAY
+    import art_feather_teaser as FEATHER
+
+    def exact(rows, size, tag):
+        got = (len(rows[0]), len(rows))
+        if got != size or any(len(row) != got[0] for row in rows):
+            errors.append(f'{tag}: size {got} != {size}')
+        try:
+            img_from_rows(rows)
+        except (KeyError, AssertionError) as exc:
+            errors.append(f'{tag}: {exc}')
+
+    for name, rows in CAT219.ICONS.items():
+        exact(rows, (16, 16), 'item/' + name)
+    for art, key, counts in ((SPRAY, 'spray', {'idle': 1, 'fire': 2, 'reload': 3}),
+                             (FEATHER, 'feather', {'idle': 1, 'charge': 1, 'fire': 1, 'empty': 1, 'return': 1})):
+        if {name: len(frames) for name, frames in art.CLIPS.items()} != counts:
+            errors.append(f'{key}: clip counts differ from {counts}')
+        for name, frames in art.CLIPS.items():
+            for i, rows in enumerate(frames):
+                exact(rows, (art.W, art.H), f'{key}/{name}[{i}]')
+        exact(art.PAGE, (24, 32), key + '/encounter')
+    if not (8 <= len(SPRAY.MIST[0]) <= 10 and 8 <= len(SPRAY.MIST) <= 10):
+        errors.append('spray/mist: must be 8-10 px')
+    for name, rows in (('lure_1', FEATHER.LURE), ('lure_2', FEATHER.LURE_2)):
+        if not (10 <= len(rows[0]) <= 14 and 10 <= len(rows) <= 14):
+            errors.append(f'feather/{name}: must be 10-14 px')
+    shards = [CAT219.SHARD_1, CAT219.SHARD_2, CAT219.SHARD_3, CAT219.SHARD_HEART]
+    if len({tuple(rows) for rows in shards}) != 4 or not any('R' in ''.join(rows) for rows in shards):
+        errors.append('cat set: four distinct coffee shards are required, including one red-heart fragment')
+    for clip, frames in CAT219.CONE_CLIPS.items():
+        knight = getattr(V4, 'COCO_KNIGHT_' + clip.upper())
+        expected = (len(knight[0][0]), len(knight[0]))
+        if len(frames) != len(knight) or {(len(f[0]), len(f)) for f in frames} != {expected}:
+            errors.append(f'companion/cone_{clip}: must match knight_{clip} count/canvas')
     for w in warnings:
         print('warn ', w)
     for e in errors:

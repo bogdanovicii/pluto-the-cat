@@ -7,6 +7,12 @@ namespace PlutoTheCat
         public const int KIBBLE_SACK_W = 32, KIBBLE_SACK_H = 18;
         public const int KIBBLE_SACK_HAND_X = 4, KIBBLE_SACK_HAND_Y = 5;
         public const int KIBBLE_SACK_MUZZLE_X = 29, KIBBLE_SACK_MUZZLE_Y = 9;
+        public const int SPRAY_BOTTLE_W = 26, SPRAY_BOTTLE_H = 20;
+        public const int SPRAY_BOTTLE_HAND_X = 10, SPRAY_BOTTLE_HAND_Y = 9;
+        public const int SPRAY_BOTTLE_MUZZLE_X = 18, SPRAY_BOTTLE_MUZZLE_Y = 16;
+        public const int FEATHER_TEASER_W = 40, FEATHER_TEASER_H = 20;
+        public const int FEATHER_TEASER_HAND_X = 5, FEATHER_TEASER_HAND_Y = 10;
+        public const int FEATHER_TEASER_MUZZLE_X = 36, FEATHER_TEASER_MUZZLE_Y = 8;
         public const int TAIYAKI_CANNON_W = 57, TAIYAKI_CANNON_H = 31;
         public const int TAIYAKI_CANNON_HAND_X = 21, TAIYAKI_CANNON_HAND_Y = 4;
         public const int TAIYAKI_CANNON_MUZZLE_X = 46, TAIYAKI_CANNON_MUZZLE_Y = 15;
