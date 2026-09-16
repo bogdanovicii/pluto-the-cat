@@ -318,6 +318,25 @@ def review_preview(rows, path, actor=False):
     return out
 
 
+def block_spark_mock(path):
+    """Native-pixel proof of the reused BlockSpark at runtime offset (0,+1.1).
+
+    Gungeon's 16 px/unit scale makes +1.1 units 17.6 px, rounded to the nearest
+    art pixel (18).  The centres below are therefore exactly 18 px apart.
+    """
+    out = Image.new('RGBA', (48, 52), (0, 0, 0, 0))
+    pluto = outline_img(img_from_rows(strip_outline(A.CLIPS['idle'][0])))
+    spark = img_from_rows(V4.BLOCK_SPARK[1])
+    actor_center = (24, 38)
+    spark_center = (24, actor_center[1] - 18)
+    out.alpha_composite(pluto, (actor_center[0] - pluto.width // 2,
+                                actor_center[1] - pluto.height // 2))
+    out.alpha_composite(spark, (spark_center[0] - spark.width // 2,
+                                spark_center[1] - spark.height // 2))
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    out.save(path)
+
+
 def previews():
     os.makedirs(PREVIEW, exist_ok=True)
     V.main()   # character sheet, breach/variants sheet, scale check, APNG clips (with the runtime outline simulated)
@@ -343,6 +362,7 @@ def previews():
     review_preview(sum(FEATHER.CLIPS.values(), []) + list(FEATHER.PROJECTILES.values()) + [FEATHER.PAGE],
                    os.path.join(PREVIEW, 'feather-teaser-2190.png'))
     review_preview(sum(CAT219.CONE_CLIPS.values(), []), os.path.join(PREVIEW, 'coco-cones-2190.png'), actor=True)
+    block_spark_mock(os.path.join(PREVIEW, 'reviews', 'cat-set-2190', 'block-spark-over-pluto.png'))
     import weapon_preview   # weapon alignment sheets (grip, muzzle, aim, reach) from tools/weapon_layout.py
     weapon_preview.main()
 

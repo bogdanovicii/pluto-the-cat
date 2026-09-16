@@ -74,7 +74,30 @@ def bottle(head=HEAD, body=BODY, head_y=2):
 
 
 IDLE = bottle()
-FIRE = [bottle(PRESSED), bottle(HEAD, LOW_BODY)]
+# The two firing keys carry the c2 action on the gun frames themselves.  The
+# first is a connected nozzle cone; the second is the departing cloud and
+# droplets.  Projectile sprites remain separate for runtime travel/impact.
+FIRE_CONE = R([
+    '......o',
+    '....o1o',
+    '..o1W1o',
+    'o1WWW1o',
+    '..o1W1o',
+    '....o1o',
+    '......o',
+])
+FIRE_PUFF = R([
+    '.oooo..',
+    'o1WW1o.',
+    'oWWWW1o',
+    '.o1W1o.',
+    '...o...',
+    '.....o.',
+    '....o1o',
+    '.....o.',
+])
+FIRE = [overlay(bottle(PRESSED), FIRE_CONE, 19, 1),
+        overlay(bottle(HEAD, LOW_BODY), FIRE_PUFF, 19, 0)]
 # Unscrew: detached head lifted; refill: droplets enter the exposed neck;
 # screw: sprayer seated one pixel high, settling back onto idle.
 REFILL = overlay(pad(OPEN_BODY, W, H, 6, 8), R([

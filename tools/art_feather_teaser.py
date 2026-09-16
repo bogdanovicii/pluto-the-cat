@@ -43,18 +43,42 @@ CHARGE_WAND = R([
     '.ooooooooo........................',
 ])
 CHARGE = overlay(overlay(pad(CHARGE_WAND, W, H, 1, 1), STRING, 31, 4), FAN, 28, 7)
-CAST_FAN = R([
-    '...oHHHo.',
-    '..oHhHHo.',
-    '.oHhHYyo.',
-    'oHhYYFfo.',
-    '.oYYFffo.',
-    '..oFffo..',
-    '...ooo...',
+CAST_HANDLE = R([
+    '...ooooooo...',
+    '.ooqqqqqqqoo.',
+    'oqqPPPPPPppPo',
+    'oPPPPPPPPPppo',
+    'oPPPPPPPPPppo',
+    '.oPPPPPPPppo.',
+    '..ooooooooo..',
 ])
-# The cast snaps the approved straight wand forward with the feather bunch at
-# its tip; EMPTY below is the same wand after the lure has left the frame.
-FIRE = overlay(EMPTY, CAST_FAN, 31, 6)
+CAST_SHAFT_STRING = R([
+    'ooooooooooooooooooooo',
+    'oLLLLLLLLLLLLLWWWWWWo',
+    'ooooooooooooooooooooo',
+])
+CAST_BELL = R([
+    '.ooo.',
+    'oSSSo',
+    'oSsSo',
+    'oSSSo',
+    '.ooo.',
+])
+CAST_FEATHERS = R([
+    '.oHHo.',
+    'oHhHYo',
+    'oHYFfo',
+    'oYYFfo',
+    '.oFFfo',
+    '..oooo',
+])
+# The c2 fire key is a new, straight horizontal cast: grip -> rigid shaft ->
+# white string -> bell -> feather bunch.  Every part overlaps its neighbour,
+# so the lure reads as one continuous extended toy at native size.
+FIRE = pad(CAST_HANDLE, W, H, 1, 7)
+FIRE = overlay(FIRE, CAST_SHAFT_STRING, 11, 9)
+FIRE = overlay(FIRE, CAST_BELL, 30, 7)
+FIRE = overlay(FIRE, CAST_FEATHERS, 34, 6)
 RETURN_STRING = R([
     '......oWo',
     '.....oWo.',

@@ -80,6 +80,15 @@ class WeaponLayoutTests(unittest.TestCase):
         self.assertIn('SwingGripOffsetPixels = WeaponLayout.KATANA_SWING_GRIP_OFFSET', katana)
         self.assertIn('CasingReachUnits = WeaponLayout.KATANA_CASING_REACH_UNITS', katana)
 
+    def test_validate_uses_one_shared_gun_manifest(self):
+        text = (ROOT / 'tools/validate.py').read_text()
+        self.assertIn('GUN_MANIFEST = (', text)
+        self.assertIn('for gun_name, clips in GUN_MANIFEST:', text)
+        self.assertNotIn("for gun_name in ('pluto_kibble_sack', 'pluto_taiyaki_cannon', 'pluto_katana')", text)
+        for gun in ('pluto_kibble_sack', 'pluto_taiyaki_cannon', 'pluto_katana',
+                    'pluto_spray_bottle', 'pluto_feather_teaser'):
+            self.assertIn("('" + gun + "',", text)
+
 
 if __name__ == '__main__':
     unittest.main()

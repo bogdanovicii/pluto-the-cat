@@ -167,23 +167,26 @@ for f in pngs:
     j = json.load(open(os.path.join(wc, f[:-4] + '.jtk2d')))
     if (j['width'], j['height']) != Image.open(os.path.join(wc, f)).size:
         err(f'{f}: jtk2d width/height does not match the PNG')
-# Common gun manifest validation.  Keeping both Cat Set guns in this loop makes
-# frame counts, canvases, attach files and encounter icons one shared contract.
-for gun_name, clips in (
-        ('pluto_spray_bottle', {'idle': 1, 'fire': 2, 'reload': 3}),
-        ('pluto_feather_teaser', {'idle': 1, 'charge': 1, 'fire': 1, 'empty': 1, 'return': 1})):
-    for clip, count in clips.items():
-        got = [f for f in pngs if re.match(r'^' + re.escape(gun_name + '_' + clip) + r'_\d{3}\.png$', f)]
-        if len(got) != count:
-            err(f'{gun_name} {clip}: expected {count} frame(s), got {len(got)}')
+# One manifest/loop owns every gun encounter icon.  Guns with authored row
+# clips also declare their exact animation counts here.
+GUN_MANIFEST = (
+    ('pluto_kibble_sack', None),
+    ('pluto_taiyaki_cannon', None),
+    ('pluto_katana', None),
+    ('pluto_spray_bottle', {'idle': 1, 'fire': 2, 'reload': 3}),
+    ('pluto_feather_teaser', {'idle': 1, 'charge': 1, 'fire': 1, 'empty': 1, 'return': 1}),
+)
+for gun_name, clips in GUN_MANIFEST:
+    if clips:
+        for clip, count in clips.items():
+            got = [f for f in pngs if re.match(r'^' + re.escape(gun_name + '_' + clip) + r'_\d{3}\.png$', f)]
+            if len(got) != count:
+                err(f'{gun_name} {clip}: expected {count} frame(s), got {len(got)}')
     page = os.path.join(RES, 'SpriteRoot', 'Ammonomicon Encounter Icon Collection', gun_name + '_idle_001.png')
     if not os.path.exists(page):
         err(f'ammonomicon page sprite missing: {gun_name}')
-    elif Image.open(page).size != (24, 32):
+    elif clips and Image.open(page).size != (24, 32):
         err(f'{gun_name} ammonomicon page sprite must be 24x32')
-for gun_name in ('pluto_kibble_sack', 'pluto_taiyaki_cannon', 'pluto_katana'):
-    if not os.path.exists(os.path.join(RES, 'SpriteRoot', 'Ammonomicon Encounter Icon Collection', gun_name + '_idle_001.png')):
-        err(f'ammonomicon page sprite missing: {gun_name}')
 if not os.path.exists(os.path.join(RES, 'SpriteRoot', 'ProjectileCollection', 'pluto_kibble_001.png')):
     err('projectile sprite missing')
 ok(f'gun: {len(pngs)} frames with attach points')

@@ -31,39 +31,39 @@ TOILET_PAPER_ICON = R([
 ])
 
 CONE_OF_SHAME_ICON = R([
-    '....oooooooo....',
-    '...o11111111o...',
-    '..o1111111111o..',
+    '..oooooooooooo..',
     '.o111111111111o.',
-    'o111WW11111111o.',
-    'o11WW111111112o.',
-    '.o1W111111112o..',
-    '..o111111112o...',
-    '...o1222222o....',
-    '....o22222o.....',
-    '.....o333o......',
-    '......ooo.......',
-    '................',
+    'o11FFFFFFFFFF11o',
+    '.o1FFFFFFFFFF1o.',
+    '..o1FFFFFFFF1o..',
+    '...o1FFFFFF1o...',
+    '....o1sFFs1o....',
+    '.....o1FF1o.....',
+    '......o11o......',
+    '.....oSSSSo.....',
+    '....oSsSSsSo....',
+    '.....oSssSo.....',
+    '......oooo......',
     '................',
     '................',
     '................',
 ])
 
 COFFEE_MUG_ICON = R([
-    '....oooooooo....',
-    '..ooMMMMMMmmoo..',
-    '.oWWWWWWWWWWwo..',
-    'oWWWWWWWWWWWwoo.',
-    'oWWRRWRRWWWWWwoo',
-    'oWWWRRRRRWWWWwWo',
-    'oWWWWRRRWWWWWwWo',
-    'oWWWWWRWWWWWWwWo',
-    'oWWWWWWWWWWWWwWo',
-    'oWWWWWWWWWWWwoWo',
-    '.oWWWWWWWWWw.oWo',
-    '..oWWWWWWWwo.oWo',
-    '...owwwwwwo...oo',
-    '....oooooo......',
+    '.............M..',
+    '...........M..M.',
+    '............MMm.',
+    '..........ooM...',
+    '.....oooooMMmo..',
+    '....oWWMMMMMmo..',
+    '...oWWWWRRRWWo..',
+    '..oWWWWWRRRWWo..',
+    '..oWWWWWWRWWwo..',
+    '...oWWWWWWWwooo.',
+    '....oWWWWWwoWoWo',
+    '.....oWWWwwoWWWo',
+    '......owwwwoWoo.',
+    '.......ooooo.oo.',
     '................',
     '................',
 ])
@@ -174,14 +174,20 @@ EFFECTS = {
 # --------------------------------------------------------- Coco Matching Cones
 # Solid blue tones suggest translucent plastic while retaining hard alpha.
 CONE = R([
-    '...ooooooooooo...',
-    '..o11111111111o..',
-    '.o11FFFFFFFFF11o.',
-    'o11FFFFFFFFFFF11o',
+    'ooooooooooooooooo',
+    'o111111111111111o',
+    '.o1FFFFFFFFFFF1o.',
     '.o1FFFFFFFFFFF1o.',
     '..o1FFFFFFFFF1o..',
-    '...offfffffffo...',
-    '....ooooooooo....',
+    '..o1FFFFFFFFF1o..',
+    '...o1FFFFFFF1o...',
+    '...o1FFFFFFF1o...',
+    '....o1FFFFF1o....',
+    '....o1FFFFF1o....',
+    '.....o1FFF1o.....',
+    '.....o1FFF1o.....',
+    '......o1F1o......',
+    '......ooooo......',
 ])
 CONE_DOWN = R([
     '..oooooo',
@@ -190,10 +196,6 @@ CONE_DOWN = R([
     'o1FFFfo.',
     '.offfo..',
     '..ooo...',
-])
-CONE_FRONT = R([
-    '..1111111111111..',
-    '...FFFFFFFFFFF...',
 ])
 
 
@@ -208,22 +210,13 @@ def _behind(base, top, dx, dy):
     return [''.join(row) for row in canvas]
 
 
-def _front(base, top, dx, dy):
-    canvas = [list(row) for row in base]
-    for y, row in enumerate(top):
-        for x, ch in enumerate(row):
-            if ch != '.':
-                canvas[y + dy][x + dx] = ch
-    return [''.join(row) for row in canvas]
-
-
 def _worn(frame):
     # Knight canvas is four rows taller than the plain clip.  Follow each
     # frame's actual head so the cone rises with hops and settles with squashes.
     canvas = pad(frame, V4.KNIGHT_W, V4.KNIGHT_H, 0, V4.KNIGHT_H - V4.COCO_H)
-    bottom = max(y for y, row in enumerate(canvas) if any(ch != '.' for ch in row))
-    canvas = _behind(canvas, CONE, 0, bottom - len(CONE) + 1)
-    return _front(canvas, CONE_FRONT, 0, bottom - 2)
+    top = min(y for y, row in enumerate(canvas) if any(ch != '.' for ch in row))
+    cone_y = min(max(0, top - 3), V4.KNIGHT_H - len(CONE))
+    return _behind(canvas, CONE, 0, cone_y)
 
 
 COCO_CONE_IDLE = [_worn(f) for f in V4.COCO_IDLE]

@@ -171,6 +171,15 @@ def main():
         expected = (len(knight[0][0]), len(knight[0]))
         if len(frames) != len(knight) or {(len(f[0]), len(f)) for f in frames} != {expected}:
             errors.append(f'companion/cone_{clip}: must match knight_{clip} count/canvas')
+        plain = getattr(V4, 'COCO_' + clip.upper())
+        for i, (base, cone_frame) in enumerate(zip(plain, frames)):
+            placed = base if clip == 'ko' else __import__('pixel').pad(base, V4.KNIGHT_W, V4.KNIGHT_H, 0, V4.KNIGHT_H - V4.COCO_H)
+            if clip == 'ko':
+                placed = __import__('pixel').pad(base, expected[0], expected[1], 0, 0)
+            changed = [(x, y) for y, row in enumerate(placed) for x, ch in enumerate(row)
+                       if ch != '.' and cone_frame[y][x] != ch]
+            if changed:
+                errors.append(f'companion/cone_{clip}[{i}]: changed {len(changed)} original Coco pixel(s)')
     for w in warnings:
         print('warn ', w)
     for e in errors:
