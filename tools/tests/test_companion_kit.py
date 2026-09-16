@@ -34,6 +34,9 @@ class CompanionKitTests(unittest.TestCase):
     def test_yasupen_rules(self):
         run_cases(self, [SRC / 'YasupenRules.cs'], ROOT / 'tools/tests/yasupen_cases.cs')
 
+    def test_cat_set_rules(self):
+        run_cases(self, [SRC / 'CatSetRules.cs'], ROOT / 'tools/tests/cat_set_cases.cs')
+
     def test_yasupen_wiring(self):
         src = (SRC / 'YasupenItem.cs').read_text(encoding='utf-8')
         for needle in ('YasupenRules.SlideReady(', 'YasupenRules.BargainCasings(', 'YasupenRules.PriceMultiplier(',
@@ -49,6 +52,20 @@ class CompanionKitTests(unittest.TestCase):
     def test_numeric_config_is_clamped_at_bind(self):
         """Wiring check: every numeric setting goes through PlutoConfigRules when it is bound."""
         text = (SRC / 'PlutoConfig.cs').read_text()
+        cat_set_keys = (
+            'SprayClip', 'SprayCooldown', 'SprayRange', 'SprayDamage', 'SprayKnockback',
+            'SprayFlinchChance', 'SprayFlinchSeconds', 'SprayReloadSeconds', 'SprayCharmBonusSeconds',
+            'FeatherChargeSeconds', 'FeatherClip', 'FeatherRange', 'FeatherDamage',
+            'FeatherDistractSeconds', 'FeatherBossSlowSeconds', 'FeatherReloadSeconds',
+            'TPRechargeDamage', 'TPLength', 'TPSeconds', 'TPHits', 'TPConfettiDamage',
+            'ConeCooldown', 'ConeArcDegrees', 'ConeRadius', 'ConeCocoStuffing',
+            'CoffeeRechargeDamage', 'CoffeeRange', 'CoffeeShardCount', 'CoffeeShardDamage',
+            'CoffeeSlowSeconds', 'CoffeeZoomiesBonusSeconds',
+        )
+        self.assertIn('const string S = "Cat Set 2.19";', text)
+        for key in cat_set_keys:
+            self.assertRegex(text, r'public static (?:int|float) ' + key + r'\s*=')
+            self.assertIn('cfg.Bind(S, "%s"' % key, text)
         unranged = {'NoFallDamage', 'Hairball', 'ChuruDrop', 'FoyerPosition', 'BathtubOffset', 'CocoBlocksBullets',
                     'LogPunchoutNames', 'UnlockSamuraiCostume'}
         bound = 0

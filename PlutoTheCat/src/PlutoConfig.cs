@@ -77,6 +77,39 @@ namespace PlutoTheCat
         public static float YasupenShopDiscount = 0.1f;
         public static float YasupenBargainChance = 0.2f;
 
+        // 2.19 cat set (section "Cat Set 2.19")
+        public static int SprayClip = 8;
+        public static float SprayCooldown = 0.35f;
+        public static float SprayRange = 6f;
+        public static float SprayDamage = 4f;
+        public static float SprayKnockback = 25f;
+        public static float SprayFlinchChance = 0.35f;
+        public static float SprayFlinchSeconds = 0.5f;
+        public static float SprayReloadSeconds = 1f;
+        public static float SprayCharmBonusSeconds = 2f;
+        public static float FeatherChargeSeconds = 0.6f;
+        public static int FeatherClip = 1;
+        public static float FeatherRange = 7f;
+        public static float FeatherDamage = 7f;
+        public static float FeatherDistractSeconds = 1.5f;
+        public static float FeatherBossSlowSeconds = 0.5f;
+        public static float FeatherReloadSeconds = 0.4f;
+        public static float TPRechargeDamage = 400f;
+        public static float TPLength = 4f;
+        public static float TPSeconds = 5f;
+        public static int TPHits = 12;
+        public static float TPConfettiDamage = 10f;
+        public static float ConeCooldown = 3f;
+        public static float ConeArcDegrees = 70f;
+        public static float ConeRadius = 1.5f;
+        public static int ConeCocoStuffing = 1;
+        public static float CoffeeRechargeDamage = 300f;
+        public static float CoffeeRange = 3f;
+        public static int CoffeeShardCount = 10;
+        public static float CoffeeShardDamage = 5f;
+        public static float CoffeeSlowSeconds = 3f;
+        public static float CoffeeZoomiesBonusSeconds = 2f;
+
         private static readonly Action<string> Warn = message => Debug.LogWarning("[Pluto] config: " + message);
 
         public static void Bind(ConfigFile cfg)
@@ -115,6 +148,7 @@ namespace PlutoTheCat
             CocoStuffingRegenSeconds = PlutoConfigRules.Clamp("CocoStuffingRegenSeconds", cfg.Bind("Balance", "CocoStuffingRegenSeconds", CocoStuffingRegenSeconds, "Seconds per point of stuffing regained while not knocked out.").Value, CocoStuffingRegenSeconds, Warn);
             BindCatItems(cfg);
             BindYasupen(cfg);
+            BindCatSet(cfg);
             LogPunchoutNames = cfg.Bind("Debug", "LogPunchoutNames", LogPunchoutNames, "Write the Pilot's Punch-Out sprite names to the log at startup.").Value;
             UnlockSamuraiCostume = cfg.Bind("Debug", "UnlockSamuraiCostume", UnlockSamuraiCostume, "Testing only: unlock the samurai costume in the Breach without beating Pluto's past (normally it appears after the Vet is beaten).").Value;
         }
@@ -153,6 +187,42 @@ namespace PlutoTheCat
             YasupenSlideKnockback = PlutoConfigRules.Clamp("YasupenSlideKnockback", cfg.Bind(S, "YasupenSlideKnockback", YasupenSlideKnockback, "Yasupen: knockback of the belly slide (bosses are never knocked back).").Value, YasupenSlideKnockback, Warn);
             YasupenShopDiscount = PlutoConfigRules.Clamp("YasupenShopDiscount", cfg.Bind(S, "YasupenShopDiscount", YasupenShopDiscount, "Yasupen: shop discount while he is with you (0.1 = 10 % off, at most 0.5).").Value, YasupenShopDiscount, Warn);
             YasupenBargainChance = PlutoConfigRules.Clamp("YasupenBargainChance", cfg.Bind(S, "YasupenBargainChance", YasupenBargainChance, "Yasupen: chance (0-1) after a room is cleared that he finds a miracle bargain of 3-5 casings.").Value, YasupenBargainChance, Warn);
+        }
+
+        private static void BindCatSet(ConfigFile cfg)
+        {
+            const string S = "Cat Set 2.19";
+            SprayClip = PlutoConfigRules.Clamp("SprayClip", cfg.Bind(S, "SprayClip", SprayClip, "Spray Bottle: shots per clip.").Value, SprayClip, Warn);
+            SprayCooldown = PlutoConfigRules.Clamp("SprayCooldown", cfg.Bind(S, "SprayCooldown", SprayCooldown, "Spray Bottle: seconds between sprays.").Value, SprayCooldown, Warn);
+            SprayRange = PlutoConfigRules.Clamp("SprayRange", cfg.Bind(S, "SprayRange", SprayRange, "Spray Bottle: mist range in tiles.").Value, SprayRange, Warn);
+            SprayDamage = PlutoConfigRules.Clamp("SprayDamage", cfg.Bind(S, "SprayDamage", SprayDamage, "Spray Bottle: damage per mist hit.").Value, SprayDamage, Warn);
+            SprayKnockback = PlutoConfigRules.Clamp("SprayKnockback", cfg.Bind(S, "SprayKnockback", SprayKnockback, "Spray Bottle: knockback per mist hit.").Value, SprayKnockback, Warn);
+            SprayFlinchChance = PlutoConfigRules.Clamp("SprayFlinchChance", cfg.Bind(S, "SprayFlinchChance", SprayFlinchChance, "Spray Bottle: chance (0-1) to flinch an enemy.").Value, SprayFlinchChance, Warn);
+            SprayFlinchSeconds = PlutoConfigRules.Clamp("SprayFlinchSeconds", cfg.Bind(S, "SprayFlinchSeconds", SprayFlinchSeconds, "Spray Bottle: flinch duration in seconds.").Value, SprayFlinchSeconds, Warn);
+            SprayReloadSeconds = PlutoConfigRules.Clamp("SprayReloadSeconds", cfg.Bind(S, "SprayReloadSeconds", SprayReloadSeconds, "Spray Bottle: reload duration in seconds.").Value, SprayReloadSeconds, Warn);
+            SprayCharmBonusSeconds = PlutoConfigRules.Clamp("SprayCharmBonusSeconds", cfg.Bind(S, "SprayCharmBonusSeconds", SprayCharmBonusSeconds, "Bath Time: charm duration added by the Spray Bottle.").Value, SprayCharmBonusSeconds, Warn);
+            FeatherChargeSeconds = PlutoConfigRules.Clamp("FeatherChargeSeconds", cfg.Bind(S, "FeatherChargeSeconds", FeatherChargeSeconds, "Feather Teaser: charge duration in seconds.").Value, FeatherChargeSeconds, Warn);
+            FeatherClip = PlutoConfigRules.Clamp("FeatherClip", cfg.Bind(S, "FeatherClip", FeatherClip, "Feather Teaser: shots per clip.").Value, FeatherClip, Warn);
+            FeatherRange = PlutoConfigRules.Clamp("FeatherRange", cfg.Bind(S, "FeatherRange", FeatherRange, "Feather Teaser: flight range in tiles.").Value, FeatherRange, Warn);
+            FeatherDamage = PlutoConfigRules.Clamp("FeatherDamage", cfg.Bind(S, "FeatherDamage", FeatherDamage, "Feather Teaser: damage on each flight leg.").Value, FeatherDamage, Warn);
+            FeatherDistractSeconds = PlutoConfigRules.Clamp("FeatherDistractSeconds", cfg.Bind(S, "FeatherDistractSeconds", FeatherDistractSeconds, "Feather Teaser: normal-enemy distraction duration.").Value, FeatherDistractSeconds, Warn);
+            FeatherBossSlowSeconds = PlutoConfigRules.Clamp("FeatherBossSlowSeconds", cfg.Bind(S, "FeatherBossSlowSeconds", FeatherBossSlowSeconds, "Feather Teaser: boss slowdown duration.").Value, FeatherBossSlowSeconds, Warn);
+            FeatherReloadSeconds = PlutoConfigRules.Clamp("FeatherReloadSeconds", cfg.Bind(S, "FeatherReloadSeconds", FeatherReloadSeconds, "Feather Teaser: reload duration in seconds.").Value, FeatherReloadSeconds, Warn);
+            TPRechargeDamage = PlutoConfigRules.Clamp("TPRechargeDamage", cfg.Bind(S, "TPRechargeDamage", TPRechargeDamage, "Toilet Paper Roll: damage dealt to recharge it.").Value, TPRechargeDamage, Warn);
+            TPLength = PlutoConfigRules.Clamp("TPLength", cfg.Bind(S, "TPLength", TPLength, "Toilet Paper Roll: streamer length in tiles.").Value, TPLength, Warn);
+            TPSeconds = PlutoConfigRules.Clamp("TPSeconds", cfg.Bind(S, "TPSeconds", TPSeconds, "Toilet Paper Roll: streamer lifetime in seconds.").Value, TPSeconds, Warn);
+            TPHits = PlutoConfigRules.Clamp("TPHits", cfg.Bind(S, "TPHits", TPHits, "Toilet Paper Roll: bullets the streamer blocks.").Value, TPHits, Warn);
+            TPConfettiDamage = PlutoConfigRules.Clamp("TPConfettiDamage", cfg.Bind(S, "TPConfettiDamage", TPConfettiDamage, "Shredder: confetti damage.").Value, TPConfettiDamage, Warn);
+            ConeCooldown = PlutoConfigRules.Clamp("ConeCooldown", cfg.Bind(S, "ConeCooldown", ConeCooldown, "Cone of Shame: seconds between bullet blocks.").Value, ConeCooldown, Warn);
+            ConeArcDegrees = PlutoConfigRules.Clamp("ConeArcDegrees", cfg.Bind(S, "ConeArcDegrees", ConeArcDegrees, "Cone of Shame: full blocking arc in degrees.").Value, ConeArcDegrees, Warn);
+            ConeRadius = PlutoConfigRules.Clamp("ConeRadius", cfg.Bind(S, "ConeRadius", ConeRadius, "Cone of Shame: blocking radius in tiles.").Value, ConeRadius, Warn);
+            ConeCocoStuffing = PlutoConfigRules.Clamp("ConeCocoStuffing", cfg.Bind(S, "ConeCocoStuffing", ConeCocoStuffing, "Matching Cones: extra stuffing for Coco.").Value, ConeCocoStuffing, Warn);
+            CoffeeRechargeDamage = PlutoConfigRules.Clamp("CoffeeRechargeDamage", cfg.Bind(S, "CoffeeRechargeDamage", CoffeeRechargeDamage, "Coffee Mug: damage dealt to recharge it.").Value, CoffeeRechargeDamage, Warn);
+            CoffeeRange = PlutoConfigRules.Clamp("CoffeeRange", cfg.Bind(S, "CoffeeRange", CoffeeRange, "Coffee Mug: throw range in tiles.").Value, CoffeeRange, Warn);
+            CoffeeShardCount = PlutoConfigRules.Clamp("CoffeeShardCount", cfg.Bind(S, "CoffeeShardCount", CoffeeShardCount, "Coffee Mug: shards in the impact ring.").Value, CoffeeShardCount, Warn);
+            CoffeeShardDamage = PlutoConfigRules.Clamp("CoffeeShardDamage", cfg.Bind(S, "CoffeeShardDamage", CoffeeShardDamage, "Coffee Mug: damage per shard.").Value, CoffeeShardDamage, Warn);
+            CoffeeSlowSeconds = PlutoConfigRules.Clamp("CoffeeSlowSeconds", cfg.Bind(S, "CoffeeSlowSeconds", CoffeeSlowSeconds, "Coffee Mug: coffee puddle slowdown duration.").Value, CoffeeSlowSeconds, Warn);
+            CoffeeZoomiesBonusSeconds = PlutoConfigRules.Clamp("CoffeeZoomiesBonusSeconds", cfg.Bind(S, "CoffeeZoomiesBonusSeconds", CoffeeZoomiesBonusSeconds, "Espresso: zoomies duration added by coffee.").Value, CoffeeZoomiesBonusSeconds, Warn);
         }
 
         private static Vector3 Vec(string text, Vector3 fallback)

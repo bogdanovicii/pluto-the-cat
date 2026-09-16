@@ -71,6 +71,15 @@ class PlayerKitCases
             {"PostRadius", 2.5}, {"PostDamageMultiplier", 1.3}, {"PostPierce", 1},
             // 2.18 Yasupen
             {"YasupenSlideCooldown", 5}, {"YasupenSlideRange", 6}, {"YasupenSlideDamage", 8}, {"YasupenSlideKnockback", 30}, {"YasupenShopDiscount", 0.1}, {"YasupenBargainChance", 0.2},
+            // 2.19 cat set
+            {"SprayClip", 8}, {"SprayCooldown", 0.35}, {"SprayRange", 6}, {"SprayDamage", 4}, {"SprayKnockback", 25},
+            {"SprayFlinchChance", 0.35}, {"SprayFlinchSeconds", 0.5}, {"SprayReloadSeconds", 1}, {"SprayCharmBonusSeconds", 2},
+            {"FeatherChargeSeconds", 0.6}, {"FeatherClip", 1}, {"FeatherRange", 7}, {"FeatherDamage", 7},
+            {"FeatherDistractSeconds", 1.5}, {"FeatherBossSlowSeconds", 0.5}, {"FeatherReloadSeconds", 0.4},
+            {"TPRechargeDamage", 400}, {"TPLength", 4}, {"TPSeconds", 5}, {"TPHits", 12}, {"TPConfettiDamage", 10},
+            {"ConeCooldown", 3}, {"ConeArcDegrees", 70}, {"ConeRadius", 1.5}, {"ConeCocoStuffing", 1},
+            {"CoffeeRechargeDamage", 300}, {"CoffeeRange", 3}, {"CoffeeShardCount", 10}, {"CoffeeShardDamage", 5},
+            {"CoffeeSlowSeconds", 3}, {"CoffeeZoomiesBonusSeconds", 2},
         };
         foreach (var d in defaults) Check(PlutoConfigRules.Contains(d.Key, d.Value), "default in range: " + d.Key);
         Check(PlutoConfigRules.Keys.Count == defaults.Count, "every ranged setting has a default case");
