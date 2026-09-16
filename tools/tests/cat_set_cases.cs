@@ -37,6 +37,19 @@ class CatSetCases
         float rotatedBoundary = rotatedAim + plus35;
         Check(CatSetRules.InCone((float)Math.Cos(rotatedBoundary), (float)Math.Sin(rotatedBoundary),
             4f * (float)Math.Cos(rotatedAim), 4f * (float)Math.Sin(rotatedAim), 1.5f, 70f), "rotated scaled aim keeps half-angle inclusive");
+        float maxRadiusAngle = 4f * (float)Math.PI / 180f;
+        float maxRadiusX = 10f * (float)Math.Cos(maxRadiusAngle);
+        float maxRadiusY = 10f * (float)Math.Sin(maxRadiusAngle);
+        Check(CatSetRules.InCone(maxRadiusX, maxRadiusY, maxRadiusX, maxRadiusY, 10f, 70f), "configured maximum radius is inclusive at four degrees");
+        foreach (float sweepDegrees in new float[] { 0f, 4f, 17f, 43f, 89f, 137f, 181f, 227f, 313f })
+        {
+            float sweepAngle = sweepDegrees * (float)Math.PI / 180f;
+            float sweepX = 10f * (float)Math.Cos(sweepAngle);
+            float sweepY = 10f * (float)Math.Sin(sweepAngle);
+            Check(CatSetRules.InCone(sweepX, sweepY, sweepX, sweepY, 10f, 70f), "maximum-radius sweep remains inclusive at " + sweepDegrees);
+        }
+        Check(!CatSetRules.InCone(10.001f * (float)Math.Cos(maxRadiusAngle), 10.001f * (float)Math.Sin(maxRadiusAngle),
+            maxRadiusX, maxRadiusY, 10f, 70f), "meaningfully outside maximum radius is rejected");
         Check(!CatSetRules.InCone((float)Math.Cos(plus3501), (float)Math.Sin(plus3501), 1f, 0f, 1.5f, 70f), "outside half-angle");
         Check(!CatSetRules.InCone(-1f, 0f, 1f, 0f, 1.5f, 70f), "behind cone");
         Check(!CatSetRules.InCone(1.51f, 0f, 1f, 0f, 1.5f, 70f), "outside cone radius");

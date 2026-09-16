@@ -5,7 +5,7 @@ namespace PlutoTheCat
     /// <summary>Engine-free timing, geometry and duration decisions shared by the 2.19 cat set.</summary>
     internal static class CatSetRules
     {
-        private const double RadiusSquaredEpsilon = 0.000001;
+        private const double RadiusSquaredRelativeEpsilon = 0.000001;
         private const double AngleDegreesEpsilon = 0.0001;
 
         public static bool RollFlinch(float roll, float chance)
@@ -38,7 +38,8 @@ namespace PlutoTheCat
             double distanceSquared = dx * dx + dy * dy;
             double aimSquared = aimX * aimX + aimY * aimY;
             double radiusSquared = radius * radius;
-            if (distanceSquared <= 0.0 || aimSquared <= 0.0 || distanceSquared > radiusSquared + RadiusSquaredEpsilon)
+            double radiusTolerance = RadiusSquaredRelativeEpsilon * Math.Max(1.0, radiusSquared);
+            if (distanceSquared <= 0.0 || aimSquared <= 0.0 || distanceSquared > radiusSquared + radiusTolerance)
                 return false;
 
             double dot = (dx * aimX + dy * aimY) / Math.Sqrt(distanceSquared * aimSquared);
