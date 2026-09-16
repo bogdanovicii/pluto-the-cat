@@ -30,6 +30,13 @@ class CatSetCases
         float plus3501 = 35.01f * (float)Math.PI / 180f;
         Check(CatSetRules.InCone((float)Math.Cos(plus35), (float)Math.Sin(plus35), 1f, 0f, 1.5f, 70f), "positive half-angle is inclusive");
         Check(CatSetRules.InCone((float)Math.Cos(minus35), (float)Math.Sin(minus35), 1f, 0f, 1.5f, 70f), "negative half-angle is inclusive");
+        Check(CatSetRules.InCone(1.5f * (float)Math.Cos(plus35), 1.5f * (float)Math.Sin(plus35), 1f, 0f, 1.5f, 70f), "positive half-angle at default radius is inclusive");
+        Check(CatSetRules.InCone(1.5f * (float)Math.Cos(minus35), 1.5f * (float)Math.Sin(minus35), 1f, 0f, 1.5f, 70f), "negative half-angle at default radius is inclusive");
+        Check(CatSetRules.InCone(1.5f, 0f, 1f, 0f, 1.5f, 70f), "radial boundary is inclusive");
+        float rotatedAim = 73f * (float)Math.PI / 180f;
+        float rotatedBoundary = rotatedAim + plus35;
+        Check(CatSetRules.InCone((float)Math.Cos(rotatedBoundary), (float)Math.Sin(rotatedBoundary),
+            4f * (float)Math.Cos(rotatedAim), 4f * (float)Math.Sin(rotatedAim), 1.5f, 70f), "rotated scaled aim keeps half-angle inclusive");
         Check(!CatSetRules.InCone((float)Math.Cos(plus3501), (float)Math.Sin(plus3501), 1f, 0f, 1.5f, 70f), "outside half-angle");
         Check(!CatSetRules.InCone(-1f, 0f, 1f, 0f, 1.5f, 70f), "behind cone");
         Check(!CatSetRules.InCone(1.51f, 0f, 1f, 0f, 1.5f, 70f), "outside cone radius");
