@@ -16,6 +16,26 @@ namespace PlutoTheCat
         public const float Speed = 15f;
         private const float SlowMultiplier = 0.5f;
         private static Projectile yarnPrefab;
+        private static readonly Dictionary<AIActor, float> tangledAt = new Dictionary<AIActor, float>();
+
+        /// <summary>Both toys share the original tangle cooldown, stun, slow and puff.</summary>
+        public static void ApplyTangle(AIActor enemy)
+        {
+            if (enemy == null || enemy.healthHaver == null || enemy.healthHaver.IsDead) return;
+            // Discard expired entries so the shared cooldown never retains enemies across floors.
+            List<AIActor> expired = new List<AIActor>();
+            foreach (KeyValuePair<AIActor, float> entry in tangledAt)
+                if (entry.Key == null || Time.time - entry.Value >= PlutoConfig.YarnTangleSeconds + PlutoConfig.YarnSlowSeconds)
+                    expired.Add(entry.Key);
+            for (int i = 0; i < expired.Count; i++) tangledAt.Remove(expired[i]);
+            float last;
+            float since = tangledAt.TryGetValue(enemy, out last) ? Time.time - last : float.NaN;
+            if (!CatItemRules.CanTangle(since, PlutoConfig.YarnTangleSeconds, PlutoConfig.YarnSlowSeconds)) return;
+            tangledAt[enemy] = Time.time;
+            CatItemKit.Stun(enemy, PlutoConfig.YarnTangleSeconds);
+            CatItemKit.Slow(enemy, PlutoConfig.YarnTangleSeconds + PlutoConfig.YarnSlowSeconds, SlowMultiplier, "pluto_yarn_tangle");
+            PlutoVFX.Spawn(PlutoVFX.FurPuff, enemy.CenterPosition);
+        }
 
         public static void Init()
         {
@@ -75,7 +95,6 @@ namespace PlutoTheCat
             private int[] ids;
             private int frame;
             private float frameTimer, life, lastBat = -10f;
-            private readonly Dictionary<AIActor, float> tangledAt = new Dictionary<AIActor, float>();
 
             private void Start()
             {
@@ -141,14 +160,7 @@ namespace PlutoTheCat
             private void OnHitEnemy(Projectile p, SpeculativeRigidbody body, bool fatal)
             {
                 if (fatal || body == null || body.aiActor == null) return;
-                AIActor enemy = body.aiActor;
-                float last;
-                float since = tangledAt.TryGetValue(enemy, out last) ? Time.time - last : float.NaN;
-                if (!CatItemRules.CanTangle(since, PlutoConfig.YarnTangleSeconds, PlutoConfig.YarnSlowSeconds)) return;
-                tangledAt[enemy] = Time.time;
-                CatItemKit.Stun(enemy, PlutoConfig.YarnTangleSeconds);
-                CatItemKit.Slow(enemy, PlutoConfig.YarnTangleSeconds + PlutoConfig.YarnSlowSeconds, SlowMultiplier, "pluto_yarn_tangle");
-                PlutoVFX.Spawn(PlutoVFX.FurPuff, enemy.CenterPosition);
+                BallOfYarnItem.ApplyTangle(body.aiActor);
             }
         }
     }
