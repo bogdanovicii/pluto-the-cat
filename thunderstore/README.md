@@ -17,6 +17,14 @@ Adds **Pluto the Cat** as a new playable Gungeoneer. He is a chunky brown tabby-
 - Enemies that die while in love sometimes drop a kibble bowl that heals half a heart.
 - **Five cat items for every Gungeoneer** (found in chests and shops): Ball of Yarn, Catnip Pouch, Jingle Bell Collar, Hairball and Scratching Post, each with an Ammonomicon story and a synergy with Pluto's own kit.
 - **Yasupen** (found in the loot pool): Donpen's twin brother follows you, belly-slides into enemies, makes shops 10 % cheaper and sometimes finds a miracle bargain of 3-5 casings after a room is cleared. Pet him and Coco is happy too. Penguin Pals with Coco Blue makes him slide at the enemy chasing Coco.
+- **The cat set, for every Gungeoneer** (found in chests and shops), each with an Ammonomicon story:
+  - **Spray Bottle** (gun): a short-ranged mist that leaves a puddle of water on the first enemy it hits and sometimes makes it flinch out of its attack. It never kept Pluto off the counter either.
+  - **Feather Teaser** (charge gun): cast a feather lure that flies out and comes back, hitting each enemy on both legs. Enemies it catches drop everything and chase the feather for 1.5 seconds; bosses are only slowed.
+  - **Toilet Paper Roll** (active): unrolls a 4-tile paper streamer across your aim that stops up to 12 enemy bullets for 5 seconds. Everyone walks straight through it.
+  - **Cone of Shame** (passive): every 3 seconds the cone catches the next enemy bullet in front of you. A glint over your head says it is ready again.
+  - **Coffee Mug** (active): push Bianca's favourite mug off the table. It shatters into a ring of 10 shards and leaves a coffee puddle that slows enemies standing in it for 3 seconds.
+- **Cat set synergies**: Bath Time (Spray Bottle + Wet Food Can: spraying a charmed enemy makes the charm last 2 s longer), Playtime (Feather Teaser + Ball of Yarn: the lure also tangles what it distracts), Shredder (Toilet Paper Roll + Scratching Post: a streamer that runs its course bursts into damaging confetti), Matching Cones (Cone of Shame + Coco Blue: Coco wears a cone too and holds one more bullet) and Espresso (Coffee Mug + Catnip Pouch: coffee during zoomies adds 2 s; needs room for two actives, e.g. a Backpack).
+- **Config**: every cat set number is in the `Cat Set 2.19` section of the BepInEx config and is range-checked at load.
 
 ## Install (r2modman)
 

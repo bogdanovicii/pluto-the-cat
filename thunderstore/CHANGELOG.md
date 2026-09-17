@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.19.0 (test build, not released)
+
+- **The cat set**: five new pieces in the loot pool for every character, each with its own art, Ammonomicon page and lore about Bogdan and Bianca's house:
+  - **Spray Bottle** (gun, C): semi-automatic mist, 8 per clip, 4 damage and 25 knockback over 6 tiles. The first enemy each mist hits gets a small puddle of vanilla water (it conducts), and 35 % of hits make a non-boss enemy flinch out of its attack for 0.5 s. `SprayClip`, `SprayCooldown`, `SprayRange`, `SprayDamage`, `SprayKnockback`, `SprayFlinchChance`, `SprayFlinchSeconds`, `SprayReloadSeconds`.
+  - **Feather Teaser** (charge gun, B): charge 0.6 s to cast a feather lure 7 tiles out and back, 7 damage on each leg. Normal enemies it catches chase the feather and hold their fire for 1.5 s; bosses are slowed for 0.5 s. You can't fire or reload until the lure returns. `FeatherChargeSeconds`, `FeatherClip`, `FeatherRange`, `FeatherDamage`, `FeatherDistractSeconds`, `FeatherBossSlowSeconds`, `FeatherReloadSeconds`.
+  - **Toilet Paper Roll** (active, C): a 4-tile paper streamer across your aim stops up to 12 enemy bullets for 5 s; players and enemies walk through it. Recharges after 400 damage. `TPRechargeDamage`, `TPLength`, `TPSeconds`, `TPHits`.
+  - **Cone of Shame** (passive, B): destroys the first enemy bullet within 1.5 tiles in a 70° arc toward your aim, then needs 3 s; a glint over your head marks it ready. `ConeCooldown`, `ConeArcDegrees`, `ConeRadius`.
+  - **Coffee Mug** (active, C): thrown 3 tiles (or until it hits something), it shatters into a ring of 10 shards (5 damage each) and leaves a coffee puddle that slows enemies standing in it to half speed for 3 s. Recharges after 300 damage. `CoffeeRechargeDamage`, `CoffeeRange`, `CoffeeShardCount`, `CoffeeShardDamage`, `CoffeeSlowSeconds`.
+- **Synergies**: Bath Time (Spray Bottle + Wet Food Can: spraying an enemy charmed by the can adds 2 s to its charm; `SprayCharmBonusSeconds`), Playtime (Feather Teaser + Ball of Yarn: distracted enemies are also tangled), Shredder (Toilet Paper Roll + Scratching Post: a streamer that runs out naturally bursts into confetti for 10 damage along its strip; `TPConfettiDamage`), Matching Cones (Cone of Shame + Coco Blue: Coco wears a cone, which wins over the knight helmet, and holds 1 more bullet; `ConeCocoStuffing`), Espresso (Coffee Mug + Catnip Pouch: using the mug during zoomies adds 2 s; `CoffeeZoomiesBonusSeconds`; both are actives, so you need room for two, e.g. a Backpack).
+- **Catnip Pouch**: dropping the pouch mid-zoomies now ends the speed boost at once (before, the speed boost kept running until its timer ran out). Zoomies are one extendable timer so Espresso can lengthen them; the catnap waits until they end.
+- None of the pieces hurt, flinch, distract or slow charmed or harmless enemies.
+- Config: every new number lives in the `Cat Set 2.19` section and is range-checked at load.
+
 ## 2.18.0 (test build, not released)
 - **Yasupen**, Donpen's twin brother, joins the loot pool as a companion (item "Yasupen's Price Tag", quality B). He follows you, belly-slides into enemies every few seconds, makes shops 10 % cheaper while he is with you, and sometimes finds a miracle bargain of 3-5 casings after a room is cleared. Pet him to make Coco happy too.
 - **Penguin Pals** (Coco Blue + Yasupen): while Coco is a decoy, Yasupen slides at the enemy chasing him.
