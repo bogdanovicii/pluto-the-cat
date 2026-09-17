@@ -13,8 +13,9 @@ namespace PlutoTheCat
     /// is false (i.e. still locked - see PlutoUnlockGate.Apply) and prices it Mathf.RoundToInt(wgo.weight),
     /// so each WeightedGameObject's weight IS the item's Hegemony-credit price: ShrineStallRules.Price
     /// reads the same config table PlutoUnlockGate and PlutoConfig already use.
-    /// Kinsuke's koi-bowl art and the torii/stall backdrop are placed as plain decorative props below;
-    /// SetUpFoyerShop itself only builds the one talking NPC (Daifuku).
+    /// SetUpFoyerShop itself only builds the one talking NPC (Daifuku); Kinsuke's koi-bowl idle clip is
+    /// attached onto that same shop GameObject (AttachKinsuke), and the torii/stall backdrop are placed
+    /// as plain decorative props (PlaceBackdropProps) alongside it.
     /// </summary>
     public static class ShrineStall
     {
@@ -86,10 +87,10 @@ namespace PlutoTheCat
                 Plugin.SHOP_ROOT + "/blueprint",
                 table,
                 CustomShopItemController.ShopCurrencyType.META_CURRENCY,
-                ShrineStallLines.RunBasedMultilineGenericKey,
-                ShrineStallLines.RunBasedMultilineStopperKey,
-                ShrineStallLines.PurchaseItemKey,
-                ShrineStallLines.PurchaseItemFailedKey,
+                ShrineStallLines.GenericKey,
+                ShrineStallLines.StopperKey,
+                ShrineStallLines.PurchaseKey,
+                ShrineStallLines.PurchaseFailedKey,
                 ShrineStallLines.IntroKey,
                 Vector3.zero,               // talkPointOffset; unverified, tune once visible in game
                 PlutoConfig.StallPosition,  // npcPosition
@@ -107,11 +108,45 @@ namespace PlutoTheCat
             // SetUpFoyerShop wraps its whole body in a try/catch that only logs and returns null (e.g. on
             // a mistyped resource path), so a null result here is silent otherwise - always check and log.
             if (shop == null)
+            {
                 Plugin.Log("shrine stall: SetUpFoyerShop returned null; see the [CharAPI]/Alexandria log lines above for the failed resource path");
+            }
             else
+            {
                 Plugin.Log("shrine stall: registered at " + PlutoConfig.StallPosition);
+                AttachKinsuke(shop);
+            }
 
             PlaceBackdropProps();
+        }
+
+        /// <summary>
+        /// Attaches Kinsuke's koi-bowl idle clip to the shop's own GameObject (there is no separate
+        /// transform to place him at: SetUpFoyerShop returns a single NPC object, and both
+        /// AddParentedAnimationToShop/AddUnparentedAnimationToShop add a named clip to that same object's
+        /// existing tk2dSpriteAnimator rather than spawning a second sprite). Design: "Kinsuke's bowl
+        /// rests on [the counter]" - a fixed prop, not something that should turn with Daifuku's own
+        /// walk/facing state. AddParentedAnimationToShop runs the clip through
+        /// ShopAPI.CreateDirectionalAnimation (the same call SetUpFoyerShop uses to build the idle/talk
+        /// clips), which drives the clip from the NPC's AIAnimator facing direction; AddUnparentedAnimationToShop
+        /// instead adds a plain looping clip via SpriteBuilder.AddAnimation, with no dependency on facing
+        /// direction at all - the one that "keeps the bowl fixed" - so that is the one used here.
+        /// UNVERIFIED: confirmed real signatures against the Alexandria 0.5.10 IL (both take
+        /// (GameObject self, List&lt;string&gt; yourPaths, float YourAnimFPS, string AnimationName)), but
+        /// the bowl's actual on-screen position comes from how kinsuke_idle_*'s frames were composited by
+        /// Task 4's art pipeline (these calls carry no runtime offset), and this has never been seen
+        /// in-game (no game install here; Assembly-CSharp.dll is a stripped stub).
+        /// </summary>
+        private static void AttachKinsuke(GameObject shop)
+        {
+            List<string> kinsukePaths = new List<string>
+            {
+                Plugin.SHOP_ROOT + "/kinsuke_idle_001",
+                Plugin.SHOP_ROOT + "/kinsuke_idle_002",
+                Plugin.SHOP_ROOT + "/kinsuke_idle_003",
+                Plugin.SHOP_ROOT + "/kinsuke_idle_004",
+            };
+            ShopAPI.AddUnparentedAnimationToShop(shop, kinsukePaths, IdleFps, "kinsuke_idle");
         }
 
         /// <summary>Places the torii and stall backdrop props (see the offset comments above).</summary>

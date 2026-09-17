@@ -138,6 +138,29 @@ class ShrineStallWiringTests(unittest.TestCase):
         )
         self.assertIn('Plugin.Log', stall, 'ShrineStall.cs must log the outcome through Plugin.Log')
 
+        # Finding 1 (round 1 review): Kinsuke's koi art must actually be attached to the shop, or he
+        # is permanently invisible in game (SetUpFoyerShop's returned GameObject is the only place a
+        # second character can be attached, and no later task re-touches shop registration).
+        self.assertIn('kinsuke_idle', stall, 'ShrineStall.cs never references the kinsuke_idle_* art')
+        self.assertTrue(
+            'ShopAPI.AddParentedAnimationToShop(' in stall or 'ShopAPI.AddUnparentedAnimationToShop(' in stall,
+            'ShrineStall.cs must attach Kinsuke to the shop GameObject via one of Alexandria\'s '
+            'AddParentedAnimationToShop / AddUnparentedAnimationToShop calls',
+        )
+
+        # Finding 2 (round 1 review): ShrineStallLines' public contract is fixed by the plan's Task 6
+        # section (IntroKey, GenericKey, StopperKey, PurchaseKey, PurchaseFailedKey, Register()), not by
+        # this task's own guess. ShrineStall.cs must reference exactly those names.
+        for key in ('IntroKey', 'GenericKey', 'StopperKey', 'PurchaseKey', 'PurchaseFailedKey'):
+            self.assertIn('ShrineStallLines.' + key, stall,
+                           'ShrineStall.cs must reference ShrineStallLines.' + key + ' (the plan\'s Task 6 contract)')
+
+        lines = self.source('ShrineStallLines.cs')
+        for key in ('IntroKey', 'GenericKey', 'StopperKey', 'PurchaseKey', 'PurchaseFailedKey'):
+            self.assertIn('string ' + key, lines,
+                           'ShrineStallLines.cs must define ' + key + ' (the plan\'s Task 6 contract)')
+        self.assertIn('public static void Register(', lines, 'ShrineStallLines.cs missing Register()')
+
         plugin = self.source('Plugin.cs')
         self.assertIn('SHOP_ROOT', plugin, 'Plugin.cs missing SHOP_ROOT')
 
