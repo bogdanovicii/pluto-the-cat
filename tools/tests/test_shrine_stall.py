@@ -1,5 +1,6 @@
 """Source-level wiring checks for the Shrine Stall 2.20 per-save unlock store."""
 import pathlib
+import re
 import unittest
 
 
@@ -181,6 +182,58 @@ class ShrineStallWiringTests(unittest.TestCase):
         self.assertGreaterEqual(unlocks_idx, 0, 'Plugin.cs missing Step("unlocks", ...)')
         self.assertLess(unlocks_idx, gate_idx, 'Step("unlock gate", ...) must come after Step("unlocks", ...)')
         self.assertLess(unlocks_idx, stall_idx, 'Step("shrine stall", ...) must come after Step("unlocks", ...)')
+
+
+    # Deliberately small: this is a "did a joke drift crude" tripwire, not a profanity filter. It
+    # cannot tell a good line from a bad one, so it is paired with the shape checks below (a real
+    # setup and a real punchline, both speakers, no repeats) and with a human read of every line.
+    SWEARS = ('fuck', 'shit', 'piss', 'crap', 'damn', 'bitch', 'bastard', 'ass', 'hell', 'dick')
+
+    # C# string literal, escapes included (\" and \n stay as written in the source).
+    LITERAL = re.compile(r'"((?:[^"\\\n]|\\.)*)"')
+
+    def stall_lines_literals(self):
+        text = self.source('ShrineStallLines.cs')
+        return text, [m.group(1) for m in self.LITERAL.finditer(text)]
+
+    def test_stall_lines(self):
+        text, literals = self.stall_lines_literals()
+
+        self.assertIn('ETGMod.Databases.Strings.Core.Set(', text,
+                       'ShrineStallLines.cs must register its lines through ETGMod.Databases.Strings.Core.Set(')
+
+        # The five keys are the plan's Task 6 contract; their values are the game's own "#" key form.
+        keys = {}
+        for name in ('IntroKey', 'GenericKey', 'StopperKey', 'PurchaseKey', 'PurchaseFailedKey'):
+            match = re.search(r'string\s+' + name + r'\s*=\s*"(#PLUTO_STALL_[A-Z_]+)"', text)
+            self.assertIsNotNone(match, name + ' must be a "#PLUTO_STALL_..." string key')
+            keys[name] = match.group(1)
+            self.assertIn(name, text.split('Register(')[-1], name + ' must be registered in Register()')
+        self.assertEqual(len(set(keys.values())), 5, 'the five string keys must all differ')
+
+        self.assertIn('Daifuku', text, 'ShrineStallLines.cs must name Daifuku')
+        self.assertIn('Kinsuke', text, 'ShrineStallLines.cs must name Kinsuke')
+
+        # Every spoken line is a "Daifuku: setup \n Kinsuke: punchline" exchange - one dialogue box.
+        exchanges = [s for s in literals if 'Daifuku:' in s and 'Kinsuke:' in s]
+        self.assertGreaterEqual(len(exchanges), 20,
+                                 'the generic pool needs at least 20 Daifuku/Kinsuke exchanges, found %d'
+                                 % len(exchanges))
+        self.assertEqual(len(exchanges), len(set(exchanges)), 'no exchange may be repeated')
+
+        for line in exchanges:
+            self.assertRegex(line, r'^Daifuku: .*\\nKinsuke: ',
+                              'Daifuku sets up and Kinsuke lands it, in that order: ' + line)
+            setup, punchline = line.split('\\nKinsuke: ', 1)
+            setup = setup[len('Daifuku: '):]
+            self.assertGreaterEqual(len(setup.strip()), 10, 'empty or stub setup: ' + line)
+            self.assertGreaterEqual(len(punchline.strip()), 10, 'empty or stub punchline: ' + line)
+
+        for line in literals:
+            lowered = re.sub(r'[^a-z ]+', ' ', line.lower())
+            for swear in self.SWEARS:
+                self.assertNotIn(' ' + swear + ' ', ' ' + lowered + ' ',
+                                  'the stall never swears: ' + line)
 
 
 class StallArtTests(unittest.TestCase):
