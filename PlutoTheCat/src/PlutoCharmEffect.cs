@@ -51,6 +51,28 @@ namespace PlutoTheCat
             return effect;
         }
 
+        /// <summary>
+        /// Extends only the live Pluto effect instance owned by this enemy. Keeping the two engine lists paired avoids
+        /// touching a stale definition and, unlike ApplyEffect, cannot apply vulnerability or another charm twice.
+        /// </summary>
+        public static bool ExtendOwned(AIActor enemy, float bonus)
+        {
+            if (enemy == null || enemy.m_activeEffects == null || enemy.m_activeEffectData == null) return false;
+            int count = Mathf.Min(enemy.m_activeEffects.Count, enemy.m_activeEffectData.Count);
+            for (int i = 0; i < count; i++)
+            {
+                RuntimeGameActorEffectData data = enemy.m_activeEffectData[i];
+                PlutoCharmEffect effect = enemy.m_activeEffects[i] as PlutoCharmEffect;
+                if (data == null || effect == null) continue;
+                if (effect.effectIdentifier == "pluto_love")
+                {
+                    effect.duration = CatSetRules.ExtendDuration(effect.duration, bonus);
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public override void OnEffectApplied(GameActor actor, RuntimeGameActorEffectData effectData, float partialAmount = 1f)
         {
             AIActor enemy = actor as AIActor;

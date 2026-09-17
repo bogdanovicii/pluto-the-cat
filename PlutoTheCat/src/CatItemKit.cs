@@ -7,6 +7,27 @@ namespace PlutoTheCat
     /// <summary>Engine helpers shared by the 2.17 cat items (decisions live in CatItemRules).</summary>
     public static class CatItemKit
     {
+        /// <summary>A living hostile enemy. Charmed enemies target enemies without targeting players and are excluded.</summary>
+        public static bool ValidEnemy(AIActor enemy)
+        {
+            return enemy != null
+                && enemy.healthHaver != null
+                && !enemy.healthHaver.IsDead
+                && !enemy.IsHarmlessEnemy
+                && (!enemy.CanTargetEnemies || enemy.CanTargetPlayers);
+        }
+
+        /// <summary>Inclusive world-space AABB test against the enemy's actual hitbox.</summary>
+        public static bool HitboxOverlaps(AIActor enemy, Vector2 min, Vector2 max)
+        {
+            if (enemy == null || enemy.specRigidbody == null || enemy.specRigidbody.HitboxPixelCollider == null) return false;
+            PixelCollider hitbox = enemy.specRigidbody.HitboxPixelCollider;
+            Vector2 eMin = hitbox.UnitBottomLeft;
+            Vector2 eMax = hitbox.UnitTopRight;
+            return eMax.x >= min.x && eMin.x <= max.x
+                && eMax.y >= min.y && eMin.y <= max.y;
+        }
+
         /// <summary>Enemy bullets are the ones not owned by a player (same test as SilencerInstance).</summary>
         public static bool IsEnemyBullet(Projectile p)
         {
