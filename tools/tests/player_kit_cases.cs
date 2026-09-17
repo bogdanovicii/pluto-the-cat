@@ -74,6 +74,7 @@ class PlayerKitCases
             // 2.19 cat set
             {"SprayClip", 8}, {"SprayCooldown", 0.35}, {"SprayRange", 6}, {"SprayDamage", 4}, {"SprayKnockback", 25},
             {"SprayFlinchChance", 0.35}, {"SprayFlinchSeconds", 0.5}, {"SprayReloadSeconds", 1}, {"SprayCharmBonusSeconds", 2},
+            {"SprayCharmMaxSeconds", 10},
             {"FeatherChargeSeconds", 0.6}, {"FeatherClip", 1}, {"FeatherRange", 7}, {"FeatherDamage", 7},
             {"FeatherDistractSeconds", 1.5}, {"FeatherBossSlowSeconds", 0.5}, {"FeatherReloadSeconds", 0.4},
             {"TPRechargeDamage", 400}, {"TPLength", 4}, {"TPSeconds", 5}, {"TPHits", 12}, {"TPConfettiDamage", 10},

@@ -122,6 +122,16 @@ class CatSetCases
         Check(Near(CatSetRules.ExtendRemaining(3f, 2f, true), 5f), "active remaining time extends");
         Check(Near(CatSetRules.ExtendRemaining(3f, 2f, false), 3f), "inactive remaining time stays unchanged");
 
+        // Bath Time cannot stack a charm forever: the total owned duration stops at SprayCharmMaxSeconds.
+        Check(Near(CatSetRules.ExtendCapped(6f, 2f, 10f), 8f), "capped extension adds the bonus below the ceiling");
+        Check(Near(CatSetRules.ExtendCapped(8f, 2f, 10f), 10f), "capped extension lands exactly on the ceiling");
+        Check(Near(CatSetRules.ExtendCapped(9f, 2f, 10f), 10f), "capped extension stops at the ceiling");
+        Check(Near(CatSetRules.ExtendCapped(10f, 2f, 10f), 10f), "extension at the ceiling adds nothing");
+        Check(Near(CatSetRules.ExtendCapped(12f, 2f, 10f), 12f), "a longer existing charm is never shortened");
+        Check(Near(CatSetRules.ExtendCapped(-1f, 2f, 10f), 2f), "negative duration counts as zero");
+        Check(Near(CatSetRules.ExtendCapped(3f, -2f, 10f), 3f), "negative bonus adds nothing");
+        Check(Near(CatSetRules.ExtendCapped(3f, 5f, -1f), 3f), "nonpositive ceiling never extends");
+
         Console.WriteLine(count + " cat set cases passed");
     }
 }

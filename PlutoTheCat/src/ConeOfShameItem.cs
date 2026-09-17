@@ -1,4 +1,4 @@
-using System.Linq;
+using System.Collections.ObjectModel;
 using UnityEngine;
 using Alexandria.ItemAPI;
 
@@ -56,11 +56,11 @@ namespace PlutoTheCat
             Vector2 aim = wearer.unadjustedAimPoint.XY() - center;
             if (aim.sqrMagnitude < 0.0001f) aim = Vector2.right;
 
-            // DieInAir may synchronously remove a projectile from the global collection, so never scan it directly.
-            Projectile[] projectiles = StaticReferenceManager.AllProjectiles != null
-                ? StaticReferenceManager.AllProjectiles.ToArray()
-                : new Projectile[0];
-            for (int i = 0; i < projectiles.Length; i++)
+            // This scan runs every frame while ready, so it reads the live collection instead of copying it. DieInAir
+            // may remove a projectile from that collection synchronously, so the loop breaks in the same step.
+            ReadOnlyCollection<Projectile> projectiles = StaticReferenceManager.AllProjectiles;
+            if (projectiles == null) return;
+            for (int i = 0; i < projectiles.Count; i++)
             {
                 Projectile projectile = projectiles[i];
                 // collidesWithPlayer is the player-hostile semantic: allied/charmed AI shots do not qualify.

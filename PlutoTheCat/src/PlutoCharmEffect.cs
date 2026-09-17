@@ -52,10 +52,11 @@ namespace PlutoTheCat
         }
 
         /// <summary>
-        /// Extends only the live Pluto effect instance owned by this enemy. Keeping the two engine lists paired avoids
-        /// touching a stale definition and, unlike ApplyEffect, cannot apply vulnerability or another charm twice.
+        /// Extends only the live Pluto effect instance owned by this enemy, up to a total of max seconds. Keeping the
+        /// two engine lists paired avoids touching a stale definition and, unlike ApplyEffect, cannot apply
+        /// vulnerability or another charm twice.
         /// </summary>
-        public static bool ExtendOwned(AIActor enemy, float bonus)
+        public static bool ExtendOwned(AIActor enemy, float bonus, float max)
         {
             if (enemy == null || enemy.m_activeEffects == null || enemy.m_activeEffectData == null) return false;
             int count = Mathf.Min(enemy.m_activeEffects.Count, enemy.m_activeEffectData.Count);
@@ -66,7 +67,7 @@ namespace PlutoTheCat
                 if (data == null || effect == null) continue;
                 if (effect.effectIdentifier == "pluto_love")
                 {
-                    effect.duration = CatSetRules.ExtendDuration(effect.duration, bonus);
+                    effect.duration = CatSetRules.ExtendCapped(effect.duration, bonus, max);
                     return true;
                 }
             }

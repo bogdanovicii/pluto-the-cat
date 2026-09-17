@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using Gungeon;
 using Alexandria.ItemAPI;
@@ -5,7 +6,11 @@ using Alexandria.Misc;
 
 namespace PlutoTheCat
 {
-    /// <summary>A short-ranged mist gun whose first enemy impact leaves conductive vanilla water.</summary>
+    /// <summary>
+    /// A short-ranged mist gun whose first enemy impact leaves conductive vanilla water. The mist carries the shared
+    /// CatTargetFilter, so harmless and charmed enemies are passed through untouched; Bath Time is the one documented
+    /// exception and tops up Pluto's own charm on that pass-through instead of hitting the enemy.
+    /// </summary>
     public class SprayBottleGun : GunBehaviour
     {
         public const string ID = "pluto:spray_bottle";
@@ -62,6 +67,7 @@ namespace PlutoTheCat
             mist.baseData.force = PlutoConfig.SprayKnockback;
             mist.shouldRotate = false;
             mist.SetProjectileSpriteRight("pluto_spray_mist_001", 10, 8, false, tk2dBaseSprite.Anchor.MiddleCenter, 8, 6);
+            mist.gameObject.AddComponent<CatTargetFilter>();
             mist.gameObject.AddComponent<SprayImpact>();
             gun.DefaultModule.projectiles[0] = mist;
 
@@ -86,19 +92,49 @@ namespace PlutoTheCat
         public class SprayImpact : MonoBehaviour
         {
             private Projectile projectile;
+            private CatTargetFilter filter;
             private bool impactHandled;
+            private readonly HashSet<AIActor> bathTimed = new HashSet<AIActor>();
 
             private void Start()
             {
                 projectile = GetComponent<Projectile>();
                 if (projectile != null && projectile.specRigidbody != null)
                     projectile.specRigidbody.OnRigidbodyCollision += OnCollision;
+                filter = GetComponent<CatTargetFilter>();
+                if (filter != null) filter.OnSkipped = OnPassedThrough;
             }
 
             private void OnDestroy()
             {
                 if (projectile != null && projectile.specRigidbody != null)
                     projectile.specRigidbody.OnRigidbodyCollision -= OnCollision;
+                if (filter != null) filter.OnSkipped = null;
+                filter = null;
+            }
+
+            /// <summary>
+            /// Bath Time: the mist never hits a charmed enemy, but while the synergy is active it still tops up the
+            /// charm Pluto owns. Once per enemy per mist, so a cloud drifting over one enemy cannot stack the bonus.
+            /// </summary>
+            private void OnPassedThrough(AIActor enemy)
+            {
+                if (projectile == null || enemy == null || !bathTimed.Add(enemy)) return;
+                PlayerController owner = projectile.Owner as PlayerController;
+                bool eligibleActor = enemy.healthHaver != null
+                    && !enemy.healthHaver.IsDead
+                    && !enemy.IsHarmlessEnemy
+                    && !enemy.healthHaver.IsBoss;
+                if (!eligibleActor || owner == null || !owner.PlayerHasActiveSynergy(PlutoSynergies.BathTime)) return;
+                if (!PlutoCharmEffect.ExtendOwned(enemy, PlutoConfig.SprayCharmBonusSeconds, PlutoConfig.SprayCharmMaxSeconds))
+                    return;
+                if (!loggedBathTime)
+                {
+                    loggedBathTime = true;
+                    Plugin.Log("spray bottle: Bath Time extended Pluto's charm by "
+                        + PlutoConfig.SprayCharmBonusSeconds + " seconds (at most "
+                        + PlutoConfig.SprayCharmMaxSeconds + " in total)");
+                }
             }
 
             private void OnCollision(CollisionData collision)
@@ -110,25 +146,8 @@ namespace PlutoTheCat
                 if (!CatItemKit.HitboxOverlaps(enemy, mine.UnitBottomLeft, mine.UnitTopRight)) return;
                 impactHandled = true;
 
+                // Only valid enemies reach this point: CatTargetFilter skipped the collision for every other actor.
                 AddWater(collision.Contact);
-                PlayerController owner = projectile.Owner as PlayerController;
-                bool eligibleActor = enemy.healthHaver != null
-                    && !enemy.healthHaver.IsDead
-                    && !enemy.IsHarmlessEnemy
-                    && !enemy.healthHaver.IsBoss;
-
-                // Bath Time is deliberately checked before ValidEnemy rejects an already charmed target.
-                if (eligibleActor && owner != null && owner.PlayerHasActiveSynergy(PlutoSynergies.BathTime)
-                    && PlutoCharmEffect.ExtendOwned(enemy, PlutoConfig.SprayCharmBonusSeconds))
-                {
-                    if (!loggedBathTime)
-                    {
-                        loggedBathTime = true;
-                        Plugin.Log("spray bottle: Bath Time extended Pluto's charm by "
-                            + PlutoConfig.SprayCharmBonusSeconds + " seconds");
-                    }
-                }
-
                 if (!CatItemKit.ValidEnemy(enemy) || enemy.healthHaver.IsBoss) return;
                 if (!CatSetRules.RollFlinch(Random.value, PlutoConfig.SprayFlinchChance)) return;
                 // A flinch only cancels the current attack; it must never disable the behavior speculator.

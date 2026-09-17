@@ -41,6 +41,9 @@ namespace PlutoTheCat
         {
             public AIActor enemy;
             public bool previousOverride;
+            // While the enemy is stunned the tangle owns its movement: the feather holds no velocity, having put
+            // back exactly the state it found, and takes it again only if the stun ends first.
+            public bool suspended;
             public Vector2 previousVelocity, appliedVelocity;
             public readonly List<DistractionLease> leases = new List<DistractionLease>();
         }
@@ -225,14 +228,41 @@ namespace PlutoTheCat
             return delta.sqrMagnitude < 0.0625f ? Vector2.zero : delta.normalized * enemy.MovementSpeed;
         }
 
+        /// <summary>
+        /// The authoritative stun signal. BehaviorSpeculator.Stun is what both CatItemKit.Stun and the yarn's
+        /// BallOfYarnItem.ApplyTangle call, and IsStunned is the engine's own live flag for it.
+        /// </summary>
+        private static bool Tangled(AIActor enemy)
+        {
+            return enemy != null && enemy.behaviorSpeculator != null && enemy.behaviorSpeculator.IsStunned;
+        }
+
         private static bool OwnsVelocity(SharedDistraction state)
         {
-            return state.enemy != null && state.enemy.BehaviorOverridesVelocity
+            if (state.enemy == null) return false;
+            // Suspended means the feather deliberately holds the pre-distraction state; anything else took over.
+            if (state.suspended)
+                return state.enemy.BehaviorOverridesVelocity == state.previousOverride
+                    && state.enemy.BehaviorVelocity.Equals(state.previousVelocity);
+            return state.enemy.BehaviorOverridesVelocity
                 && state.enemy.BehaviorVelocity.Equals(state.appliedVelocity);
+        }
+
+        /// <summary>Gives the enemy's movement back to whatever owned it before the feather, and stops re-asserting.</summary>
+        private static void SuspendDistraction(SharedDistraction state)
+        {
+            if (state.suspended) return;
+            if (state.enemy != null && OwnsVelocity(state))
+            {
+                state.enemy.BehaviorOverridesVelocity = state.previousOverride;
+                state.enemy.BehaviorVelocity = state.previousVelocity;
+            }
+            state.suspended = true;
         }
 
         private static void ApplyDistractionVelocity(SharedDistraction state, DistractionLease lease)
         {
+            state.suspended = false;
             state.enemy.behaviorSpeculator.Interrupt();
             state.appliedVelocity = ChaseVelocity(state.enemy, lease.targetPosition);
             state.enemy.BehaviorOverridesVelocity = true;
@@ -260,7 +290,9 @@ namespace PlutoTheCat
             }
             state.leases.Add(lease);
             lease.shared = state;
-            ApplyDistractionVelocity(state, lease);
+            // A tangle that is already holding the enemy wins immediately: never override it, not even for one frame.
+            if (Tangled(lease.enemy)) SuspendDistraction(state);
+            else ApplyDistractionVelocity(state, lease);
             return true;
         }
 
@@ -277,6 +309,18 @@ namespace PlutoTheCat
                 // Conditional restoration rule: external ownership wins, so abandon this whole generation.
                 SharedDistractions.Remove(lease.enemy);
                 return false;
+            }
+            // Tangle precedence: a stunned enemy must visibly stop, so the lease keeps running but owns nothing.
+            if (Tangled(state.enemy))
+            {
+                SuspendDistraction(state);
+                return true;
+            }
+            if (state.suspended)
+            {
+                // The stun ended first and the distraction still has time: take the chase back.
+                ApplyDistractionVelocity(state, lease);
+                return true;
             }
             // Interrupt is public in the referenced DLL. Repeating it prevents a fresh attack during the 1.5 s window
             // without permanently disabling the BehaviorSpeculator.
@@ -312,8 +356,9 @@ namespace PlutoTheCat
                 SharedDistractions.Remove(lease.enemy);
                 return;
             }
-            // The next-newest live lease takes over; never restore a nested lease's stale snapshot.
-            ApplyDistractionVelocity(state, state.leases[state.leases.Count - 1]);
+            // The next-newest live lease takes over; never restore a nested lease's stale snapshot. While the enemy
+            // is tangled nobody takes the chase back: the new top lease re-acquires it once the stun ends.
+            if (!state.suspended) ApplyDistractionVelocity(state, state.leases[state.leases.Count - 1]);
         }
 
         internal void BeginDistraction(AIActor enemy, FeatherLure source, PlayerController owner,
@@ -328,15 +373,16 @@ namespace PlutoTheCat
                 source = source,
                 targetPosition = targetPosition,
             };
-            if (!AcquireDistractionOwnership(lease)) return;
-            distractionLeases.Add(lease);
-            lease.routine = StartCoroutine(Distract(lease));
-            Plugin.Log("feather teaser: distract for " + PlutoConfig.FeatherDistractSeconds + " s");
+            // Tangle first: the yarn owns movement while it holds, and the lease below starts already suspended.
             if (owner.PlayerHasActiveSynergy(PlutoSynergies.Playtime))
             {
                 BallOfYarnItem.ApplyTangle(enemy);
                 Plugin.Log("feather teaser: Playtime shared yarn tangle");
             }
+            if (!AcquireDistractionOwnership(lease)) return;
+            distractionLeases.Add(lease);
+            lease.routine = StartCoroutine(Distract(lease));
+            Plugin.Log("feather teaser: distract for " + PlutoConfig.FeatherDistractSeconds + " s");
         }
 
         private bool DistractionContextValid(DistractionLease lease)

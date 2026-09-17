@@ -50,10 +50,14 @@ class CatSetWiringTests(unittest.TestCase):
             'CatSetRules.RollFlinch(Random.value, PlutoConfig.SprayFlinchChance)',
             'behaviorSpeculator.Interrupt()',
             'CatItemKit.Stun(enemy, PlutoConfig.SprayFlinchSeconds)',
-            'PlutoCharmEffect.ExtendOwned(enemy, PlutoConfig.SprayCharmBonusSeconds)',
+            'PlutoCharmEffect.ExtendOwned(enemy, PlutoConfig.SprayCharmBonusSeconds, PlutoConfig.SprayCharmMaxSeconds)',
+            'PlutoConfig.SprayCharmMaxSeconds',
             'PlayerHasActiveSynergy(PlutoSynergies.BathTime)',
             'bool eligibleActor =', '!enemy.IsHarmlessEnemy',
             '!enemy.healthHaver.IsBoss',
+            # The mist itself passes through harmless and charmed enemies.
+            'AddComponent<CatTargetFilter>()', 'filter.OnSkipped = OnPassedThrough',
+            'private void OnPassedThrough(AIActor enemy)',
         )
         self.assertNotIn('gun.InfiniteAmmo', spray)
         self.assertNotIn('PreventStartingOwnerFromDropping', spray)
@@ -61,16 +65,29 @@ class CatSetWiringTests(unittest.TestCase):
         self.assertNotIn('InterruptAndDisable', spray)
         self.assertRegex(spray, r'SetProjectileSpriteRight\("pluto_spray_mist_001",\s*(?:8|9|10),\s*(?:8|9|10)')
 
+        # A real impact wets first, then rolls the flinch. Only valid enemies ever reach it: the shared
+        # CatTargetFilter skips the collision for harmless and charmed actors, so they take no damage,
+        # no knockback and no water.
         collision = spray.index('private void OnCollision(CollisionData collision)')
         water = spray.index('AddWater(collision.Contact)', collision)
-        owner = spray.index('PlayerController owner =', water)
-        eligible = spray.index('bool eligibleActor =', owner)
+        flinch_filter = spray.index('CatItemKit.ValidEnemy(enemy)', water)
+        self.assertLess(water, flinch_filter)
+        self.assertNotIn('PlutoCharmEffect.ExtendOwned(', spray[collision:flinch_filter])
+        # Bath Time is the one documented exception and rides the pass-through, not an impact.
+        skipped = spray.index('private void OnPassedThrough(AIActor enemy)')
+        eligible = spray.index('bool eligibleActor =', skipped)
         bath = spray.index('PlutoCharmEffect.ExtendOwned(', eligible)
-        flinch_filter = spray.index('CatItemKit.ValidEnemy(enemy)', bath)
-        self.assertLess(water, owner)
-        self.assertLess(owner, eligible)
         self.assertLess(eligible, bath)
-        self.assertLess(bath, flinch_filter)
+
+        self.requires(
+            'CatTargetFilter.cs',
+            'public sealed class CatTargetFilter : MonoBehaviour',
+            'OnPreRigidbodyCollision += Filter',
+            'OnPreRigidbodyCollision -= Filter',
+            'CatItemKit.ValidEnemy(enemy)',
+            'PhysicsEngine.SkipCollision = true',
+            'OnSkipped',
+        )
 
         for resource in (
             'WeaponCollection/pluto_spray_bottle_idle_001.png',
@@ -103,12 +120,12 @@ class CatSetWiringTests(unittest.TestCase):
     def test_bath_time_extends_owned_charm(self):
         charm = self.requires(
             'PlutoCharmEffect.cs',
-            'public static bool ExtendOwned(AIActor enemy, float bonus)',
             'enemy.m_activeEffects', 'enemy.m_activeEffectData',
             'Mathf.Min(enemy.m_activeEffects.Count, enemy.m_activeEffectData.Count)',
             'PlutoCharmEffect effect = enemy.m_activeEffects[i] as PlutoCharmEffect',
             'effect.effectIdentifier == "pluto_love"',
-            'effect.duration = CatSetRules.ExtendDuration(effect.duration, bonus)',
+            'public static bool ExtendOwned(AIActor enemy, float bonus, float max)',
+            'effect.duration = CatSetRules.ExtendCapped(effect.duration, bonus, max)',
             'return true', 'return false',
         )
         start = charm.index('public static bool ExtendOwned(')
@@ -187,6 +204,17 @@ class CatSetWiringTests(unittest.TestCase):
         self.assertIn('ReferenceEquals(lease.shared, state)', feather)
         self.assertIn('state.enemy.BehaviorOverridesVelocity = state.previousOverride', feather)
         self.assertIn('state.enemy.BehaviorVelocity = state.previousVelocity', feather)
+        # Playtime: while the yarn tangle holds the enemy, the feather must hand its velocity back so the
+        # enemy visibly stops chasing, and only re-take it if the stun ends first.
+        self.assertIn('behaviorSpeculator.IsStunned', feather)
+        self.assertIn('private static bool Tangled(AIActor enemy)', feather)
+        self.assertIn('private static void SuspendDistraction(SharedDistraction state)', feather)
+        self.assertIn('public bool suspended;', feather)
+        suspend = feather.index('if (Tangled(state.enemy))', update_owner)
+        resume = feather.index('if (state.suspended)', suspend)
+        reassert = feather.index('state.enemy.BehaviorVelocity = state.appliedVelocity;', resume)
+        self.assertLess(suspend, resume)
+        self.assertLess(resume, reassert)
         self.assertIn('EndDistraction(lease, false)', feather)
         self.assertIn('EndDistraction(leases[i], true)', feather)
         # Outbound and return are separate valid hits; each starts its own full lease.
@@ -317,7 +345,7 @@ class CatSetWiringTests(unittest.TestCase):
             'PlutoConfig.ConeCooldown', 'PlutoConfig.ConeArcDegrees',
             'PlutoConfig.ConeRadius', 'CatSetRules.ConeReady(',
             'CatSetRules.InCone(delta.x, delta.y, aim.x, aim.y,',
-            'StaticReferenceManager.AllProjectiles.ToArray()',
+            'ReadOnlyCollection<Projectile> projectiles = StaticReferenceManager.AllProjectiles',
             'CatItemKit.IsEnemyBullet(projectile)', 'projectile.collidesWithPlayer',
             'projectile.HasDiedInAir', 'projectile.DieInAir(',
             'break;', 'lastBlock = Time.time', 'wasReady = false',
@@ -330,6 +358,9 @@ class CatSetWiringTests(unittest.TestCase):
         # ItemBuilder.SetupItem registers ordinary non-EXCLUDED passives in the ANY loot pool.
         self.assertNotIn('PickupObject.ItemQuality.EXCLUDED', cone)
         self.assertNotIn('SilencerInstance.DestroyBulletsInRange', cone)
+        # The ready scan runs every frame: it must not copy the whole live projectile list.
+        self.assertNotIn('AllProjectiles.ToArray()', cone)
+        self.assertNotIn('using System.Linq;', cone)
         self.assertEqual(3, cone.count('Unhook();'))
         # Initial pickup is already ready but must not masquerade as a cooldown transition.
         self.assertIn('wasReady = true', cone)
@@ -404,7 +435,7 @@ class CatSetWiringTests(unittest.TestCase):
             'shard.Owner = owner',
             'coffee_shard_00', 'coffee_puddle_001',
             # Harmless/charmed enemies are neither hit nor slowed.
-            'CatItemKit.ValidEnemy(enemy)', 'PhysicsEngine.SkipCollision = true',
+            'CatItemKit.ValidEnemy(enemy)', 'AddComponent<CatTargetFilter>()',
             # Puddle slow: hitbox scan, owned slow id, released on exit/end/teardown.
             'RoomHandler.ActiveEnemyType.All',
             'CatItemKit.HitboxOverlaps(enemy, min, max)',

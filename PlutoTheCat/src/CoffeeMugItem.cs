@@ -9,7 +9,8 @@ namespace PlutoTheCat
     /// <summary>
     /// Coffee Mug (2.19): Pluto pushes a mug off an invisible table. It flies CoffeeRange tiles toward the aim (or stops
     /// at the first thing it hits) and shatters once into a ring of CoffeeShardCount player-owned shards, leaving a
-    /// coffee puddle for CoffeeSlowSeconds that slows valid enemies standing in it. The slow is the vanilla speed effect
+    /// coffee puddle for CoffeeSlowSeconds that slows valid enemies standing in it. Mug and shards carry the shared
+    /// CatTargetFilter, so they pass through harmless and charmed enemies. The slow is the vanilla speed effect
     /// (no goop); the puddle removes it from every enemy it slowed on exit, end and teardown. With Espresso (Catnip
     /// Pouch) using the mug during zoomies extends them.
     /// </summary>
@@ -63,7 +64,7 @@ namespace PlutoTheCat
             mugPrefab.baseData.range = PlutoConfig.CoffeeRange;
             mugPrefab.baseData.force = 0f;
             mugPrefab.shouldRotate = false;
-            mugPrefab.gameObject.AddComponent<CoffeeTargetFilter>();
+            mugPrefab.gameObject.AddComponent<CatTargetFilter>();
             mugPrefab.gameObject.AddComponent<MugThrow>();
 
             shardPrefab = ProjectileUtility.SetupProjectile(56);
@@ -72,7 +73,7 @@ namespace PlutoTheCat
             shardPrefab.baseData.speed = ShardSpeed;
             shardPrefab.baseData.range = ShardRange;
             shardPrefab.baseData.force = 4f;
-            shardPrefab.gameObject.AddComponent<CoffeeTargetFilter>();
+            shardPrefab.gameObject.AddComponent<CatTargetFilter>();
         }
 
         public override void DoEffect(PlayerController user)
@@ -176,30 +177,6 @@ namespace PlutoTheCat
         {
             Teardown();
             base.OnDestroy();
-        }
-
-        /// <summary>Mug and shards pass through harmless and charmed enemies instead of hitting them.</summary>
-        public sealed class CoffeeTargetFilter : MonoBehaviour
-        {
-            private SpeculativeRigidbody body;
-
-            private void Start()
-            {
-                body = GetComponent<SpeculativeRigidbody>();
-                if (body != null) body.OnPreRigidbodyCollision += Filter;
-            }
-
-            private static void Filter(SpeculativeRigidbody myBody, PixelCollider myCollider,
-                SpeculativeRigidbody other, PixelCollider otherCollider)
-            {
-                AIActor enemy = other != null ? other.aiActor : null;
-                if (enemy != null && !CatItemKit.ValidEnemy(enemy)) PhysicsEngine.SkipCollision = true;
-            }
-
-            private void OnDestroy()
-            {
-                if (body != null) body.OnPreRigidbodyCollision -= Filter;
-            }
         }
 
         /// <summary>The flying mug. Shatters exactly once where the projectile stops, unless its item disarmed it.</summary>

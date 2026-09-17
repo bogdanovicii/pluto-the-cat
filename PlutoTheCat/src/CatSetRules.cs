@@ -102,6 +102,18 @@ namespace PlutoTheCat
             return Math.Max(0f, duration) + Math.Max(0f, bonus);
         }
 
+        /// <summary>
+        /// Extends a duration but stops at a ceiling. The cap applies to the total, not to one increment, so repeated
+        /// top-ups can never stack past it. A duration that is already longer than the ceiling is never shortened.
+        /// </summary>
+        public static float ExtendCapped(float duration, float bonus, float max)
+        {
+            float current = Math.Max(0f, duration);
+            float extended = ExtendDuration(current, bonus);
+            float ceiling = Math.Max(0f, max);
+            return extended <= ceiling ? extended : Math.Max(current, ceiling);
+        }
+
         public static float ExtendRemaining(float remaining, float bonus, bool active)
         {
             return active ? Math.Max(0f, remaining) + Math.Max(0f, bonus) : remaining;
