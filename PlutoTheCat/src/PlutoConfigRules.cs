@@ -83,7 +83,7 @@ namespace PlutoTheCat
             { "SprayFlinchSeconds", new Range(0, 10) },
             { "SprayReloadSeconds", new Range(0.05, 30) },
             { "SprayCharmBonusSeconds", new Range(0, 30) },
-            { "SprayCharmMaxSeconds", new Range(0.1, 120) },
+            { "SprayCharmMaxBonusSeconds", new Range(0.1, 60) },
             { "FeatherChargeSeconds", new Range(0.05, 10) },
             { "FeatherClip", new Range(1, 99) },
             { "FeatherRange", new Range(0.5, 50) },

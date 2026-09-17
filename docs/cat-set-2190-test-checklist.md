@@ -20,8 +20,8 @@ copy them into the report. Numbers are the defaults from config section `Cat Set
 - [ ] About 35 % of hits on a normal enemy make it flinch: its current attack is cancelled and it is stunned for 0.5 s, then it acts normally again (AI not disabled). Log once: `spray bottle: first flinch interrupted and stunned a non-boss enemy for 0.5 seconds`.
 - [ ] Bosses never flinch (they still take damage and get wet).
 - [ ] Harmless and charmed enemies are passed straight through: the mist does not damage, push, wet or flinch them, and it keeps flying to whatever is behind them.
-- [ ] **Bath Time** (Spray Bottle + Wet Food Can): mist an enemy already charmed by the can: the mist still passes through it (no damage, no knockback, no puddle) and its charm lasts 2 s longer (no second charm is applied, no fresh hearts burst). Log once: `spray bottle: Bath Time extended Pluto's charm by 2 seconds (at most 10 in total)`. Bosses and harmless enemies are not extended. Without the synergy the charm is unchanged.
-- [ ] Bath Time cap: keep misting the same charmed enemy. Its total charm stops growing at `SprayCharmMaxSeconds` (10 s) instead of stacking forever; a charm already longer than the cap is never shortened.
+- [ ] **Bath Time** (Spray Bottle + Wet Food Can): mist an enemy already charmed by the can: the mist still passes through it (no damage, no knockback, no puddle) and its charm lasts 2 s longer (no second charm is applied, no fresh hearts burst). Log once: `spray bottle: Bath Time extended Pluto's charm by up to 2 seconds (at most 6 s added per charm)`. Bosses and harmless enemies are not extended. Without the synergy the charm is unchanged.
+- [ ] Bath Time budget: keep misting the same charmed enemy. Bath Time adds at most `SprayCharmMaxBonusSeconds` (6 s) to that charm however long it already was (a 10 s Wet Food Can charm tops out at 16 s, a 20 s Dinner Time charm at 26 s); the fourth mist adds nothing and logs nothing. Re-charming the enemy with the can gives it a fresh 6 s budget.
 
 ## Feather Teaser (`pluto:feather_teaser`, gun, B)
 - [ ] At 1x: grip in the pink handle, idle shows the dangling feather; charge plays at 10 fps; fire frame shows briefly (0.1 s), then the rod is `empty` (no feather) while the lure is out and switches to `return` as it comes back.
@@ -35,6 +35,10 @@ copy them into the report. Numbers are the defaults from config section `Cat Set
 - [ ] Co-op: both players cast lures through the same enemy; it ends up moving normally afterwards (never frozen or stuck sliding).
 - [ ] **Playtime** (Feather Teaser + Ball of Yarn): each distracted enemy is also tangled like the yarn (stunned 1.5 s, then slowed; same cooldown as the ball). Log: `feather teaser: Playtime shared yarn tangle`.
 - [ ] Playtime precedence: the tangle wins over the feather. A tangled enemy visibly **stops** where it is (it never slides after the lure) for the tangle's 1.5 s. If the distraction still has time left when the tangle ends, it starts chasing the feather again; if the distraction ran out first, it simply goes back to normal. The enemy is never left frozen or sliding afterwards.
+- [ ] Playtime resume (cannot be checked outside the game): raise `FeatherDistractSeconds` to about 6 s so the
+  distraction clearly outlives the 1.5 s tangle, then catch one enemy. It must stop for the tangle and then
+  **visibly chase the lure again** once the stun ends, not stand still or walk off on its own. Repeat in co-op
+  with both players lure-ing the same enemy: the handover must not leave it frozen. Afterwards it moves normally.
 
 ## Toilet Paper Roll (`pluto:toilet_paper_roll`, active, C)
 - [ ] Icon at 1x reads as a roll. Recharges after 400 damage.
@@ -75,6 +79,6 @@ copy them into the report. Numbers are the defaults from config section `Cat Set
 - [ ] Charmed/harmless: none of the five pieces damages, flinches, distracts, slows or confetti-hits a charmed or harmless enemy. The Spray Bottle's mist and the Coffee Mug's mug and shards visibly pass through them and carry on. Bath Time is the one exception, and it only lengthens an existing charm.
 - [ ] Bosses: Spray never flinches a boss, Feather only slows a boss 0.5 s, Shredder and shards damage bosses normally, the puddle slows bosses.
 - [ ] Coco precedence: with Coco Blue + Ser Junkan (Squire) + Cone of Shame, Coco wears the **cone** (not the knight helmet) and still gets the Squire stuffing bonus plus 1. Drop the cone: the knight helmet comes back on the next frame and the extra charge goes. Drop Junkan too: plain Coco.
-- [ ] Config clamping (set in `BepInEx/config`, restart): `SprayFlinchChance = 1.5` logs `[Pluto] config: SprayFlinchChance = 1.5 is outside 0 to 1; using 1.`; `TPHits = 0` logs `... TPHits = 0 is outside 1 to 99; using 1.`; `ConeArcDegrees = 360` logs `... is outside 1 to 180; using 180.`; `SprayCharmMaxSeconds = 0` logs `... is outside 0.1 to 120; using 0.1.` The game uses the clamped values.
+- [ ] Config clamping (set in `BepInEx/config`, restart): `SprayFlinchChance = 1.5` logs `[Pluto] config: SprayFlinchChance = 1.5 is outside 0 to 1; using 1.`; `TPHits = 0` logs `... TPHits = 0 is outside 1 to 99; using 1.`; `ConeArcDegrees = 360` logs `... is outside 1 to 180; using 180.`; `SprayCharmMaxBonusSeconds = 0` logs `... is outside 0.1 to 60; using 0.1.` The game uses the clamped values.
 - [ ] Co-op: each player's pieces act for their owner only (their own aim, room and synergies); dropping a piece on one player never ends the other player's streamer, puddle or distraction.
 - [ ] Deferred (Task 4): no duplicate Feather Teaser behaviour after a normal game restart (Harmony guards are process-lifetime; plugin hot-reload is unsupported).

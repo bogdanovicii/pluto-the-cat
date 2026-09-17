@@ -103,15 +103,21 @@ namespace PlutoTheCat
         }
 
         /// <summary>
-        /// Extends a duration but stops at a ceiling. The cap applies to the total, not to one increment, so repeated
-        /// top-ups can never stack past it. A duration that is already longer than the ceiling is never shortened.
+        /// The seconds Bath Time may still add to one charm. The budget caps the ADDED time, not the total, so it is
+        /// independent of how long that charm was to begin with: each mist adds <paramref name="bonus"/> until
+        /// <paramref name="maxBonus"/> seconds have been added, and the last increment is partial. Never negative.
         /// </summary>
-        public static float ExtendCapped(float duration, float bonus, float max)
+        public static float AllowedBonus(float alreadyAdded, float bonus, float maxBonus)
         {
-            float current = Math.Max(0f, duration);
-            float extended = ExtendDuration(current, bonus);
-            float ceiling = Math.Max(0f, max);
-            return extended <= ceiling ? extended : Math.Max(current, ceiling);
+            float remaining = Math.Max(0f, maxBonus) - Math.Max(0f, alreadyAdded);
+            if (remaining <= 0f) return 0f;
+            return Math.Min(Math.Max(0f, bonus), remaining);
+        }
+
+        /// <summary>Applies <see cref="AllowedBonus"/> to a live duration; an exhausted budget leaves it alone.</summary>
+        public static float ExtendBudgeted(float duration, float alreadyAdded, float bonus, float maxBonus)
+        {
+            return Math.Max(0f, duration) + AllowedBonus(alreadyAdded, bonus, maxBonus);
         }
 
         public static float ExtendRemaining(float remaining, float bonus, bool active)

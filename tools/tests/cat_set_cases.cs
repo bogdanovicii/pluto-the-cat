@@ -122,15 +122,40 @@ class CatSetCases
         Check(Near(CatSetRules.ExtendRemaining(3f, 2f, true), 5f), "active remaining time extends");
         Check(Near(CatSetRules.ExtendRemaining(3f, 2f, false), 3f), "inactive remaining time stays unchanged");
 
-        // Bath Time cannot stack a charm forever: the total owned duration stops at SprayCharmMaxSeconds.
-        Check(Near(CatSetRules.ExtendCapped(6f, 2f, 10f), 8f), "capped extension adds the bonus below the ceiling");
-        Check(Near(CatSetRules.ExtendCapped(8f, 2f, 10f), 10f), "capped extension lands exactly on the ceiling");
-        Check(Near(CatSetRules.ExtendCapped(9f, 2f, 10f), 10f), "capped extension stops at the ceiling");
-        Check(Near(CatSetRules.ExtendCapped(10f, 2f, 10f), 10f), "extension at the ceiling adds nothing");
-        Check(Near(CatSetRules.ExtendCapped(12f, 2f, 10f), 12f), "a longer existing charm is never shortened");
-        Check(Near(CatSetRules.ExtendCapped(-1f, 2f, 10f), 2f), "negative duration counts as zero");
-        Check(Near(CatSetRules.ExtendCapped(3f, -2f, 10f), 3f), "negative bonus adds nothing");
-        Check(Near(CatSetRules.ExtendCapped(3f, 5f, -1f), 3f), "nonpositive ceiling never extends");
+        // Bath Time budgets the seconds it may ADD to one charm, independently of how long that charm is.
+        // AllowedBonus is the increment still available; ExtendBudgeted applies it to the live duration.
+        Check(Near(CatSetRules.AllowedBonus(0f, 2f, 6f), 2f), "first mist adds the whole bonus");
+        Check(Near(CatSetRules.AllowedBonus(4f, 2f, 6f), 2f), "third mist lands exactly on the budget");
+        Check(Near(CatSetRules.AllowedBonus(5f, 2f, 6f), 1f), "the final increment is partial");
+        Check(Near(CatSetRules.AllowedBonus(6f, 2f, 6f), 0f), "an exhausted budget adds nothing");
+        Check(Near(CatSetRules.AllowedBonus(7f, 2f, 6f), 0f), "an overspent budget adds nothing");
+        Check(Near(CatSetRules.AllowedBonus(0f, 2f, 0f), 0f), "a zero budget never adds");
+        Check(Near(CatSetRules.AllowedBonus(0f, 2f, -1f), 0f), "a negative budget never adds");
+        Check(Near(CatSetRules.AllowedBonus(-3f, 2f, 6f), 2f), "negative added counts as zero");
+        Check(Near(CatSetRules.AllowedBonus(0f, -2f, 6f), 0f), "a negative bonus adds nothing");
+
+        // The budget is the same whatever the base charm is: 10 s reaches 16 s, a 20 s Dinner Time charm reaches 26 s.
+        float bathed = 10f, added = 0f;
+        for (int mist = 0; mist < 5; mist++)
+        {
+            float step = CatSetRules.AllowedBonus(added, 2f, 6f);
+            bathed = CatSetRules.ExtendBudgeted(bathed, added, 2f, 6f);
+            added += step;
+        }
+        Check(Near(bathed, 16f), "repeated misting stops six seconds above the base charm");
+        Check(Near(added, 6f), "the spent budget stops at the maximum bonus");
+        float dinner = 20f, dinnerAdded = 0f;
+        for (int mist = 0; mist < 5; mist++)
+        {
+            float step = CatSetRules.AllowedBonus(dinnerAdded, 2f, 6f);
+            dinner = CatSetRules.ExtendBudgeted(dinner, dinnerAdded, 2f, 6f);
+            dinnerAdded += step;
+        }
+        Check(Near(dinner, 26f), "a longer base charm gets the same six added seconds");
+        Check(Near(CatSetRules.ExtendBudgeted(9f, 5f, 2f, 6f), 10f), "a partial final increment extends by what is left");
+        Check(Near(CatSetRules.ExtendBudgeted(9f, 6f, 2f, 6f), 9f), "an exhausted budget leaves the duration alone");
+        Check(CatSetRules.ExtendBudgeted(12f, 0f, 2f, 6f) >= 12f, "a duration is never shortened");
+        Check(Near(CatSetRules.ExtendBudgeted(-1f, 0f, 2f, 6f), 2f), "negative duration counts as zero");
 
         Console.WriteLine(count + " cat set cases passed");
     }

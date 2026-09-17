@@ -115,7 +115,8 @@ namespace PlutoTheCat
 
             /// <summary>
             /// Bath Time: the mist never hits a charmed enemy, but while the synergy is active it still tops up the
-            /// charm Pluto owns. Once per enemy per mist, so a cloud drifting over one enemy cannot stack the bonus.
+            /// charm Pluto owns, by at most SprayCharmMaxBonusSeconds over that charm's own length. Once per enemy
+            /// per mist, so a cloud drifting over one enemy cannot stack the bonus.
             /// </summary>
             private void OnPassedThrough(AIActor enemy)
             {
@@ -126,14 +127,15 @@ namespace PlutoTheCat
                     && !enemy.IsHarmlessEnemy
                     && !enemy.healthHaver.IsBoss;
                 if (!eligibleActor || owner == null || !owner.PlayerHasActiveSynergy(PlutoSynergies.BathTime)) return;
-                if (!PlutoCharmEffect.ExtendOwned(enemy, PlutoConfig.SprayCharmBonusSeconds, PlutoConfig.SprayCharmMaxSeconds))
+                // False means the budget is spent (or there is no Pluto charm), so nothing was extended: stay quiet.
+                if (!PlutoCharmEffect.ExtendOwned(enemy, PlutoConfig.SprayCharmBonusSeconds, PlutoConfig.SprayCharmMaxBonusSeconds))
                     return;
                 if (!loggedBathTime)
                 {
                     loggedBathTime = true;
-                    Plugin.Log("spray bottle: Bath Time extended Pluto's charm by "
+                    Plugin.Log("spray bottle: Bath Time extended Pluto's charm by up to "
                         + PlutoConfig.SprayCharmBonusSeconds + " seconds (at most "
-                        + PlutoConfig.SprayCharmMaxSeconds + " in total)");
+                        + PlutoConfig.SprayCharmMaxBonusSeconds + " s added per charm)");
                 }
             }
 

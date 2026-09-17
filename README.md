@@ -16,8 +16,8 @@ What ships today, in short:
   charged returning lure that distracts enemies), Toilet Paper Roll (active, C: bullet-blocking streamer), Cone of Shame
   (passive, B: blocks a bullet in front every 3 s) and Coffee Mug (active, C: shatters into shards and a slowing
   puddle). No piece hits a harmless or charmed enemy: the mist, mug and shards pass through them. Synergies Bath Time
-  (+ Wet Food Can: tops a charm up by `SprayCharmBonusSeconds` to at most `SprayCharmMaxSeconds` in total, without
-  damaging the charmed enemy), Playtime (+ Ball of Yarn: the tangle wins over the feather, so a tangled enemy stops
+  (+ Wet Food Can: tops a charm up by `SprayCharmBonusSeconds` per mist, up to `SprayCharmMaxBonusSeconds` (6 s)
+  added to that charm however long it already was, without damaging the charmed enemy), Playtime (+ Ball of Yarn: the tangle wins over the feather, so a tangled enemy stops
   instead of chasing), Shredder (+ Scratching Post), Matching Cones (+ Coco Blue) and Espresso (+ Catnip Pouch). Every
   number is in the config section `Cat Set 2.19`; in-game checklist `docs/cat-set-2190-test-checklist.md`.
 - **Samurai Pluto** (alternate costume, 2.16.0): unlocked by beating Pluto's past (the Vet Visit), switched at the

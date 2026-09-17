@@ -87,7 +87,7 @@ namespace PlutoTheCat
         public static float SprayFlinchSeconds = 0.5f;
         public static float SprayReloadSeconds = 1f;
         public static float SprayCharmBonusSeconds = 2f;
-        public static float SprayCharmMaxSeconds = 10f;
+        public static float SprayCharmMaxBonusSeconds = 6f;
         public static float FeatherChargeSeconds = 0.6f;
         public static int FeatherClip = 1;
         public static float FeatherRange = 7f;
@@ -202,7 +202,7 @@ namespace PlutoTheCat
             SprayFlinchSeconds = PlutoConfigRules.Clamp("SprayFlinchSeconds", cfg.Bind(S, "SprayFlinchSeconds", SprayFlinchSeconds, "Spray Bottle: flinch duration in seconds.").Value, SprayFlinchSeconds, Warn);
             SprayReloadSeconds = PlutoConfigRules.Clamp("SprayReloadSeconds", cfg.Bind(S, "SprayReloadSeconds", SprayReloadSeconds, "Spray Bottle: reload duration in seconds.").Value, SprayReloadSeconds, Warn);
             SprayCharmBonusSeconds = PlutoConfigRules.Clamp("SprayCharmBonusSeconds", cfg.Bind(S, "SprayCharmBonusSeconds", SprayCharmBonusSeconds, "Bath Time: charm duration added by the Spray Bottle.").Value, SprayCharmBonusSeconds, Warn);
-            SprayCharmMaxSeconds = PlutoConfigRules.Clamp("SprayCharmMaxSeconds", cfg.Bind(S, "SprayCharmMaxSeconds", SprayCharmMaxSeconds, "Bath Time: longest total charm duration the Spray Bottle can extend a charm to.").Value, SprayCharmMaxSeconds, Warn);
+            SprayCharmMaxBonusSeconds = PlutoConfigRules.Clamp("SprayCharmMaxBonusSeconds", cfg.Bind(S, "SprayCharmMaxBonusSeconds", SprayCharmMaxBonusSeconds, "Bath Time: most seconds the Spray Bottle can add to one charm, whatever that charm's own length is.").Value, SprayCharmMaxBonusSeconds, Warn);
             FeatherChargeSeconds = PlutoConfigRules.Clamp("FeatherChargeSeconds", cfg.Bind(S, "FeatherChargeSeconds", FeatherChargeSeconds, "Feather Teaser: charge duration in seconds.").Value, FeatherChargeSeconds, Warn);
             FeatherClip = PlutoConfigRules.Clamp("FeatherClip", cfg.Bind(S, "FeatherClip", FeatherClip, "Feather Teaser: shots per clip.").Value, FeatherClip, Warn);
             FeatherRange = PlutoConfigRules.Clamp("FeatherRange", cfg.Bind(S, "FeatherRange", FeatherRange, "Feather Teaser: flight range in tiles.").Value, FeatherRange, Warn);

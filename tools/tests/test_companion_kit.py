@@ -55,7 +55,7 @@ class CompanionKitTests(unittest.TestCase):
         cat_set_keys = (
             'SprayClip', 'SprayCooldown', 'SprayRange', 'SprayDamage', 'SprayKnockback',
             'SprayFlinchChance', 'SprayFlinchSeconds', 'SprayReloadSeconds', 'SprayCharmBonusSeconds',
-            'SprayCharmMaxSeconds',
+            'SprayCharmMaxBonusSeconds',
             'FeatherChargeSeconds', 'FeatherClip', 'FeatherRange', 'FeatherDamage',
             'FeatherDistractSeconds', 'FeatherBossSlowSeconds', 'FeatherReloadSeconds',
             'TPRechargeDamage', 'TPLength', 'TPSeconds', 'TPHits', 'TPConfettiDamage',

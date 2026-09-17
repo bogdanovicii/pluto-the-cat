@@ -50,8 +50,8 @@ class CatSetWiringTests(unittest.TestCase):
             'CatSetRules.RollFlinch(Random.value, PlutoConfig.SprayFlinchChance)',
             'behaviorSpeculator.Interrupt()',
             'CatItemKit.Stun(enemy, PlutoConfig.SprayFlinchSeconds)',
-            'PlutoCharmEffect.ExtendOwned(enemy, PlutoConfig.SprayCharmBonusSeconds, PlutoConfig.SprayCharmMaxSeconds)',
-            'PlutoConfig.SprayCharmMaxSeconds',
+            'PlutoCharmEffect.ExtendOwned(enemy, PlutoConfig.SprayCharmBonusSeconds, PlutoConfig.SprayCharmMaxBonusSeconds)',
+            'PlutoConfig.SprayCharmMaxBonusSeconds',
             'PlayerHasActiveSynergy(PlutoSynergies.BathTime)',
             'bool eligibleActor =', '!enemy.IsHarmlessEnemy',
             '!enemy.healthHaver.IsBoss',
@@ -78,6 +78,11 @@ class CatSetWiringTests(unittest.TestCase):
         eligible = spray.index('bool eligibleActor =', skipped)
         bath = spray.index('PlutoCharmEffect.ExtendOwned(', eligible)
         self.assertLess(eligible, bath)
+        # An exhausted budget returns false, so the "extended" log must sit behind that early return.
+        guard = spray.index('if (!PlutoCharmEffect.ExtendOwned(', eligible)
+        self.assertLess(guard, spray.index('loggedBathTime = true', guard))
+        self.assertIn('added per charm', spray)
+        self.assertNotIn('in total)', spray)
 
         self.requires(
             'CatTargetFilter.cs',
@@ -124,10 +129,23 @@ class CatSetWiringTests(unittest.TestCase):
             'Mathf.Min(enemy.m_activeEffects.Count, enemy.m_activeEffectData.Count)',
             'PlutoCharmEffect effect = enemy.m_activeEffects[i] as PlutoCharmEffect',
             'effect.effectIdentifier == "pluto_love"',
-            'public static bool ExtendOwned(AIActor enemy, float bonus, float max)',
-            'effect.duration = CatSetRules.ExtendCapped(effect.duration, bonus, max)',
+            'public static bool ExtendOwned(AIActor enemy, float bonus, float maxBonus)',
+            'CatSetRules.AllowedBonus(effect.bonusAdded, bonus, maxBonus)',
+            'effect.duration = CatSetRules.ExtendBudgeted(effect.duration, effect.bonusAdded, bonus, maxBonus)',
+            'effect.bonusAdded +=',
             'return true', 'return false',
         )
+        # The budget is per charm and lives on the effect instance, so it is per enemy and shared between
+        # co-op players; a freshly applied charm starts over.
+        self.assertIn('public float bonusAdded', charm)
+        self.assertIn('bonusAdded = 0f', charm)
+        applied = charm.index('public override void OnEffectApplied')
+        self.assertIn('bonusAdded = 0f', charm[applied:charm.index('public override void OnEffectRemoved', applied)])
+        # An exhausted budget must report "nothing changed" rather than a successful extension.
+        extend_start = charm.index('public static bool ExtendOwned(')
+        extend_end = charm.index('public override void OnEffectApplied', extend_start)
+        self.assertIn('return false', charm[extend_start:extend_end])
+        self.assertNotIn('ExtendCapped', charm)
         start = charm.index('public static bool ExtendOwned(')
         end = charm.index('public override void OnEffectApplied', start)
         self.assertNotIn('ApplyEffect', charm[start:end])
@@ -215,6 +233,32 @@ class CatSetWiringTests(unittest.TestCase):
         reassert = feather.index('state.enemy.BehaviorVelocity = state.appliedVelocity;', resume)
         self.assertLess(suspend, resume)
         self.assertLess(resume, reassert)
+        # Regression: while suspended the AI writes BehaviorVelocity itself every frame, so the lease must not
+        # be tested by velocity equality and the takeover teardown must come AFTER the tangle/resume branches.
+        # Otherwise the chase can never resume once the stun ends.
+        self.assertNotIn('state.enemy.BehaviorVelocity.Equals(state.previousVelocity)', feather)
+        owns = feather.index('private static bool OwnsVelocity(SharedDistraction state)')
+        self.assertIn('if (state.suspended) return true;',
+                      feather[owns:feather.index('private static', owns + 10)])
+        teardown = feather.index('if (!OwnsVelocity(state))', update_owner)
+        self.assertLess(suspend, teardown)
+        self.assertLess(resume, teardown)
+        # Resuming re-snapshots the state it is taking over, because the old snapshot went stale during the stun.
+        self.assertIn('private static void ResumeDistraction(SharedDistraction state, DistractionLease lease)', feather)
+        resume_fn = feather.index('private static void ResumeDistraction(')
+        resume_body = feather[resume_fn:feather.index('private static', resume_fn + 10)]
+        self.assertIn('state.previousOverride = state.enemy.BehaviorOverridesVelocity', resume_body)
+        self.assertIn('state.previousVelocity = state.enemy.BehaviorVelocity', resume_body)
+        self.assertIn('ResumeDistraction(state, lease)', feather[resume:teardown])
+        # A suspended generation owns nothing, so releasing it must not write the snapshot back over the AI.
+        release_body = feather[release_owner:feather.index('internal void BeginDistraction(', release_owner)]
+        self.assertIn('!state.suspended && OwnsVelocity(state)', release_body)
+        # F4: a brand-new generation starts explicitly suspended with a real appliedVelocity, so nothing
+        # ever reads an uninitialised velocity.
+        acquire = feather.index('private static bool AcquireDistractionOwnership(')
+        acquire_body = feather[acquire:update_owner]
+        self.assertIn('appliedVelocity = lease.enemy.BehaviorVelocity', acquire_body)
+        self.assertIn('suspended = true', acquire_body)
         self.assertIn('EndDistraction(lease, false)', feather)
         self.assertIn('EndDistraction(leases[i], true)', feather)
         # Outbound and return are separate valid hits; each starts its own full lease.

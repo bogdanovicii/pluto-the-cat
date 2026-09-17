@@ -52,11 +52,19 @@ namespace PlutoTheCat
         }
 
         /// <summary>
-        /// Extends only the live Pluto effect instance owned by this enemy, up to a total of max seconds. Keeping the
-        /// two engine lists paired avoids touching a stale definition and, unlike ApplyEffect, cannot apply
-        /// vulnerability or another charm twice.
+        /// Seconds Bath Time has already added to this charm, and the duration it left behind. The budget lives on
+        /// the effect instance, so it is per enemy and shared by both co-op players, and a charm applied afresh
+        /// (a new instance, or an existing one whose duration someone else rewrote) starts over.
         /// </summary>
-        public static bool ExtendOwned(AIActor enemy, float bonus, float max)
+        public float bonusAdded, bonusDuration;
+
+        /// <summary>
+        /// Extends only the live Pluto effect instance owned by this enemy, by at most maxBonus seconds in total over
+        /// the length that charm had when Bath Time first touched it. Keeping the two engine lists paired avoids
+        /// touching a stale definition and, unlike ApplyEffect, cannot apply vulnerability or another charm twice.
+        /// Returns whether the duration actually grew: an exhausted budget changes nothing and reports false.
+        /// </summary>
+        public static bool ExtendOwned(AIActor enemy, float bonus, float maxBonus)
         {
             if (enemy == null || enemy.m_activeEffects == null || enemy.m_activeEffectData == null) return false;
             int count = Mathf.Min(enemy.m_activeEffects.Count, enemy.m_activeEffectData.Count);
@@ -67,7 +75,14 @@ namespace PlutoTheCat
                 if (data == null || effect == null) continue;
                 if (effect.effectIdentifier == "pluto_love")
                 {
-                    effect.duration = CatSetRules.ExtendCapped(effect.duration, bonus, max);
+                    // Anything but our own last extension means a fresh charm (or a longer Dinner Time one), which
+                    // gets its own budget rather than inheriting a spent one.
+                    if (effect.duration != effect.bonusDuration) effect.bonusAdded = 0f;
+                    float added = CatSetRules.AllowedBonus(effect.bonusAdded, bonus, maxBonus);
+                    if (added <= 0f) return false;
+                    effect.duration = CatSetRules.ExtendBudgeted(effect.duration, effect.bonusAdded, bonus, maxBonus);
+                    effect.bonusAdded += added;
+                    effect.bonusDuration = effect.duration;
                     return true;
                 }
             }
@@ -78,6 +93,8 @@ namespace PlutoTheCat
         {
             AIActor enemy = actor as AIActor;
             if (enemy == null) return;
+            bonusAdded = 0f; // a freshly applied charm gets a fresh Bath Time budget
+            bonusDuration = duration;
             AkSoundEngine.PostEvent("Play_OBJ_enemy_charmed_01", GameManager.Instance.gameObject);
             enemy.CanTargetEnemies = true;
             enemy.CanTargetPlayers = false;
