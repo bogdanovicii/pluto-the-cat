@@ -76,12 +76,22 @@ without the game installed.
 
 `GungeonFlags` values from `ETGModCompatibility.ExtendEnum` are assigned per-save based on registration order,
 so installing or removing another mod that also extends `GungeonFlags` can shift the numeric ids. The string
-mirror (`bogdan.etg.plutothecat:<item>`) exists specifically so unlocks survive that shift.
+mirror (`bogdan.etg.plutothecat:<item>`, written by `PlutoUnlocks.Unlock` via `GameStatsManager.ForceUnlock`)
+exists specifically so unlocks survive that shift. A fix-round review found that until this build, nothing in
+the mod ever called `PlutoUnlocks.Unlock` at all — the foyer shop's `OnPurchase` slot was left `null`, so a
+purchase may have set the `GungeonFlags` value (Alexandria copies the FLAG prerequisite's `saveFlagToCheck`
+into `PickupObject.SaveFlagToSetOnAcquisition` on its own) but never wrote the string mirror or called
+`GameStatsManager.Save()`. `ShrineStall.OnPurchase` now calls `PlutoUnlocks.Unlock` on every purchase, but that
+wiring itself has not been run in game — check it before trusting the drift result below.
+- [ ] **First, confirm the mirror is actually being written at all**: unlock an item at the stall, and check the
+  log for `shrine stall: purchased and unlocked <id>` (from `ShrineStall.OnPurchase`). If that line is missing,
+  the purchase callback did not fire or did not match the item back to its id — the drift check below cannot
+  mean anything until this line appears.
 - [ ] Unlock at least one item. Install another mod that also extends `GungeonFlags` (any Alexandria/ETGMod mod
   that registers its own custom flags), relaunch, and confirm the previously unlocked item is still unlocked.
 - [ ] Now remove that other mod and relaunch again: the item must still read as unlocked (this is the actual
   drift scenario — the flag's numeric id likely changed or was freed, and only the string mirror keeps the
-  unlock correct). If it reverts to locked, the mirror is not being checked correctly.
+  unlock correct). If it reverts to locked, the mirror is not being written or not being checked correctly.
 
 ## 7. Buying an item
 
@@ -89,7 +99,8 @@ mirror (`bogdan.etg.plutothecat:<item>`) exists specifically so unlocks survive 
   Pouch, Hairball, Scratching Post, Toilet Paper Roll and Coffee Mug; 15 for Jingle Bell Collar, Cone of Shame,
   Spray Bottle and Feather Teaser — `Shrine Stall 2.20` config defaults), permanently unlocks that item for the
   save, and hands one copy of it to Pluto to carry into the current run immediately (not just an unlock with
-  nothing handed over).
+  nothing handed over). Check the log for `shrine stall: purchased and unlocked <id>` on every purchase (see
+  §6) — its absence means the unlock's string mirror was never written even if the item itself was handed over.
 - [ ] The bought item disappears from the stall's mat on the same visit (it is now unlocked, so
   `encounterTrackable.PrerequisitesMet()` is true and the foyer shop no longer stocks it).
 - [ ] After that purchase, the item drops normally from chests/shops/rewards in later runs, same as any of
@@ -99,8 +110,10 @@ mirror (`bogdan.etg.plutothecat:<item>`) exists specifically so unlocks survive 
 
 ## 8. The mat: item count and prices
 
-- [ ] The mat shows three items at a time (the foyer shop's normal display slot count), drawn from whichever of
-  the ten are still locked; buying one causes another locked item to appear in its place if any remain.
+- [ ] The mat shows three items at a time (an assumption about Alexandria's default foyer-shop slot count, not
+  a value read from its source — if a different number shows up, that is not necessarily a bug, just this
+  checklist's guess being wrong), drawn from whichever of the ten are still locked; buying one causes another
+  locked item to appear in its place if any remain.
 - [ ] Prices on the mat read 8 or 15 credits, matching the tier a given item belongs to (listed above), not some
   other rounding of the config value.
 

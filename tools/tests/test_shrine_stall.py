@@ -146,6 +146,48 @@ class ShrineStallWiringTests(unittest.TestCase):
             self.assertLess(idx, gate_idx, step + ' must come before Step("unlock gate", ...)')
 
 
+    def test_stall_purchase_unlocks(self):
+        """Critical fix-round finding: SetUpFoyerShop's OnPurchase slot (the 4th of the
+        CustomCanBuy/CustomRemoveCurrency/CustomPrice/OnPurchase/OnSteal group, confirmed against the
+        Alexandria 0.5.10 IL as Func<PlayerController, PickupObject, int, bool>) must be wired to a real
+        method that calls PlutoUnlocks.Unlock(...) - not left null. Passing null there means nothing in
+        our code ever writes ShrineStallRules.MirrorKey's string mirror or calls GameStatsManager.Save(),
+        which is the entire flag-id-drift protection the docs describe. A string match on 'PlutoUnlocks.Unlock'
+        appearing anywhere in the file is not enough (e.g. a stray doc-comment mention would pass it), so
+        this resolves the actual argument passed in the OnPurchase position and checks that argument's own
+        method body.
+        """
+        stall = self.source('ShrineStall.cs')
+
+        marker = '// CustomCanBuy / CustomRemoveCurrency / CustomPrice / OnPurchase / OnSteal'
+        marker_idx = stall.find(marker)
+        self.assertGreaterEqual(marker_idx, 0,
+                                 'ShrineStall.cs missing the CustomCanBuy/.../OnPurchase/OnSteal argument marker')
+        line_start = stall.rfind('\n', 0, marker_idx) + 1
+        args_line = stall[line_start:marker_idx]
+        args = [a.strip() for a in args_line.split(',') if a.strip()]
+        self.assertEqual(len(args), 5,
+                          'expected exactly 5 arguments (CustomCanBuy, CustomRemoveCurrency, CustomPrice, '
+                          'OnPurchase, OnSteal) on the marker line, found %d: %r' % (len(args), args))
+        on_purchase_arg = args[3]
+
+        self.assertNotEqual(on_purchase_arg, 'null',
+                             'SetUpFoyerShop\'s OnPurchase argument must not be null: nothing else calls '
+                             'PlutoUnlocks.Unlock(...), so a purchase never writes the string mirror or '
+                             'calls GameStatsManager.Save()')
+
+        method_match = re.search(
+            r'\bbool\s+' + re.escape(on_purchase_arg) + r'\s*\([^)]*\)\s*\{(.*?)\n        \}',
+            stall, re.S)
+        self.assertIsNotNone(
+            method_match,
+            'could not find a method named ' + on_purchase_arg + ' in ShrineStall.cs matching the '
+            'OnPurchase argument passed to SetUpFoyerShop')
+        method_body = method_match.group(1)
+        self.assertIn('PlutoUnlocks.Unlock(', method_body,
+                       'the method passed as OnPurchase (' + on_purchase_arg + ') must call '
+                       'PlutoUnlocks.Unlock(...) so a purchase actually writes the string mirror')
+
     def test_stall_registration(self):
         self.requires(
             'ShrineStall.cs',

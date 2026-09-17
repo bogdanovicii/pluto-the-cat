@@ -108,7 +108,7 @@ namespace PlutoTheCat
                 ShopAPI.VoiceBoxes.BELLO,
                 ShopAPI.defaultItemPositions,
                 1f,                         // costModifier
-                null, null, null, null, null,   // CustomCanBuy / CustomRemoveCurrency / CustomPrice / OnPurchase / OnSteal
+                null, null, null, OnPurchase, null,   // CustomCanBuy / CustomRemoveCurrency / CustomPrice / OnPurchase / OnSteal
                 null, null,                 // currencyIconPath, currencyName (defaults for META_CURRENCY)
                 false, null, null,          // hasCarpet, carpetSpritePath, CarpetOffset
                 null,                       // prerequisites: ShopAPI does not gate NPC placement by them (see brief)
@@ -128,6 +128,42 @@ namespace PlutoTheCat
             }
 
             PlaceBackdropProps();
+        }
+
+        /// <summary>
+        /// Wired into SetUpFoyerShop's OnPurchase slot. Its real signature (read from the Alexandria 0.5.10
+        /// IL with ikdasm, since monodis crashes on this assembly) is
+        /// Func&lt;PlayerController, PickupObject, int, bool&gt; = (player, item, cost). Alexandria invokes it
+        /// from CustomShopItemController's own purchase handler AFTER the item has already been added to the
+        /// player's loadout and the currency already removed, and immediately discards the bool it returns
+        /// (the IL pops the result) - so the return value is not a "allow/deny the purchase" gate, only a
+        /// notification hook, and this always returns true.
+        /// PickupObject carries no back-reference to our own string ids, so the item is matched by
+        /// PickupObjectId against Game.Items[id] for each of PlutoUnlocks.Ids rather than assumed from
+        /// argument order or array position (the same bug class ShrineStallRules.Price already guards
+        /// against for prices).
+        /// Calling PlutoUnlocks.Unlock a second time is harmless (SetFlag/ForceUnlock/Save are all
+        /// idempotent), so this stays wired even though the FLAG prerequisite's saveFlagToCheck is also
+        /// copied by Alexandria into PickupObject.SaveFlagToSetOnAcquisition on purchase (per the plan doc) -
+        /// that would set the GungeonFlags value on its own, but this method is what writes the string
+        /// mirror (ShrineStallRules.MirrorKey) that flag-id drift actually depends on, since nothing else
+        /// in this codebase ever calls PlutoUnlocks.Unlock.
+        /// </summary>
+        private static bool OnPurchase(PlayerController player, PickupObject item, int cost)
+        {
+            foreach (string id in PlutoUnlocks.Ids)
+            {
+                if (!Game.Items.ContainsID(id)) continue;
+                PickupObject pickup = Game.Items[id];
+                if (pickup == null || item == null || pickup.PickupObjectId != item.PickupObjectId) continue;
+
+                PlutoUnlocks.Unlock(id);
+                Plugin.Log("shrine stall: purchased and unlocked " + id);
+                return true;
+            }
+
+            Plugin.Log("shrine stall: purchase callback could not match the bought item back to a gated id");
+            return true;
         }
 
         /// <summary>
