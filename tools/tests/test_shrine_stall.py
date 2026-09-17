@@ -8,6 +8,33 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 SRC = ROOT / 'PlutoTheCat' / 'src'
 SHOP = ROOT / 'PlutoTheCat' / 'Resources' / 'Shop'
 PREVIEW = ROOT / 'docs' / 'art-preview' / 'shrine-stall-2200.png'
+KIT_CASES = ROOT / 'tools' / 'tests' / 'player_kit_cases.cs'
+
+# The ten gated ids (Task 2/3/5's contract), each paired with its config price key (Task 1) and the
+# Plugin.cs Step(...) call that loads it (Task 1-era item registration, unrelated to this round).
+GATED_ITEMS = (
+    ('BallOfYarnItem.ID', 'StallPriceBallOfYarn', 'Step("ball of yarn", BallOfYarnItem.Init)'),
+    ('CatnipPouchItem.ID', 'StallPriceCatnipPouch', 'Step("catnip pouch", CatnipPouchItem.Init)'),
+    ('HairballItem.ID', 'StallPriceHairball', 'Step("hairball item", HairballItem.Init)'),
+    ('ScratchingPostItem.ID', 'StallPriceScratchingPost', 'Step("scratching post", ScratchingPostItem.Init)'),
+    ('ToiletPaperRollItem.ID', 'StallPriceToiletPaperRoll', 'Step("toilet paper roll", ToiletPaperRollItem.Init)'),
+    ('CoffeeMugItem.ID', 'StallPriceCoffeeMug', 'Step("coffee mug", CoffeeMugItem.Init)'),
+    ('JingleBellCollarItem.ID', 'StallPriceJingleBellCollar', 'Step("jingle bell collar", JingleBellCollarItem.Init)'),
+    ('ConeOfShameItem.ID', 'StallPriceConeOfShame', 'Step("cone of shame", ConeOfShameItem.Init)'),
+    ('SprayBottleGun.ID', 'StallPriceSprayBottle', 'Step("spray bottle", SprayBottleGun.Add)'),
+    ('FeatherTeaserGun.ID', 'StallPriceFeatherTeaser', 'Step("feather teaser", FeatherTeaserGun.Add)'),
+)
+
+# Ids that must NOT be gated: the two active/passive starter items, the two starter guns, and the
+# 2.18 Yasupen costume item - none of these are 2.17.0/2.19.0 cat-set items.
+EXCLUDED_IDS = (
+    'KibbleSackGun.ID',
+    'WetFoodCanItem.ID',
+    'KatanaGun.ID',
+    'TaiyakiCannonGun.ID',
+    'CocoBlueItem.ID',
+    'YasupenItem.ID',
+)
 
 
 class ShrineStallWiringTests(unittest.TestCase):
@@ -234,6 +261,83 @@ class ShrineStallWiringTests(unittest.TestCase):
             for swear in self.SWEARS:
                 self.assertNotIn(' ' + swear + ' ', ' ' + lowered + ' ',
                                   'the stall never swears: ' + line)
+
+
+    def test_shrine_stall_integration(self):
+        """Aggregate check across Tasks 1-6: catches drift no single task's test can see, e.g. the
+        ids list and the config price table quietly falling out of step with each other."""
+        unlocks = self.source('PlutoUnlocks.cs')
+        ids_match = re.search(r'Ids\s*=\s*new\[\]\s*\{(.*?)\};', unlocks, re.S)
+        self.assertIsNotNone(ids_match, 'PlutoUnlocks.cs missing the Ids array literal')
+        ids_tokens = [tok.strip() for tok in ids_match.group(1).split(',') if tok.strip()]
+
+        # All ten ids, exactly once each, and none of the excluded starter/costume items.
+        self.assertEqual(len(ids_tokens), 10,
+                          'PlutoUnlocks.Ids must list exactly ten gated ids, found %d' % len(ids_tokens))
+        self.assertEqual(len(set(ids_tokens)), 10, 'PlutoUnlocks.Ids must not repeat an id')
+        expected_tokens = [token for token, _, _ in GATED_ITEMS]
+        self.assertEqual(sorted(ids_tokens), sorted(expected_tokens),
+                          'PlutoUnlocks.Ids must be exactly the ten 2.17.0/2.19.0 cat items')
+        for excluded in EXCLUDED_IDS:
+            self.assertNotIn(excluded, ids_tokens, 'PlutoUnlocks.Ids must not gate ' + excluded)
+
+        # Every gated id has a config price key (Task 1), a Ranges entry (Task 1) and a
+        # player_kit_cases.cs default (Task 1's own test fixture).
+        config = self.source('PlutoConfig.cs')
+        rules = self.source('PlutoConfigRules.cs')
+        kit_cases = KIT_CASES.read_text(encoding='utf-8')
+        for token, price_key, step in GATED_ITEMS:
+            self.assertIn('public static int ' + price_key, config,
+                           'PlutoConfig.cs missing ' + price_key)
+            self.assertIn('"' + price_key + '"', rules,
+                           'PlutoConfigRules.cs missing a Ranges entry for ' + price_key)
+            self.assertIn('"' + price_key + '"', kit_cases,
+                           'player_kit_cases.cs missing a default case for ' + price_key)
+
+        # Load-step order: items, then unlocks, then unlock gate, then shrine stall.
+        plugin = self.source('Plugin.cs')
+        unlocks_idx = plugin.find('Step("unlocks", PlutoUnlocks.Init)')
+        gate_idx = plugin.find('Step("unlock gate", PlutoUnlockGate.Apply)')
+        stall_idx = plugin.find('Step("shrine stall", ShrineStall.Init)')
+        self.assertGreaterEqual(unlocks_idx, 0, 'Plugin.cs missing Step("unlocks", ...)')
+        self.assertGreaterEqual(gate_idx, 0, 'Plugin.cs missing Step("unlock gate", ...)')
+        self.assertGreaterEqual(stall_idx, 0, 'Plugin.cs missing Step("shrine stall", ...)')
+        self.assertLess(unlocks_idx, gate_idx, 'Step("unlocks", ...) must come before Step("unlock gate", ...)')
+        self.assertLess(gate_idx, stall_idx, 'Step("unlock gate", ...) must come before Step("shrine stall", ...)')
+        for token, _, step in GATED_ITEMS:
+            idx = plugin.find(step)
+            self.assertGreaterEqual(idx, 0, 'Plugin.cs missing ' + step)
+            self.assertLess(idx, unlocks_idx, step + ' must load before Step("unlocks", ...)')
+
+        # Cross-task bug class this test exists to catch: ShrineStall.cs builds its weight/"price"
+        # array positionally and looks prices up by walking PlutoUnlocks.Ids in lockstep with it
+        # (ShrineStallRules.Price(id, prices, PlutoUnlocks.Ids)). If Task 2's Ids order and Task 5's
+        # prices array order ever drift apart, an item silently gets sold at the wrong price - no
+        # single task's own test can see this, because each only checks its own file.
+        stall = self.source('ShrineStall.cs')
+        prices_match = re.search(r'int\[\]\s*prices\s*=\s*\{(.*?)\};', stall, re.S)
+        self.assertIsNotNone(prices_match, 'ShrineStall.cs missing the prices array literal')
+        price_keys = re.findall(r'PlutoConfig\.(StallPrice\w+)', prices_match.group(1))
+        token_to_price_key = dict((token, price_key) for token, price_key, _ in GATED_ITEMS)
+        expected_price_keys = [token_to_price_key[token] for token in ids_tokens]
+        self.assertEqual(price_keys, expected_price_keys,
+                          "ShrineStall.cs's prices array must list the same items, in the same order, "
+                          "as PlutoUnlocks.Ids, or prices silently attach to the wrong item")
+
+        # Every Task 4 resource file actually delivered under Resources/Shop/ has its clip family
+        # referenced by ShrineStall.cs - a new or renamed art file that nobody wires up is a silent
+        # integration gap the art-only test (StallArtTests, below) cannot see, since it only checks
+        # that the files exist, not that anything loads them.
+        bases = set()
+        for path in sorted(SHOP.glob('*.png')):
+            frame_match = re.match(r'^(.*)_\d{3}$', path.stem)
+            bases.add(frame_match.group(1) if frame_match else path.stem)
+        self.assertEqual(bases, {'daifuku_idle', 'daifuku_talk', 'kinsuke_idle', 'torii', 'stall', 'blueprint'},
+                          'unexpected set of Task 4 art families under Resources/Shop/: ' + repr(bases))
+        for base in bases:
+            pattern = re.compile(r'[/"]' + re.escape(base) + r'(_\d{3})?(\.png)?"')
+            self.assertRegex(stall, pattern,
+                              'ShrineStall.cs has no reference to the ' + base + ' art family')
 
 
 class StallArtTests(unittest.TestCase):
