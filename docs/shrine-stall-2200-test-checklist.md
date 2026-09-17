@@ -16,6 +16,16 @@ anything else:
   If instead it contains `shrine stall: SetUpFoyerShop returned null; see the [CharAPI]/Alexandria log lines
   above for the failed resource path`, the stall failed to build — copy the Alexandria/CharAPI lines immediately
   above it into the report; do not assume the stall is simply invisible.
+- [ ] **2.20.4: paste the new diagnostic lines, every time, whether or not the stall looks right.** They print
+  unconditionally the moment the foyer loads (and again after any `pluto_stall` move) and are the only thing
+  that turns "the shopkeeper is missing" or "there's a strange white sliver near the torii" into a decision
+  instead of another screenshot. Copy every line starting `shrine stall: prop '...'` (one per torii/stall/
+  kinsuke, with its resolved position and draw depth) and every line starting `shrine stall: child '...'`
+  (one per GameObject in the shopkeeper's own hierarchy — Daifuku is one of several; Alexandria also builds a
+  blueprint prefab instance, item points and a talk point under the same root). A child line whose `sprite=`
+  says `UNBOUND` or whose `bounds=` is a thin sliver (roughly 3x58 art px, i.e. very narrow and tall relative
+  to its width) is the prime suspect for the unexplained white bar reported after 2.20.3 — paste it verbatim
+  rather than describing it.
 - [ ] **If the stall (or any part of it) is off screen**, do not just report it — place it yourself with the
   `pluto_stall` console command (2.20.1) and report the value it logs: walk to a spot where the whole assembly
   (Daifuku, Kinsuke, the torii and the counter) would read well, then type `pluto_stall here`. Check the

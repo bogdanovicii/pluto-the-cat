@@ -621,6 +621,96 @@ class ShrineStallWiringTests(unittest.TestCase):
             self.assertRegex(stall, pattern,
                               'ShrineStall.cs has no reference to the ' + base + ' art family')
 
+    def test_props_use_tk2d_depth_not_a_raw_sprite_renderer(self):
+        """2.20.4 root-cause fix: PlaceProp used to build plain Unity SpriteRenderer GameObjects at z=0
+        with no sortingOrder/sortingLayer and none of this game's own depth handling - the same tk2d
+        z-sort convention every other prop in this mod already uses (CoffeeMugItem.cs's puddle,
+        PuffedUpItem.cs's fur layer, ScratchingPostItem.cs's placed post all call
+        `sprite.HeightOffGround = ...; sprite.UpdateZDepth()` on a tk2dSprite). With the torii and counter
+        now centered on Daifuku's own anchor, either one drawing in front of him at an undefined z would
+        hide him completely with no error logged - this is the tester's "shopkeeper is missing" bug."""
+        stall = self.source('ShrineStall.cs')
+        self.assertNotIn('AddComponent<SpriteRenderer>', stall,
+                          'ShrineStall.cs must not build props as plain SpriteRenderer GameObjects - they '
+                          'need a tk2dSprite so HeightOffGround/UpdateZDepth can place them relative to '
+                          "Daifuku's own depth (see CoffeeMugItem.cs:149-150 for the established pattern)")
+        self.assertIn('AddComponent<tk2dSprite>', stall,
+                       'PlaceProp must build a tk2dSprite, the depth mechanism this mod already uses '
+                       'everywhere else')
+        self.assertIn('.HeightOffGround = heightOffGround', stall,
+                       'PlaceProp must set HeightOffGround so each prop has an explicit, deterministic '
+                       'depth instead of an undefined z=0')
+        self.assertIn('.UpdateZDepth()', stall,
+                       'PlaceProp must call UpdateZDepth() after setting HeightOffGround, like every other '
+                       'tk2d depth site in this codebase')
+
+    def test_prop_depth_ordering_puts_torii_furthest_back_then_stall_then_kinsuke(self):
+        """The torii (77x48px) and the counter (48x36px) are both large enough to fully hide Daifuku
+        (24x31px) if they draw in front of him, so the three backdrop props must have a strict, explicit
+        back-to-front order: torii furthest back, then the counter, then Kinsuke's bowl - leaving Daifuku
+        (whose own depth this file does not touch) in front of all three. More negative HeightOffGround
+        means further back (see CoffeeMugItem.cs's -0.5f puddle and PuffedUpItem.cs's -0.6f "always
+        behind" fur layer)."""
+        stall = self.source('ShrineStall.cs')
+
+        def constant(name):
+            match = re.search(name + r'\s*=\s*(-?[\d.]+)f', stall)
+            self.assertIsNotNone(match, 'ShrineStall.cs missing a parseable ' + name + ' constant')
+            return float(match.group(1))
+
+        torii = constant('ToriiHeightOffGround')
+        counter = constant('StallHeightOffGround')
+        kinsuke = constant('KinsukeHeightOffGround')
+        self.assertLess(torii, counter,
+                         'the torii must be further back (more negative HeightOffGround) than the counter')
+        self.assertLess(counter, kinsuke,
+                         "the counter must be further back than Kinsuke's bowl")
+        self.assertLess(kinsuke, 0.0,
+                         "Kinsuke's bowl must still be behind Daifuku's own (unmodified, ~0) depth")
+
+    def test_shopkeeper_diagnostic_logs_the_whole_shop_hierarchy(self):
+        """The tester asked for a diagnostic that distinguishes a working stall from one with no visible
+        shopkeeper, unconditionally (not behind a debug flag), at foyer placement time and after a
+        pluto_stall move. It must walk the shop GameObject's own children (Daifuku is one of several -
+        Alexandria also builds a blueprint prefab instance, item points and a talk point under the same
+        root), since the tester's own measurement of the narrow white bar (~3x58 art px) matches none of
+        this mod's own art and needs a name, not another guess."""
+        stall = self.source('ShrineStall.cs')
+        self.assertIn('private static void LogShopDiagnostics', stall,
+                       'ShrineStall.cs missing a LogShopDiagnostics() method')
+        self.assertIn('GetComponentsInChildren<Transform>(true)', stall,
+                       'LogShopDiagnostics must walk the full shop GameObject transform hierarchy, not '
+                       'just the root, so a stray child (e.g. the narrow white bar) has a name')
+        self.assertIn('LogShopDiagnostics();', stall,
+                       'PlaceBackdropProps (which runs at foyer placement and after every pluto_stall '
+                       'move) must call LogShopDiagnostics()')
+        placement_idx = stall.find('private static void PlaceBackdropProps')
+        diag_call_idx = stall.find('LogShopDiagnostics();', placement_idx)
+        self.assertGreater(diag_call_idx, placement_idx,
+                            'PlaceBackdropProps must call LogShopDiagnostics()')
+        # Unconditional: no #if DEBUG or a config/debug-flag guard wrapping the diagnostic.
+        method_start = stall.find('private static void LogShopDiagnostics')
+        method_body = stall[method_start:stall.find('\n        }\n', method_start)]
+        self.assertNotIn('#if', method_body,
+                          'the diagnostic must be unconditional, not compiled out in some configuration')
+        self.assertNotIn('Debug', method_body.replace('DebugMenu', ''),
+                          'the diagnostic must run on a normal run, not only behind a debug flag')
+
+    def test_shopkeeper_diagnostic_reports_position_renderer_and_bounds(self):
+        """Task 2's exact ask: at foyer placement time, log the shopkeeper's resolved world position (read
+        back from the transform), whether his sprite/animator actually bound (renderer present, sprite
+        non-null, bounds/size, renderer enabled), and each prop's resolved world position and depth."""
+        stall = self.source('ShrineStall.cs')
+        diag = stall[stall.find('private static void LogShopDiagnostics'):stall.find('private static string FormatSize')]
+        for needle in ('t.position', 'GetComponent<Renderer>', 'renderer.enabled', 'renderer.bounds'):
+            self.assertIn(needle, diag,
+                           'LogShopDiagnostics must report ' + needle + ' for each child in the hierarchy')
+        prop_log = stall[stall.find('private static void PlaceProp('):stall.find('private static int LoadSpriteId')]
+        self.assertIn('resolved to', prop_log,
+                       "PlaceProp must log each prop's own resolved world position")
+        self.assertIn('depth(heightOffGround)', prop_log,
+                       "PlaceProp must log each prop's resolved draw depth")
+
 
 class StallArtTests(unittest.TestCase):
     """The resource paths are a contract with ShrineStall.cs (ShopAPI loads them

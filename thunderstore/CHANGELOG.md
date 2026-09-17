@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.20.4 (test build, not released)
+
+- **Fix: Daifuku still didn't render, even after 2.20.3 placed him at the right position.** The torii
+  (77x48px) and the counter (48x36px) backdrop props were plain Unity `SpriteRenderer` GameObjects at
+  z=0 with no `sortingOrder`, no `sortingLayerName`, and none of this game's own tk2d depth handling -
+  the same convention every other prop in this mod already uses (`CoffeeMugItem`'s puddle,
+  `PuffedUpItem`'s fur layer, `ScratchingPostItem`'s placed post, all via
+  `sprite.HeightOffGround = ...; sprite.UpdateZDepth()`). With both props now centered on Daifuku's own
+  anchor point (per 2.20.3's counter-centering fix), a raw z=0 sprite had no defined draw order relative
+  to him and could render in front, hiding him completely with nothing in the log to say so. Props are
+  now built as `tk2dSprite`s with an explicit depth, back to front: torii, then the counter, then
+  Kinsuke's bowl, leaving Daifuku (whose own depth this file does not touch) in front of all three.
+- **Add: unconditional shrine stall diagnostics.** At foyer placement time (and after every `pluto_stall`
+  move), the mod now logs each backdrop prop's resolved world position and depth, plus a line for every
+  GameObject in the shopkeeper's own transform hierarchy (name, resolved position, renderer presence/
+  enabled state, world-space bounds, and whether its sprite is actually bound) - this covers both "is
+  Daifuku there and drawn in front of the counter" and "what is that other object" (Alexandria builds
+  several besides the NPC: a blueprint prefab instance, item points, a talk point) in one pass, so the
+  next report is a name and a number instead of a screenshot to guess from.
+
 ## 2.20.3 (test build, not released)
 
 - **Fix: Daifuku was being placed twice as far from the Breach origin as intended, so he never appeared

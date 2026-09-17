@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using UnityEngine;
 using Alexandria.DungeonAPI;
+using Alexandria.ItemAPI;
 using Alexandria.Misc;
 using Alexandria.NPCAPI;
 using Gungeon;
@@ -29,7 +30,7 @@ namespace PlutoTheCat
         private const float KinsukeFps = 4f;
 
         private static readonly List<GameObject> Props = new List<GameObject>();
-        private static readonly Dictionary<string, Sprite> SpriteCache = new Dictionary<string, Sprite>();
+        private static readonly Dictionary<string, int> SpriteIdCache = new Dictionary<string, int>();
         private static System.Action _foyerHandler;
 
         // The NPC GameObject SetUpFoyerShop built, kept so pluto_stall can move Daifuku himself (not just
@@ -72,6 +73,25 @@ namespace PlutoTheCat
         // was - clearing the three purchasable items that sit at the stall's own center - not a
         // measurement correction.
         private static readonly Vector3 KinsukeOffset = StallOffset + new Vector3(12f / 16f, 16f / 16f, 0f);
+
+        // 2.20.4 depth fix: PlaceProp used to build plain Unity SpriteRenderer GameObjects at z=0 with no
+        // sortingOrder/sortingLayer and none of this game's own depth handling - the same tk2d-based
+        // z-sort every other prop/decal in this mod goes through (CoffeeMugItem.cs's puddle,
+        // PuffedUpItem.cs's fur layer, ScratchingPostItem.cs's placed post: all call
+        // sprite.HeightOffGround = <value>; sprite.UpdateZDepth() on a tk2dSprite). A raw SpriteRenderer at
+        // z=0 has no defined relationship to Daifuku's own tk2d depth, so with the torii (77x48px, ~4.8x3
+        // tiles) and the counter (48x36px, 3x2.25 tiles) both now centered on the same anchor Daifuku
+        // stands at, either one drawing in front of him would hide him completely with no error in the
+        // log - which is exactly "the shopkeeper is missing" with nothing to grep for.
+        // PlaceProp below now builds tk2dSprite GameObjects and sets HeightOffGround explicitly so the
+        // stack order is deterministic regardless of how close these three props sit to Daifuku's own Y:
+        // more negative = further back, matching CoffeeMugItem's -0.5f and PuffedUpItem's -0.6f. Ordering,
+        // back to front: torii (furthest back) -> stall/counter -> Kinsuke's bowl -> Daifuku (managed by
+        // Alexandria's own NPC depth handling, not this file, and left at its default so he stays in front
+        // of all three).
+        private const float ToriiHeightOffGround = -1.0f;
+        private const float StallHeightOffGround = -0.6f;
+        private const float KinsukeHeightOffGround = -0.3f;
 
         public static void Init()
         {
@@ -410,11 +430,19 @@ namespace PlutoTheCat
         private static void PlaceBackdropProps()
         {
             DestroyProps();
-            PlaceProp(new[] { "torii.png" }, PlutoConfig.StallPosition + ToriiOffset, "pluto_shrine_stall_torii");
-            PlaceProp(new[] { "stall.png" }, PlutoConfig.StallPosition + StallOffset, "pluto_shrine_stall_stall");
+            PlaceProp(new[] { "torii.png" }, PlutoConfig.StallPosition + ToriiOffset, "pluto_shrine_stall_torii", ToriiHeightOffGround);
+            PlaceProp(new[] { "stall.png" }, PlutoConfig.StallPosition + StallOffset, "pluto_shrine_stall_stall", StallHeightOffGround);
             PlaceProp(
                 new[] { "kinsuke_idle_001.png", "kinsuke_idle_002.png", "kinsuke_idle_003.png", "kinsuke_idle_004.png" },
-                PlutoConfig.StallPosition + KinsukeOffset, "pluto_shrine_stall_kinsuke");
+                PlutoConfig.StallPosition + KinsukeOffset, "pluto_shrine_stall_kinsuke", KinsukeHeightOffGround);
+
+            // 2.20.4 diagnostic (tester's ask, and the controller's follow-up after a fresh look at the
+            // screenshots ruled out the small pale cat - that is stall.png's own painted maneki-neko, not
+            // a stray sprite - and ruled out the narrow white bar being Daifuku himself, since in 2.20.0 he
+            // was 28 tiles away yet the bar was already there beside the torii). This turns "the
+            // shopkeeper is missing" / "there is an unexplained white bar" into hard data on the very next
+            // run instead of another round of screenshots and guessing.
+            LogShopDiagnostics();
         }
 
         /// <summary>Destroys the props placed by the previous foyer load. The flipbook dies with its object.</summary>
@@ -426,60 +454,123 @@ namespace PlutoTheCat
         }
 
         /// <summary>
-        /// A non-interactive decorative sprite: no collider, bottom-center pivot. One frame is static; more
-        /// than one gets a PropFlipbook. Sprites are cached because this runs on every foyer load and
-        /// Sprite.Create/GetTextureFromResource would otherwise leak a texture per visit.
+        /// A non-interactive decorative sprite: no collider, bottom-center pivot, tk2d depth (see the
+        /// HeightOffGround comment above the three *HeightOffGround constants). One frame is static; more
+        /// than one gets a PropFlipbook. Sprite ids are cached in the shared item collection because this
+        /// runs on every foyer load and re-adding the same PNG would otherwise leak a collection entry
+        /// (and a texture) per visit.
         /// </summary>
-        private static void PlaceProp(string[] fileNames, Vector3 position, string objectName)
+        private static void PlaceProp(string[] fileNames, Vector3 position, string objectName, float heightOffGround)
         {
-            Sprite[] frames = new Sprite[fileNames.Length];
+            int[] ids = new int[fileNames.Length];
             for (int i = 0; i < fileNames.Length; i++)
             {
-                frames[i] = LoadSprite(fileNames[i]);
-                if (frames[i] == null) return;   // LoadSprite already logged which resource is missing
+                ids[i] = LoadSpriteId(fileNames[i]);
+                if (ids[i] < 0) return;   // LoadSpriteId already logged which resource is missing
             }
 
             GameObject obj = new GameObject(objectName);
-            SpriteRenderer renderer = obj.AddComponent<SpriteRenderer>();
-            renderer.sprite = frames[0];
-            obj.transform.position = position;
-            if (frames.Length > 1) obj.AddComponent<PropFlipbook>().Begin(frames, KinsukeFps);
+            tk2dSprite sprite = obj.AddComponent<tk2dSprite>();
+            sprite.SetSprite(SpriteBuilder.itemCollection, ids[0]);
+            sprite.PlaceAtPositionByAnchor(position, tk2dBaseSprite.Anchor.LowerCenter);
+            obj.transform.position = obj.transform.position.Quantize(1f / 16f);
+            sprite.HeightOffGround = heightOffGround;
+            sprite.UpdateZDepth();
+            if (ids.Length > 1) obj.AddComponent<PropFlipbook>().Begin(SpriteBuilder.itemCollection, ids, KinsukeFps);
             Props.Add(obj);
+
+            Vector3 resolved = obj.transform.position;
+            Plugin.Log("shrine stall: prop '" + objectName + "' resolved to " + FormatPos(resolved)
+                + ",z=" + resolved.z.ToString("0.###", CultureInfo.InvariantCulture)
+                + " depth(heightOffGround)=" + heightOffGround.ToString("0.##", CultureInfo.InvariantCulture));
         }
 
-        private static Sprite LoadSprite(string fileName)
+        private static int LoadSpriteId(string fileName)
         {
-            Sprite cached;
-            if (SpriteCache.TryGetValue(fileName, out cached) && cached != null) return cached;
+            int cached;
+            if (SpriteIdCache.TryGetValue(fileName, out cached)) return cached;
 
-            string resource = (Plugin.SHOP_ROOT + "/" + fileName).Replace('/', '.');
-            Texture2D tex = Alexandria.ItemAPI.ResourceExtractor.GetTextureFromResource(resource, typeof(Plugin).Assembly);
-            if (tex == null)
+            string resourcePath = Plugin.SHOP_ROOT + "/" + fileName;
+            int id = SpriteBuilder.AddSpriteToCollection(resourcePath, SpriteBuilder.itemCollection, typeof(Plugin).Assembly);
+            if (id < 0)
             {
-                Plugin.Log("shrine stall: missing prop resource " + resource);
-                return null;
+                Plugin.Log("shrine stall: missing prop resource " + resourcePath);
+                return -1;
             }
-            tex.filterMode = FilterMode.Point;
-            Sprite sprite = Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height), new Vector2(0.5f, 0f), 16f);
-            SpriteCache[fileName] = sprite;
-            return sprite;
+            SpriteIdCache[fileName] = id;
+            return id;
         }
 
         /// <summary>
-        /// Advances a SpriteRenderer through a set of frames on a timer, so Kinsuke bobs in his bowl. Lives
-        /// on the prop's own GameObject, so DestroyProps (and any scene change) takes it with it.
-        /// BraveTime.DeltaTime rather than Time.deltaTime, like the rest of this mod's per-frame components,
-        /// so the bob follows the game's own time scale.
+        /// Walks the shopkeeper GameObject's own transform hierarchy and logs one line per child: name,
+        /// resolved world position, whether it has a renderer (and if so, whether it is enabled and how
+        /// big its world-space bounds are), and whether that renderer's sprite is actually bound (a
+        /// tk2dBaseSprite with a null current sprite def, or a SpriteRenderer with a null sprite, is a
+        /// silent blank - the "LoadSprite returns null and logs on a missing resource" case, but for
+        /// something Alexandria built rather than one of our own props).
+        ///
+        /// SetUpFoyerShop's GameObject is not just Daifuku: Alexandria parents the NPC, the blueprint
+        /// prefab instance, item spawn points and a talk point all under the one root it returns, so this
+        /// single walk covers "is Daifuku there and is he drawn behind the counter" (he is one of these
+        /// children) AND "what is the narrow white sliver beside the torii" (something else in this same
+        /// hierarchy, per the tester's measurement, ~3x58 art px - too thin for any of our own art) in one
+        /// pass, without guessing which child is which ahead of time.
+        /// </summary>
+        private static void LogShopDiagnostics()
+        {
+            if (_shopObject == null)
+            {
+                Plugin.Log("shrine stall: shopkeeper GameObject is null - Daifuku was never built this "
+                    + "session (see the SetUpFoyerShop failure logged above, if any)");
+                return;
+            }
+
+            Transform[] all = _shopObject.GetComponentsInChildren<Transform>(true);
+            Plugin.Log("shrine stall: shop root '" + _shopObject.name + "' at " + FormatPos(_shopObject.transform.position)
+                + " has " + all.Length + " transform(s) in its hierarchy");
+
+            foreach (Transform t in all)
+            {
+                Renderer renderer = t.GetComponent<Renderer>();
+                tk2dBaseSprite tkSprite = t.GetComponent<tk2dBaseSprite>();
+                SpriteRenderer plainSprite = t.GetComponent<SpriteRenderer>();
+
+                string spriteState;
+                if (tkSprite != null) spriteState = tkSprite.GetCurrentSpriteDef() != null ? "bound" : "UNBOUND";
+                else if (plainSprite != null) spriteState = plainSprite.sprite != null ? "bound" : "UNBOUND";
+                else spriteState = renderer != null ? "unknown-type" : "n/a";
+
+                Plugin.Log("shrine stall: child '" + t.name + "' at " + FormatPos(t.position)
+                    + " renderer=" + (renderer != null ? "present enabled=" + renderer.enabled : "none")
+                    + " bounds=" + (renderer != null ? FormatSize(renderer.bounds.size) : "n/a")
+                    + " sprite=" + spriteState);
+            }
+        }
+
+        private static string FormatSize(Vector3 v)
+        {
+            return v.x.ToString("0.###", CultureInfo.InvariantCulture) + "x"
+                + v.y.ToString("0.###", CultureInfo.InvariantCulture) + "x"
+                + v.z.ToString("0.###", CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>
+        /// Advances a tk2dSprite through a set of frames (by sprite id, in the shared item collection) on a
+        /// timer, so Kinsuke bobs in his bowl. Lives on the prop's own GameObject, so DestroyProps (and any
+        /// scene change) takes it with it. BraveTime.DeltaTime rather than Time.deltaTime, like the rest of
+        /// this mod's per-frame components, so the bob follows the game's own time scale.
         /// </summary>
         public sealed class PropFlipbook : MonoBehaviour
         {
-            private Sprite[] frames;
+            private tk2dSpriteCollectionData collection;
+            private int[] frames;
             private float secondsPerFrame;
             private float elapsed;
             private int frame;
 
-            public void Begin(Sprite[] clip, float fps)
+            public void Begin(tk2dSpriteCollectionData spriteCollection, int[] clip, float fps)
             {
+                collection = spriteCollection;
                 frames = clip;
                 secondsPerFrame = fps > 0f ? 1f / fps : 0f;
             }
@@ -496,8 +587,8 @@ namespace PlutoTheCat
                 elapsed -= steps * secondsPerFrame;
                 frame = (frame + steps) % frames.Length;
 
-                SpriteRenderer renderer = GetComponent<SpriteRenderer>();
-                if (renderer != null) renderer.sprite = frames[frame];
+                tk2dSprite sprite = GetComponent<tk2dSprite>();
+                if (sprite != null && collection != null) sprite.SetSprite(collection, frames[frame]);
             }
         }
     }
