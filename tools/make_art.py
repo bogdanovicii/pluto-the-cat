@@ -24,6 +24,7 @@ import art_v5 as V5  # noqa: E402
 import art_cat_set as CAT219  # noqa: E402
 import art_spray_bottle as SPRAY  # noqa: E402
 import art_feather_teaser as FEATHER  # noqa: E402
+import art_shrine_stall as STALL  # noqa: E402
 import fur as FUR  # noqa: E402
 import weapon_layout as WL  # noqa: E402
 
@@ -277,6 +278,17 @@ def gun_and_items():
     print(f'fur layers: {n}')
 
 
+def shrine_stall():
+    """2.20.0 Shrine Stall art.  Daifuku and Kinsuke are Breach NPCs, not AIActors,
+    so nothing outlines them at runtime: these frames keep their drawn outline."""
+    shop = os.path.join(RES, 'Shop')
+    clean(shop)
+    for clip, frames in list(STALL.DAIFUKU_CLIPS.items()) + list(STALL.KINSUKE_CLIPS.items()):
+        write_clip(shop, frames, clip)
+    for name, rows in list(STALL.PROPS.items()) + [('blueprint', STALL.BLUEPRINT)]:
+        save(rows, os.path.join(shop, name + '.png'))
+
+
 def thunderstore():
     os.makedirs(TS, exist_ok=True)
     U.thunderstore_icon().save(os.path.join(TS, 'icon.png'))
@@ -362,6 +374,9 @@ def previews():
     review_preview(sum(FEATHER.CLIPS.values(), []) + list(FEATHER.PROJECTILES.values()) + [FEATHER.PAGE],
                    os.path.join(PREVIEW, 'feather-teaser-2190.png'))
     review_preview(sum(CAT219.CONE_CLIPS.values(), []), os.path.join(PREVIEW, 'coco-cones-2190.png'), actor=True)
+    review_preview(STALL.DAIFUKU_IDLE + STALL.DAIFUKU_TALK + STALL.KINSUKE_IDLE
+                   + [STALL.BLUEPRINT, STALL.STALL, STALL.TORII],
+                   os.path.join(PREVIEW, 'shrine-stall-2200.png'))
     block_spark_mock(os.path.join(PREVIEW, 'reviews', 'cat-set-2190', 'block-spark-over-pluto.png'))
     import weapon_preview   # weapon alignment sheets (grip, muzzle, aim, reach) from tools/weapon_layout.py
     weapon_preview.main()
@@ -372,6 +387,7 @@ if __name__ == '__main__':
         sys.exit('art lint failed')
     character()
     gun_and_items()
+    shrine_stall()
     thunderstore()
     previews()
     n = sum(len(fs) for _, _, fs in os.walk(CHAR))

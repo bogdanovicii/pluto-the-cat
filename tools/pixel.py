@@ -66,6 +66,11 @@ PALETTE = {
     '8': (0xB3, 0x20, 0x2A, 255),  # obi and hachimaki crimson (shade: 'r')
     '3': (0x5C, 0x8E, 0xC2, 255),  # plush blue dark
     'f': (0x4A, 0x86, 0xB0, 255),  # bath water dark
+    # 2.20.0 shrine stall: Daifuku is a ginger cat and Kinsuke a ginger-and-white koi.  No existing
+    # ramp is orange (the tabby is a grey-brown taupe), so ginger needs its own three tones.
+    'k': (0xEF, 0xAC, 0x5E, 255),  # ginger light: warmer, yellower (h35 v94)
+    'i': (0xC9, 0x76, 0x2E, 255),  # ginger base (h27 v79)
+    'n': (0x8A, 0x45, 0x20, 255),  # ginger shadow: cooler, redder (h21 v54)
 }
 
 

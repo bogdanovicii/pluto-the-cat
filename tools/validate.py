@@ -285,6 +285,22 @@ effect_names = ('toilet_paper_streamer_001.png', 'toilet_paper_bits_001.png', 't
 for f in effect_names:
     if not os.path.exists(os.path.join(cat_effects, f)):
         err(f'Cat Set effect missing: {f}')
+# 2.20 Shrine Stall: the resource paths ShrineStall.cs hands to ShopAPI.SetUpFoyerShop,
+# which fails silently on a missing one, so every name is checked here.
+shop = os.path.join(RES, 'Shop')
+stall_art = ['%s_%03d.png' % (clip, i) for clip, n in (('daifuku_idle', 4), ('daifuku_talk', 4), ('kinsuke_idle', 4))
+             for i in range(1, n + 1)] + ['torii.png', 'stall.png', 'blueprint.png']
+for f in stall_art:
+    if not os.path.exists(os.path.join(shop, f)):
+        err(f'shrine stall art missing: {f}')
+# Daifuku and Kinsuke are Breach NPCs, not AIActors: nothing outlines them at runtime,
+# so unlike the companion clips their frames must keep the drawn outline.
+for f in ('daifuku_idle_001.png', 'kinsuke_idle_001.png'):
+    fp = os.path.join(shop, f)
+    if os.path.exists(fp) and OUTLINE not in set(Image.open(fp).convert('RGBA').get_flattened_data()):
+        err(f'{f}: NPC frame lost its drawn outline (nothing adds one at runtime)')
+ok('shrine stall art')
+
 # Row-generated Cat Set art is fixed-palette and hard-alpha.  Check the shipped
 # resources too, so a later manual PNG edit cannot bypass the source contract.
 from pixel import PALETTE  # noqa: E402
@@ -294,6 +310,7 @@ new_art += [os.path.join(RES, 'SpriteRoot', 'ProjectileCollection', f) for f in
             ('pluto_spray_mist_001.png', 'pluto_water_drop_001.png', 'pluto_water_splash_001.png',
              'pluto_feather_lure_001.png', 'pluto_feather_lure_002.png', 'pluto_loose_feather_burst_001.png')]
 new_art += [os.path.join(cat_effects, f) for f in effect_names]
+new_art += [os.path.join(shop, f) for f in stall_art]
 for fp in new_art:
     if not os.path.exists(fp):
         continue

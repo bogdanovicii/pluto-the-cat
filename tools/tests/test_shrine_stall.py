@@ -5,6 +5,8 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 SRC = ROOT / 'PlutoTheCat' / 'src'
+SHOP = ROOT / 'PlutoTheCat' / 'Resources' / 'Shop'
+PREVIEW = ROOT / 'docs' / 'art-preview' / 'shrine-stall-2200.png'
 
 
 class ShrineStallWiringTests(unittest.TestCase):
@@ -114,6 +116,23 @@ class ShrineStallWiringTests(unittest.TestCase):
             idx = plugin.find(step)
             self.assertGreaterEqual(idx, 0, 'Plugin.cs missing ' + step)
             self.assertLess(idx, gate_idx, step + ' must come before Step("unlock gate", ...)')
+
+
+class StallArtTests(unittest.TestCase):
+    """The resource paths are a contract with ShrineStall.cs (ShopAPI loads them
+    as embedded-resource names), so the files and the frame counts are asserted
+    here rather than left to the art pipeline."""
+
+    def test_stall_art(self):
+        for clip, count in (('daifuku_idle', 4), ('daifuku_talk', 4), ('kinsuke_idle', 4)):
+            for i in range(1, count + 1):
+                name = '%s_%03d.png' % (clip, i)
+                self.assertTrue((SHOP / name).exists(), 'missing ' + name)
+            extra = '%s_%03d.png' % (clip, count + 1)
+            self.assertFalse((SHOP / extra).exists(), clip + ' must have exactly %d frames' % count)
+        for name in ('torii.png', 'stall.png', 'blueprint.png'):
+            self.assertTrue((SHOP / name).exists(), 'missing ' + name)
+        self.assertTrue(PREVIEW.exists(), 'missing docs/art-preview/shrine-stall-2200.png')
 
 
 if __name__ == '__main__':
