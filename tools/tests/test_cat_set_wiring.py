@@ -224,6 +224,72 @@ class CatSetWiringTests(unittest.TestCase):
         self.assertLess(plugin.index('Step("feather teaser", FeatherTeaserGun.Add)'),
                         plugin.index('Step("synergies", PlutoSynergies.Init)'))
 
+    def test_toilet_paper_roll(self):
+        paper = self.requires(
+            'ToiletPaperRollItem.cs',
+            'public class ToiletPaperRollItem : PlayerItem',
+            'public const string ID = "pluto:toilet_paper_roll"',
+            'Bogdan and Bianca', 'home defence',
+            'PickupObject.ItemQuality.C',
+            'ItemBuilder.SetupItem(item,',
+            'ItemBuilder.CooldownType.Damage', 'PlutoConfig.TPRechargeDamage',
+            'PlutoConfig.TPLength', 'PlutoConfig.TPSeconds', 'PlutoConfig.TPHits',
+            'CatSetRules.StreamerAlive(Time.time, born, PlutoConfig.TPSeconds, hits, PlutoConfig.TPHits)',
+            'unadjustedAimPoint.XY() - user.CenterPosition',
+            'new Vector2(-aim.y, aim.x)',
+            'user.CenterPosition + aim',
+            'CollisionLayer.BulletBlocker', 'OnPreRigidbodyCollision',
+            'CatItemKit.IsEnemyBullet(projectile)', 'PhysicsEngine.SkipCollision = true',
+            'HashSet<Projectile>', 'projectile.DieInAir(',
+            'TearNearest(', 'List<Segment>',
+            'Coroutine lifetime', 'StopCoroutine(lifetime)',
+            'OwnershipValid()', 'owner.CurrentRoom == room', 'DestroyAllSegments()',
+            'OnPreDrop', 'OnDestroy', 'Teardown(false)',
+            'FinishNormally()', 'PlayerHasActiveSynergy(PlutoSynergies.Shredder)',
+            'PlutoConfig.TPConfettiDamage', 'RoomHandler.ActiveEnemyType.All',
+            'CatItemKit.ValidEnemy(enemy)', 'CatItemKit.HitboxOverlaps(enemy, envelopeMin, envelopeMax)',
+            'ApplyDamage(', 'CoreDamageTypes.None', 'DamageCategory.Normal',
+            'toilet_paper_streamer_001', 'toilet_paper_bits_001', 'toilet_paper_confetti_001',
+        )
+        # Segment bodies are projectile-only blockers: actors pass through, while each
+        # actually destroyed enemy projectile accounts for one hit at most.
+        self.assertNotIn('CollisionLayer.EnemyCollider', paper)
+        self.assertNotIn('CollisionLayer.PlayerCollider', paper)
+        # Alexandria ItemBuilder.SetupItem registers PlayerItems in the normal ANY loot pool.
+        self.assertNotIn('PickupObject.ItemQuality.EXCLUDED', paper)
+        self.assertIn('blocked.Add(projectile)', paper)
+        self.assertLess(paper.index('blocked.Add(projectile)'), paper.index('projectile.DieInAir('))
+        # Confetti is only reachable from normal timeout/final-hit completion.
+        finish = paper.index('private void FinishNormally()')
+        teardown = paper.index('private void Teardown(bool normalCompletion)', finish)
+        self.assertIn('Teardown(true)', paper[finish:teardown])
+        self.assertIn('if (normalCompletion && shredder)', paper[teardown:])
+        self.assertNotIn('BurstConfetti()', paper[:finish])
+
+        config = self.source('PlutoConfig.cs')
+        for key, value in [('TPRechargeDamage', '400f'), ('TPLength', '4f'),
+                           ('TPSeconds', '5f'), ('TPHits', '12'),
+                           ('TPConfettiDamage', '10f')]:
+            self.assertIn('public static ' + ('int ' if key == 'TPHits' else 'float ') + key + ' = ' + value + ';', config)
+
+        synergy = self.requires(
+            'PlutoSynergies.cs',
+            'public const string Shredder = "Shredder"',
+            'Register(Shredder, new List<string> { ToiletPaperRollItem.ID, ScratchingPostItem.ID });',
+        )
+        self.assertEqual(1, synergy.count('Register(Shredder,'))
+        plugin = self.source('Plugin.cs')
+        self.assertLess(plugin.index('Step("toilet paper roll", ToiletPaperRollItem.Init)'),
+                        plugin.index('Step("synergies", PlutoSynergies.Init)'))
+
+        for resource in (
+            ROOT / 'PlutoTheCat/Resources/Items/toilet_paper_roll_icon.png',
+            ROOT / 'PlutoTheCat/Resources/Effects/cat_set/toilet_paper_streamer_001.png',
+            ROOT / 'PlutoTheCat/Resources/Effects/cat_set/toilet_paper_bits_001.png',
+            ROOT / 'PlutoTheCat/Resources/Effects/cat_set/toilet_paper_confetti_001.png',
+        ):
+            self.assertTrue(resource.exists(), str(resource.relative_to(ROOT)))
+
 
 if __name__ == '__main__':
     unittest.main()
