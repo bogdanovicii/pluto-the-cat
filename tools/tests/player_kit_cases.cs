@@ -81,6 +81,11 @@ class PlayerKitCases
             {"ConeCooldown", 3}, {"ConeArcDegrees", 70}, {"ConeRadius", 1.5}, {"ConeCocoStuffing", 1},
             {"CoffeeRechargeDamage", 300}, {"CoffeeRange", 3}, {"CoffeeShardCount", 10}, {"CoffeeShardDamage", 5},
             {"CoffeeSlowSeconds", 3}, {"CoffeeZoomiesBonusSeconds", 2},
+            // 2.20 shrine stall
+            {"StallPriceBallOfYarn", 8}, {"StallPriceCatnipPouch", 8}, {"StallPriceHairball", 8},
+            {"StallPriceScratchingPost", 8}, {"StallPriceToiletPaperRoll", 8}, {"StallPriceCoffeeMug", 8},
+            {"StallPriceJingleBellCollar", 15}, {"StallPriceConeOfShame", 15}, {"StallPriceSprayBottle", 15},
+            {"StallPriceFeatherTeaser", 15},
         };
         foreach (var d in defaults) Check(PlutoConfigRules.Contains(d.Key, d.Value), "default in range: " + d.Key);
         Check(PlutoConfigRules.Keys.Count == defaults.Count, "every ranged setting has a default case");

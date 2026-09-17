@@ -111,6 +111,20 @@ namespace PlutoTheCat
         public static float CoffeeSlowSeconds = 3f;
         public static float CoffeeZoomiesBonusSeconds = 2f;
 
+        // 2.20 shrine stall (section "Shrine Stall 2.20")
+        public static int StallPriceBallOfYarn = 8;
+        public static int StallPriceCatnipPouch = 8;
+        public static int StallPriceHairball = 8;
+        public static int StallPriceScratchingPost = 8;
+        public static int StallPriceToiletPaperRoll = 8;
+        public static int StallPriceCoffeeMug = 8;
+        public static int StallPriceJingleBellCollar = 15;
+        public static int StallPriceConeOfShame = 15;
+        public static int StallPriceSprayBottle = 15;
+        public static int StallPriceFeatherTeaser = 15;
+        public static Vector3 StallPosition = new Vector3(10.5f, 22.1f, 0f);
+        public static bool StallUnlocksDisabled = false;
+
         private static readonly Action<string> Warn = message => Debug.LogWarning("[Pluto] config: " + message);
 
         public static void Bind(ConfigFile cfg)
@@ -150,6 +164,7 @@ namespace PlutoTheCat
             BindCatItems(cfg);
             BindYasupen(cfg);
             BindCatSet(cfg);
+            BindShrineStall(cfg);
             LogPunchoutNames = cfg.Bind("Debug", "LogPunchoutNames", LogPunchoutNames, "Write the Pilot's Punch-Out sprite names to the log at startup.").Value;
             UnlockSamuraiCostume = cfg.Bind("Debug", "UnlockSamuraiCostume", UnlockSamuraiCostume, "Testing only: unlock the samurai costume in the Breach without beating Pluto's past (normally it appears after the Vet is beaten).").Value;
         }
@@ -225,6 +240,23 @@ namespace PlutoTheCat
             CoffeeShardDamage = PlutoConfigRules.Clamp("CoffeeShardDamage", cfg.Bind(S, "CoffeeShardDamage", CoffeeShardDamage, "Coffee Mug: damage per shard.").Value, CoffeeShardDamage, Warn);
             CoffeeSlowSeconds = PlutoConfigRules.Clamp("CoffeeSlowSeconds", cfg.Bind(S, "CoffeeSlowSeconds", CoffeeSlowSeconds, "Coffee Mug: coffee puddle slowdown duration.").Value, CoffeeSlowSeconds, Warn);
             CoffeeZoomiesBonusSeconds = PlutoConfigRules.Clamp("CoffeeZoomiesBonusSeconds", cfg.Bind(S, "CoffeeZoomiesBonusSeconds", CoffeeZoomiesBonusSeconds, "Espresso: zoomies duration added by coffee.").Value, CoffeeZoomiesBonusSeconds, Warn);
+        }
+
+        private static void BindShrineStall(ConfigFile cfg)
+        {
+            const string S = "Shrine Stall 2.20";
+            StallPriceBallOfYarn = PlutoConfigRules.Clamp("StallPriceBallOfYarn", cfg.Bind(S, "StallPriceBallOfYarn", StallPriceBallOfYarn, "Hegemony credits to unlock the Ball of Yarn.").Value, StallPriceBallOfYarn, Warn);
+            StallPriceCatnipPouch = PlutoConfigRules.Clamp("StallPriceCatnipPouch", cfg.Bind(S, "StallPriceCatnipPouch", StallPriceCatnipPouch, "Hegemony credits to unlock the Catnip Pouch.").Value, StallPriceCatnipPouch, Warn);
+            StallPriceHairball = PlutoConfigRules.Clamp("StallPriceHairball", cfg.Bind(S, "StallPriceHairball", StallPriceHairball, "Hegemony credits to unlock the Hairball.").Value, StallPriceHairball, Warn);
+            StallPriceScratchingPost = PlutoConfigRules.Clamp("StallPriceScratchingPost", cfg.Bind(S, "StallPriceScratchingPost", StallPriceScratchingPost, "Hegemony credits to unlock the Scratching Post.").Value, StallPriceScratchingPost, Warn);
+            StallPriceToiletPaperRoll = PlutoConfigRules.Clamp("StallPriceToiletPaperRoll", cfg.Bind(S, "StallPriceToiletPaperRoll", StallPriceToiletPaperRoll, "Hegemony credits to unlock the Toilet Paper Roll.").Value, StallPriceToiletPaperRoll, Warn);
+            StallPriceCoffeeMug = PlutoConfigRules.Clamp("StallPriceCoffeeMug", cfg.Bind(S, "StallPriceCoffeeMug", StallPriceCoffeeMug, "Hegemony credits to unlock the Coffee Mug.").Value, StallPriceCoffeeMug, Warn);
+            StallPriceJingleBellCollar = PlutoConfigRules.Clamp("StallPriceJingleBellCollar", cfg.Bind(S, "StallPriceJingleBellCollar", StallPriceJingleBellCollar, "Hegemony credits to unlock the Jingle Bell Collar.").Value, StallPriceJingleBellCollar, Warn);
+            StallPriceConeOfShame = PlutoConfigRules.Clamp("StallPriceConeOfShame", cfg.Bind(S, "StallPriceConeOfShame", StallPriceConeOfShame, "Hegemony credits to unlock the Cone of Shame.").Value, StallPriceConeOfShame, Warn);
+            StallPriceSprayBottle = PlutoConfigRules.Clamp("StallPriceSprayBottle", cfg.Bind(S, "StallPriceSprayBottle", StallPriceSprayBottle, "Hegemony credits to unlock the Spray Bottle.").Value, StallPriceSprayBottle, Warn);
+            StallPriceFeatherTeaser = PlutoConfigRules.Clamp("StallPriceFeatherTeaser", cfg.Bind(S, "StallPriceFeatherTeaser", StallPriceFeatherTeaser, "Hegemony credits to unlock the Feather Teaser.").Value, StallPriceFeatherTeaser, Warn);
+            StallPosition = Vec(cfg.Bind(S, "StallPosition", "10.5,22.1", "Where the Shrine Stall stands in the Breach (x,y).").Value, StallPosition);
+            StallUnlocksDisabled = cfg.Bind(S, "StallUnlocksDisabled", StallUnlocksDisabled, "Testing only: treat all ten cat items as already unlocked.").Value;
         }
 
         private static Vector3 Vec(string text, Vector3 fallback)

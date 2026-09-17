@@ -37,6 +37,9 @@ class CompanionKitTests(unittest.TestCase):
     def test_cat_set_rules(self):
         run_cases(self, [SRC / 'CatSetRules.cs'], ROOT / 'tools/tests/cat_set_cases.cs')
 
+    def test_shrine_stall_rules(self):
+        run_cases(self, [SRC / 'ShrineStallRules.cs'], ROOT / 'tools/tests/shrine_stall_cases.cs')
+
     def test_yasupen_wiring(self):
         src = (SRC / 'YasupenItem.cs').read_text(encoding='utf-8')
         for needle in ('YasupenRules.SlideReady(', 'YasupenRules.BargainCasings(', 'YasupenRules.PriceMultiplier(',
@@ -68,7 +71,7 @@ class CompanionKitTests(unittest.TestCase):
             self.assertRegex(text, r'public static (?:int|float) ' + key + r'\s*=')
             self.assertIn('cfg.Bind(S, "%s"' % key, text)
         unranged = {'NoFallDamage', 'Hairball', 'ChuruDrop', 'FoyerPosition', 'BathtubOffset', 'CocoBlocksBullets',
-                    'LogPunchoutNames', 'UnlockSamuraiCostume'}
+                    'LogPunchoutNames', 'UnlockSamuraiCostume', 'StallPosition', 'StallUnlocksDisabled'}
         bound = 0
         for line in text.splitlines():
             match = re.search(r'cfg\.Bind\("[^"]+", "(\w+)"', line)

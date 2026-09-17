@@ -106,6 +106,17 @@ namespace PlutoTheCat
             { "CoffeeShardDamage", new Range(0, Damage) },
             { "CoffeeSlowSeconds", new Range(0, 30) },
             { "CoffeeZoomiesBonusSeconds", new Range(0, 30) },
+            // 2.20 shrine stall
+            { "StallPriceBallOfYarn", new Range(1, 99) },
+            { "StallPriceCatnipPouch", new Range(1, 99) },
+            { "StallPriceHairball", new Range(1, 99) },
+            { "StallPriceScratchingPost", new Range(1, 99) },
+            { "StallPriceToiletPaperRoll", new Range(1, 99) },
+            { "StallPriceCoffeeMug", new Range(1, 99) },
+            { "StallPriceJingleBellCollar", new Range(1, 99) },
+            { "StallPriceConeOfShame", new Range(1, 99) },
+            { "StallPriceSprayBottle", new Range(1, 99) },
+            { "StallPriceFeatherTeaser", new Range(1, 99) },
         };
 
         public static ICollection<string> Keys { get { return Ranges.Keys; } }
