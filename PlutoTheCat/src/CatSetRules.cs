@@ -23,6 +23,51 @@ namespace PlutoTheCat
             return hits < maxHits && now - born < seconds;
         }
 
+        /// <summary>
+        /// Separating-axis test between the streamer (an oriented rectangle) and an enemy hitbox AABB.
+        /// The strip axis may be scaled; length and width are full dimensions. Touching counts as overlap.
+        /// </summary>
+        public static bool StreamerStripOverlapsAabb(float centerX, float centerY, float axisX, float axisY,
+            float length, float width, float minX, float minY, float maxX, float maxY)
+        {
+            if (!Finite(centerX) || !Finite(centerY) || !Finite(axisX) || !Finite(axisY)
+                || !Finite(length) || !Finite(width) || !Finite(minX) || !Finite(minY)
+                || !Finite(maxX) || !Finite(maxY) || length <= 0f || width <= 0f
+                || minX > maxX || minY > maxY)
+                return false;
+
+            double axisSquared = (double)axisX * axisX + (double)axisY * axisY;
+            if (axisSquared <= 0.0) return false;
+            double inverseAxisLength = 1.0 / Math.Sqrt(axisSquared);
+            double ux = axisX * inverseAxisLength;
+            double uy = axisY * inverseAxisLength;
+            double vx = -uy;
+            double vy = ux;
+
+            double boxCenterX = ((double)minX + maxX) * 0.5;
+            double boxCenterY = ((double)minY + maxY) * 0.5;
+            double boxHalfX = ((double)maxX - minX) * 0.5;
+            double boxHalfY = ((double)maxY - minY) * 0.5;
+            double dx = boxCenterX - centerX;
+            double dy = boxCenterY - centerY;
+            double halfLength = length * 0.5;
+            double halfWidth = width * 0.5;
+            const double epsilon = 0.0000001;
+
+            // AABB world X/Y axes.
+            if (Math.Abs(dx) > boxHalfX + halfLength * Math.Abs(ux) + halfWidth * Math.Abs(vx) + epsilon) return false;
+            if (Math.Abs(dy) > boxHalfY + halfLength * Math.Abs(uy) + halfWidth * Math.Abs(vy) + epsilon) return false;
+            // Streamer longitudinal/normal axes.
+            if (Math.Abs(dx * ux + dy * uy) > halfLength + boxHalfX * Math.Abs(ux) + boxHalfY * Math.Abs(uy) + epsilon) return false;
+            if (Math.Abs(dx * vx + dy * vy) > halfWidth + boxHalfX * Math.Abs(vx) + boxHalfY * Math.Abs(vy) + epsilon) return false;
+            return true;
+        }
+
+        private static bool Finite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
+
         public static bool ConeReady(float now, float lastBlock, float cooldown)
         {
             return now - lastBlock >= cooldown;

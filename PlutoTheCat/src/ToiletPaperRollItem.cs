@@ -21,9 +21,10 @@ namespace PlutoTheCat
         private static int streamerSpriteId = -1;
         private static int bitsSpriteId = -1;
         private static int confettiSpriteId = -1;
+        // Shared across co-op item instances so overlapping streamers cannot both count one projectile.
+        private static readonly HashSet<Projectile> ClaimedProjectiles = new HashSet<Projectile>();
 
         private readonly List<Segment> segments = new List<Segment>();
-        private readonly HashSet<Projectile> blocked = new HashSet<Projectile>();
         private PlayerController owner;
         private RoomHandler room;
         private Coroutine lifetime;
@@ -32,8 +33,6 @@ namespace PlutoTheCat
         private bool active;
         private Vector2 streamerCenter;
         private Vector2 perpendicular;
-        private Vector2 envelopeMin;
-        private Vector2 envelopeMax;
 
         private sealed class Segment
         {
@@ -98,16 +97,8 @@ namespace PlutoTheCat
             born = Time.time;
             hits = 0;
             active = true;
-            blocked.Clear();
 
             float halfLength = PlutoConfig.TPLength * 0.5f;
-            Vector2 endA = streamerCenter - perpendicular * halfLength;
-            Vector2 endB = streamerCenter + perpendicular * halfLength;
-            envelopeMin = new Vector2(Mathf.Min(endA.x, endB.x) - SegmentHalfWidth,
-                Mathf.Min(endA.y, endB.y) - SegmentHalfWidth);
-            envelopeMax = new Vector2(Mathf.Max(endA.x, endB.x) + SegmentHalfWidth,
-                Mathf.Max(endA.y, endB.y) + SegmentHalfWidth);
-
             int segmentCount = Mathf.Max(1, PlutoConfig.TPHits);
             float centerSpan = Mathf.Max(0f, halfLength - SegmentHalfWidth);
             for (int i = 0; i < segmentCount; i++)
@@ -159,6 +150,7 @@ namespace PlutoTheCat
         {
             while (active)
             {
+                CleanupProjectileClaims();
                 // Ownership invalidation wins over a timeout on the same frame: transitions never trigger Shredder.
                 if (!OwnershipValid())
                 {
@@ -192,12 +184,12 @@ namespace PlutoTheCat
                 PhysicsEngine.SkipCollision = true;
                 return;
             }
-            if (!CatItemKit.IsEnemyBullet(projectile))
+            if (!CatItemKit.IsEnemyBullet(projectile) || !projectile.collidesWithPlayer || projectile.HasDiedInAir)
             {
                 PhysicsEngine.SkipCollision = true;
                 return;
             }
-            if (!blocked.Add(projectile))
+            if (!TryClaimProjectile(projectile))
             {
                 PhysicsEngine.SkipCollision = true;
                 return;
@@ -205,12 +197,41 @@ namespace PlutoTheCat
 
             Vector2 impact = other.UnitCenter;
             PhysicsEngine.SkipCollision = true;
-            projectile.DieInAir(false, true, true, false);
+            bool destroyed = false;
+            try
+            {
+                projectile.DieInAir(false, true, true, false);
+                // Unity's overloaded null covers immediate native destruction; otherwise HasDiedInAir is the
+                // referenced DLL's synchronous live-to-dead flag. Either outcome is an actual destroyed shot.
+                destroyed = projectile == null || projectile.HasDiedInAir;
+            }
+            finally
+            {
+                // Releasing after the transition cannot permit a double count: future callbacks see null/dead.
+                ClaimedProjectiles.Remove(projectile);
+            }
+            if (!destroyed) return;
             TearNearest(impact);
             hits++;
             Plugin.Log("toilet paper roll: blocked enemy bullet " + hits + "/" + PlutoConfig.TPHits);
             if (!CatSetRules.StreamerAlive(Time.time, born, PlutoConfig.TPSeconds, hits, PlutoConfig.TPHits))
                 FinishNormally();
+        }
+
+        private static bool TryClaimProjectile(Projectile projectile)
+        {
+            CleanupProjectileClaims();
+            if (projectile == null || projectile.HasDiedInAir || !projectile.isActiveAndEnabled) return false;
+            return ClaimedProjectiles.Add(projectile);
+        }
+
+        private static void CleanupProjectileClaims()
+        {
+            if (ClaimedProjectiles.Count == 0) return;
+            List<Projectile> stale = new List<Projectile>();
+            foreach (Projectile projectile in ClaimedProjectiles)
+                if (projectile == null || projectile.HasDiedInAir || !projectile.isActiveAndEnabled) stale.Add(projectile);
+            for (int i = 0; i < stale.Count; i++) ClaimedProjectiles.Remove(stale[i]);
         }
 
         private void TearNearest(Vector2 impact)
@@ -251,7 +272,7 @@ namespace PlutoTheCat
             active = false;
             if (normalCompletion && shredder) BurstConfetti();
             DestroyAllSegments();
-            blocked.Clear();
+            CleanupProjectileClaims();
             owner = null;
             room = null;
         }
@@ -288,7 +309,13 @@ namespace PlutoTheCat
             {
                 AIActor enemy = enemies[i];
                 if (!CatItemKit.ValidEnemy(enemy)) continue;
-                if (!CatItemKit.HitboxOverlaps(enemy, envelopeMin, envelopeMax)) continue;
+                if (enemy.specRigidbody == null || enemy.specRigidbody.HitboxPixelCollider == null) continue;
+                PixelCollider hitbox = enemy.specRigidbody.HitboxPixelCollider;
+                Vector2 min = hitbox.UnitBottomLeft;
+                Vector2 max = hitbox.UnitTopRight;
+                if (!CatSetRules.StreamerStripOverlapsAabb(streamerCenter.x, streamerCenter.y,
+                    perpendicular.x, perpendicular.y, PlutoConfig.TPLength, SegmentHalfWidth * 2f,
+                    min.x, min.y, max.x, max.y)) continue;
                 Vector2 direction = enemy.CenterPosition - streamerCenter;
                 if (direction.sqrMagnitude < 0.0001f) direction = Vector2.right;
                 enemy.healthHaver.ApplyDamage(PlutoConfig.TPConfettiDamage, direction.normalized, "Shredder",

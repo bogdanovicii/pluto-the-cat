@@ -20,6 +20,55 @@ class CatSetCases
         Check(!CatSetRules.StreamerAlive(5f, 0f, 5f, 11, 12), "streamer expires at duration");
         Check(!CatSetRules.StreamerAlive(4.999f, 0f, 5f, 12, 12), "streamer expires at hit cap");
 
+        // Oriented streamer-strip vs enemy hitbox AABB. Boundaries are inclusive and
+        // a diagonal strip must not damage actors that only touch its enclosing world AABB.
+        Check(CatSetRules.StreamerStripOverlapsAabb(0f, 0f, 1f, 0f, 4f, 0.375f,
+            -0.2f, -0.1f, 0.2f, 0.1f), "horizontal strip crosses central hitbox");
+        Check(CatSetRules.StreamerStripOverlapsAabb(0f, 0f, 1f, 0f, 4f, 0.375f,
+            2f, -0.1f, 2.2f, 0.1f), "strip length boundary is inclusive");
+        Check(!CatSetRules.StreamerStripOverlapsAabb(0f, 0f, 1f, 0f, 4f, 0.375f,
+            2.001f, -0.1f, 2.2f, 0.1f), "outside strip length is rejected");
+        Check(CatSetRules.StreamerStripOverlapsAabb(0f, 0f, 0f, 3f, 4f, 0.375f,
+            -0.1f, 1.9f, 0.1f, 2.1f), "scaled vertical axis is normalized");
+        float diagonal = (float)Math.Sqrt(0.5);
+        Check(CatSetRules.StreamerStripOverlapsAabb(0f, 0f, diagonal, diagonal, 4f, 0.375f,
+            0.9f, 0.9f, 1.1f, 1.1f), "diagonal strip crosses hitbox on its axis");
+        Check(!CatSetRules.StreamerStripOverlapsAabb(0f, 0f, diagonal, diagonal, 4f, 0.375f,
+            1.25f, -1.25f, 1.45f, -1.05f), "diagonal enclosing-AABB false positive is rejected");
+        Check(CatSetRules.StreamerStripOverlapsAabb(12f, -7f, diagonal, -diagonal, 4f, 0.375f,
+            11.9f, -7.1f, 12.1f, -6.9f), "translated rotated strip crosses hitbox");
+        Check(CatSetRules.StreamerStripOverlapsAabb(0f, 0f, diagonal, diagonal, 4f, 0.375f,
+            -10f, -10f, 10f, 10f), "large boss hitbox enclosing strip overlaps");
+        Check(!CatSetRules.StreamerStripOverlapsAabb(0f, 0f, 0f, 0f, 4f, 0.375f,
+            -1f, -1f, 1f, 1f), "zero strip axis rejected");
+        Check(!CatSetRules.StreamerStripOverlapsAabb(0f, 0f, 1f, 0f, 0f, 0.375f,
+            -1f, -1f, 1f, 1f), "zero strip length rejected");
+        Check(!CatSetRules.StreamerStripOverlapsAabb(0f, 0f, 1f, 0f, 4f, 0f,
+            -1f, -1f, 1f, 1f), "zero strip width rejected");
+        Check(!CatSetRules.StreamerStripOverlapsAabb(float.NaN, 0f, 1f, 0f, 4f, 0.375f,
+            -1f, -1f, 1f, 1f), "NaN strip data rejected");
+        Check(!CatSetRules.StreamerStripOverlapsAabb(float.PositiveInfinity, 0f, 1f, 0f, 4f, 0.375f,
+            -1f, -1f, 1f, 1f), "infinite strip data rejected");
+        Check(!CatSetRules.StreamerStripOverlapsAabb(0f, 0f, 1f, 0f, 4f, 0.375f,
+            1f, -1f, -1f, 1f), "inverted hitbox rejected");
+
+        // Sweep all orientations through an on-axis box and reject an equally distant
+        // box on the strip normal. This catches axis/sign/normalization mistakes.
+        for (int degrees = 0; degrees < 360; degrees += 5)
+        {
+            float radians = degrees * (float)Math.PI / 180f;
+            float axisX = (float)Math.Cos(radians);
+            float axisY = (float)Math.Sin(radians);
+            float onX = axisX * 1.4f, onY = axisY * 1.4f;
+            Check(CatSetRules.StreamerStripOverlapsAabb(3f, -2f, axisX, axisY, 4f, 0.375f,
+                3f + onX - 0.04f, -2f + onY - 0.04f, 3f + onX + 0.04f, -2f + onY + 0.04f),
+                "orientation sweep on-axis " + degrees);
+            float normalX = -axisY * 0.55f, normalY = axisX * 0.55f;
+            Check(!CatSetRules.StreamerStripOverlapsAabb(3f, -2f, axisX, axisY, 4f, 0.375f,
+                3f + normalX - 0.04f, -2f + normalY - 0.04f, 3f + normalX + 0.04f, -2f + normalY + 0.04f),
+                "orientation sweep off-width " + degrees);
+        }
+
         Check(CatSetRules.ConeReady(0f, float.NegativeInfinity, 3f), "cone ready on first use");
         Check(!CatSetRules.ConeReady(2.99f, 0f, 3f), "cone waits for cooldown");
         Check(CatSetRules.ConeReady(3f, 0f, 3f), "cone ready at cooldown boundary");

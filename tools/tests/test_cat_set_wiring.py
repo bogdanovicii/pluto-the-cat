@@ -239,15 +239,23 @@ class CatSetWiringTests(unittest.TestCase):
             'new Vector2(-aim.y, aim.x)',
             'user.CenterPosition + aim',
             'CollisionLayer.BulletBlocker', 'OnPreRigidbodyCollision',
-            'CatItemKit.IsEnemyBullet(projectile)', 'PhysicsEngine.SkipCollision = true',
-            'HashSet<Projectile>', 'projectile.DieInAir(',
+            'private const float SegmentHalfWidth = 3f / 16f',
+            'ManualWidth = 6', 'ManualHeight = 6',
+            'CatItemKit.IsEnemyBullet(projectile)', 'projectile.collidesWithPlayer',
+            'PhysicsEngine.SkipCollision = true',
+            'static readonly HashSet<Projectile> ClaimedProjectiles',
+            'TryClaimProjectile(projectile)', 'CleanupProjectileClaims()',
+            'projectile.HasDiedInAir', 'projectile.DieInAir(',
+            'destroyed = projectile == null || projectile.HasDiedInAir',
             'TearNearest(', 'List<Segment>',
             'Coroutine lifetime', 'StopCoroutine(lifetime)',
             'OwnershipValid()', 'owner.CurrentRoom == room', 'DestroyAllSegments()',
             'OnPreDrop', 'OnDestroy', 'Teardown(false)',
             'FinishNormally()', 'PlayerHasActiveSynergy(PlutoSynergies.Shredder)',
             'PlutoConfig.TPConfettiDamage', 'RoomHandler.ActiveEnemyType.All',
-            'CatItemKit.ValidEnemy(enemy)', 'CatItemKit.HitboxOverlaps(enemy, envelopeMin, envelopeMax)',
+            'CatItemKit.ValidEnemy(enemy)', 'enemy.specRigidbody.HitboxPixelCollider',
+            'CatSetRules.StreamerStripOverlapsAabb(',
+            'PlutoConfig.TPLength, SegmentHalfWidth * 2f',
             'ApplyDamage(', 'CoreDamageTypes.None', 'DamageCategory.Normal',
             'toilet_paper_streamer_001', 'toilet_paper_bits_001', 'toilet_paper_confetti_001',
         )
@@ -257,8 +265,15 @@ class CatSetWiringTests(unittest.TestCase):
         self.assertNotIn('CollisionLayer.PlayerCollider', paper)
         # Alexandria ItemBuilder.SetupItem registers PlayerItems in the normal ANY loot pool.
         self.assertNotIn('PickupObject.ItemQuality.EXCLUDED', paper)
-        self.assertIn('blocked.Add(projectile)', paper)
-        self.assertLess(paper.index('blocked.Add(projectile)'), paper.index('projectile.DieInAir('))
+        self.assertNotIn('CatItemKit.HitboxOverlaps(enemy, envelopeMin, envelopeMax)', paper)
+        claim = paper.index('TryClaimProjectile(projectile)')
+        die = paper.index('projectile.DieInAir(', claim)
+        count = paper.index('hits++', die)
+        self.assertLess(claim, die)
+        self.assertLess(die, count)
+        self.assertIn('if (!destroyed)', paper[die:count])
+        self.assertIn('finally', paper[die:count])
+        self.assertIn('ClaimedProjectiles.Remove(projectile)', paper[die:count])
         # Confetti is only reachable from normal timeout/final-hit completion.
         finish = paper.index('private void FinishNormally()')
         teardown = paper.index('private void Teardown(bool normalCompletion)', finish)
