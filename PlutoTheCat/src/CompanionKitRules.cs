@@ -10,6 +10,7 @@ namespace PlutoTheCat
         public int Remaining { get; private set; }
         public CocoShieldCharges(int count) { Refill(count); }
         public void Refill(int count) { Remaining = Math.Max(0, count); blocked.Clear(); }
+        public void Grow(int count) { Remaining += Math.Max(0, count); }
         public void Regenerate(int maximum) { Remaining = Math.Min(maximum, Remaining + 1); }
         public void Clamp(int maximum) { Remaining = Math.Min(maximum, Remaining); }
         public void ForgetDestroyed(Predicate<object> destroyed) { blocked.RemoveWhere(destroyed); }
@@ -128,6 +129,13 @@ namespace PlutoTheCat
         /// <summary>Squire helmet clip prefix: the gold plumed knight helmet for every Junkan form, none without Squire.</summary>
         public static string CocoHelmetPrefix(bool squire, int junkanForm)
         {
+            return squire ? "knight_" : "";
+        }
+
+        /// <summary>Matching Cones is deliberately visible even while Squire's knight bonus remains active.</summary>
+        public static string CocoHelmetPrefix(bool matchingCones, bool squire, int junkanForm)
+        {
+            if (matchingCones) return "cone_";
             return squire ? "knight_" : "";
         }
 

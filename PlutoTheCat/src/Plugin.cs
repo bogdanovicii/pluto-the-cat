@@ -69,6 +69,7 @@ namespace PlutoTheCat
             Step("hairball item", HairballItem.Init);
             Step("scratching post", ScratchingPostItem.Init);
             Step("toilet paper roll", ToiletPaperRollItem.Init);
+            Step("cone of shame", ConeOfShameItem.Init);
             Step("yasupen", YasupenItem.Init);
 
             CustomCharacterData built = null;

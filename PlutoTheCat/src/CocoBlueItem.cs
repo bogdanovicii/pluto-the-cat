@@ -67,7 +67,7 @@ namespace PlutoTheCat
 
             // Squire: the gold plumed knight helmet (knight_) for every Junkan form.
             // Like Ser Junkan's armour clips, these are swapped in by name (SetHelmet).
-            foreach (string helmet in new[] { "knight_" })
+            foreach (string helmet in new[] { "knight_", "cone_" })
             {
                 AddHelmetClip(helmet, "idle", 4, tk2dSpriteAnimationClip.WrapMode.Loop);
                 AddHelmetClip(helmet, "move", 9, tk2dSpriteAnimationClip.WrapMode.Loop);
@@ -128,6 +128,7 @@ namespace PlutoTheCat
             private CocoShieldCharges charges = new CocoShieldCharges(0);
             private bool ko;
             private float koLeft, regenTimer;
+            private bool matchingCones;
 
             public PlayerController OwnerPlayer { get { return m_owner; } }
             public bool IsDecoy { get { return decoy; } }
@@ -140,7 +141,9 @@ namespace PlutoTheCat
                 get
                 {
                     SackKnightController junkan = CocoFriends.SquireJunkan(m_owner);
-                    return PlutoConfig.CocoStuffing + (junkan != null ? Mathf.Min((int)junkan.CurrentForm, 6) : 0);
+                    int cone = m_owner != null && m_owner.PlayerHasActiveSynergy(PlutoSynergies.MatchingCones)
+                        ? PlutoConfig.ConeCocoStuffing : 0;
+                    return PlutoConfig.CocoStuffing + (junkan != null ? Mathf.Min((int)junkan.CurrentForm, 6) : 0) + cone;
                 }
             }
 
@@ -169,13 +172,12 @@ namespace PlutoTheCat
                 PlutoVFX.Spawn(PlutoVFX.LoveBurst, (Vector2)transform.position + new Vector2(0.5f, 1f));
             }
 
-            // A Single-direction animation plays its Prefix (DirectionalAnimation.GetInfo(0) returns Prefix for
-            // DirectionType.Single and never reads AnimNames); Junkan's two-way clips read AnimNames. Write both.
+            // A Single-direction animation plays its Prefix (DirectionalAnimation.GetInfo(0) returns Prefix and
+            // never reads AnimNames), so runtime swaps must update Prefix itself.
             private static void SetClip(DirectionalAnimation anim, string clip)
             {
                 if (anim == null) return;
                 anim.Prefix = clip;
-                if (anim.AnimNames != null && anim.AnimNames.Length > 0) anim.AnimNames[0] = clip;
             }
 
             public static CocoBlueController For(PlayerController player)
@@ -224,6 +226,7 @@ namespace PlutoTheCat
                     // CompanionController's own Start is not virtual, so hook up on the first frame instead.
                     hooked = true;
                     if (aiActor != null) normalSpeed = aiActor.MovementSpeed;
+                    matchingCones = m_owner != null && m_owner.PlayerHasActiveSynergy(PlutoSynergies.MatchingCones);
                     charges.Refill(MaxStuffing);
                     BuildShield();
                 }
@@ -235,6 +238,13 @@ namespace PlutoTheCat
                 float dt = BraveTime.DeltaTime;
                 cooldown -= dt; blockCooldown -= dt;
                 charges.ForgetDestroyed(delegate(object shot) { return (Projectile)shot == null; });
+                bool hasMatchingCones = m_owner != null && m_owner.PlayerHasActiveSynergy(PlutoSynergies.MatchingCones);
+                if (hasMatchingCones != matchingCones)
+                {
+                    if (hasMatchingCones) charges.Grow(PlutoConfig.ConeCocoStuffing);
+                    matchingCones = hasMatchingCones;
+                    charges.Clamp(MaxStuffing);
+                }
                 if (ko)
                 {
                     koLeft -= dt;

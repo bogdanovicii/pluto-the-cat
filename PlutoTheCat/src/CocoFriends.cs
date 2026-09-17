@@ -79,7 +79,9 @@ namespace PlutoTheCat
             SackKnightController knight = SquireJunkan(owner);
             AIActor junkan = knight != null ? knight.aiActor : null;
 
-            coco.SetHelmet(CompanionKitRules.CocoHelmetPrefix(knight != null, knight != null ? (int)knight.CurrentForm : 0));
+            bool matchingCones = owner.PlayerHasActiveSynergy(PlutoSynergies.MatchingCones);
+            coco.SetHelmet(CompanionKitRules.CocoHelmetPrefix(matchingCones, knight != null,
+                knight != null ? (int)knight.CurrentForm : 0));
 
             if (coco.IsDecoy && (dog != null || junkan != null))
             {

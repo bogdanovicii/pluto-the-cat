@@ -15,6 +15,10 @@ class CompanionKitCases
         Check(!charges.TryBlock(new object()), "empty shield passes subsequent bullets");
         charges.Refill(2);
         Check(charges.TryBlock(new object()) && charges.Remaining == 1, "recover resets shield");
+        charges.Grow(1);
+        Check(charges.Remaining == 2, "matching cone adds one live stuffing charge immediately");
+        charges.Grow(0);
+        Check(charges.Remaining == 2, "zero growth cannot drift stuffing");
         var owned = new CompanionOwnedValue<string>();
         owned.Record("original", "coco");
         Check(owned.Restore("coco") == "original", "restore original target");
@@ -78,6 +82,10 @@ class CompanionKitCases
         Check(CompanionKitRules.CocoHelmetPrefix(true, 5) == "knight_", "Knight Commander: knight helmet");
         Check(CompanionKitRules.CocoHelmetPrefix(true, 6) == "knight_" && CompanionKitRules.CocoHelmetPrefix(true, 7) == "knight_", "Holy and Angelic Knight: knight helmet");
         Check(CompanionKitRules.CocoHelmetPrefix(true, 8) == "knight_", "Mecha Junkan: gold helmet");
+        Check(CompanionKitRules.CocoHelmetPrefix(true, true, 8) == "cone_", "Matching Cones wins over knight helmet");
+        Check(CompanionKitRules.CocoHelmetPrefix(true, false, 0) == "cone_", "Matching Cones uses cone without Squire");
+        Check(CompanionKitRules.CocoHelmetPrefix(false, true, 5) == "knight_", "Squire remains when cone is removed");
+        Check(CompanionKitRules.CocoHelmetPrefix(false, false, 0) == "", "base clips return when both are absent");
         Console.WriteLine(count + " companion behavior cases passed");
     }
 }

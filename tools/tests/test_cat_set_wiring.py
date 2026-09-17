@@ -305,6 +305,82 @@ class CatSetWiringTests(unittest.TestCase):
         ):
             self.assertTrue(resource.exists(), str(resource.relative_to(ROOT)))
 
+    def test_cone_of_shame(self):
+        cone = self.requires(
+            'ConeOfShameItem.cs',
+            'public class ConeOfShameItem : PassiveItem',
+            'public const string ID = "pluto:cone_of_shame"',
+            'PickupObject.ItemQuality.B', 'ItemBuilder.SetupItem(item,',
+            'public override void Update()', 'base.Update()',
+            'Bogdan and Bianca', "Vet's clinic", 'see its point',
+            'PlutoConfig.ConeCooldown', 'PlutoConfig.ConeArcDegrees',
+            'PlutoConfig.ConeRadius', 'CatSetRules.ConeReady(',
+            'CatSetRules.InCone(delta.x, delta.y, aim.x, aim.y,',
+            'StaticReferenceManager.AllProjectiles.ToArray()',
+            'CatItemKit.IsEnemyBullet(projectile)', 'projectile.collidesWithPlayer',
+            'projectile.HasDiedInAir', 'projectile.DieInAir(',
+            'break;', 'lastBlock = Time.time', 'wasReady = false',
+            'if (!wasReady && ready)', 'PlutoVFX.BlockSpark',
+            'wearer.CenterPosition + new Vector2(0f, 1.1f)',
+            'public override void DisableEffect(PlayerController player)',
+            'public override DebrisObject Drop(PlayerController player)',
+            'public override void OnDestroy()', 'private void Unhook()',
+        )
+        # ItemBuilder.SetupItem registers ordinary non-EXCLUDED passives in the ANY loot pool.
+        self.assertNotIn('PickupObject.ItemQuality.EXCLUDED', cone)
+        self.assertNotIn('SilencerInstance.DestroyBulletsInRange', cone)
+        self.assertEqual(3, cone.count('Unhook();'))
+        # Initial pickup is already ready but must not masquerade as a cooldown transition.
+        self.assertIn('wasReady = true', cone)
+        pickup = cone.index('public override void Pickup(')
+        update = cone.index('public override void Update()', pickup)
+        self.assertNotIn('PlutoVFX.Spawn(', cone[pickup:update])
+        # Only the first qualifying live hostile shot is consumed in a scan.
+        die = cone.index('projectile.DieInAir(')
+        block_time = cone.index('lastBlock = Time.time', die)
+        stop = cone.index('break;', block_time)
+        self.assertLess(die, block_time)
+        self.assertLess(block_time, stop)
+
+        config = self.source('PlutoConfig.cs')
+        for key, typename, value in (
+            ('ConeCooldown', 'float', '3f'), ('ConeArcDegrees', 'float', '70f'),
+            ('ConeRadius', 'float', '1.5f'), ('ConeCocoStuffing', 'int', '1')):
+            self.assertIn('public static ' + typename + ' ' + key + ' = ' + value + ';', config)
+
+        coco = self.requires(
+            'CocoBlueItem.cs', '"cone_"', '"knight_"',
+            'PlayerHasActiveSynergy(PlutoSynergies.MatchingCones)',
+            '? PlutoConfig.ConeCocoStuffing : 0', 'matchingCones',
+            'charges.Grow(PlutoConfig.ConeCocoStuffing)',
+            'charges.Clamp(MaxStuffing)',
+            'anim.Prefix = clip',
+        )
+        self.assertNotIn('anim.AnimNames', coco)
+        for clip in ('idle', 'move'):
+            self.assertIn('prefix + "' + clip + '"', coco)
+        for clip in ('pet', 'block', 'ko'):
+            self.assertIn('named.name == "' + clip + '"', coco)
+        self.assertIn('SetClip(named.anim, prefix + named.name)', coco)
+        self.requires('CocoFriends.cs',
+                      'CompanionKitRules.CocoHelmetPrefix(matchingCones, knight != null,')
+
+        rules = self.source('CompanionKitRules.cs')
+        selector = rules[rules.index('public static string CocoHelmetPrefix('):]
+        self.assertIn('if (matchingCones) return "cone_";', selector)
+        self.assertIn('return squire ? "knight_" : "";', selector)
+
+        synergy = self.requires(
+            'PlutoSynergies.cs', 'public const string MatchingCones = "Matching Cones"',
+            'Register(MatchingCones, new List<string> { ConeOfShameItem.ID, CocoBlueItem.ID });',
+        )
+        self.assertEqual(1, synergy.count('Register(MatchingCones,'))
+        plugin = self.source('Plugin.cs')
+        self.assertLess(plugin.index('Step("cone of shame", ConeOfShameItem.Init)'),
+                        plugin.index('Step("synergies", PlutoSynergies.Init)'))
+
+        self.assertTrue((ROOT / 'PlutoTheCat/Resources/Items/cone_of_shame_icon.png').exists())
+
 
 if __name__ == '__main__':
     unittest.main()
