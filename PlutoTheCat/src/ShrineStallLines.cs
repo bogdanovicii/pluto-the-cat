@@ -16,8 +16,12 @@ namespace PlutoTheCat
     ///
     /// Each pool entry is one dialogue box: Daifuku sets it up, Kinsuke lands it, one "\n" between them.
     /// UNVERIFIED (the game is not installed here): that the box renders that newline rather than
-    /// running the two speakers together, and that a ~110-character exchange fits the box without
-    /// clipping. Both need one look in game; if either is wrong the fix is local to this file.
+    /// running the two speakers together, and that the longest exchanges fit the box without clipping.
+    /// Lengths run 90-155 characters including both speaker prefixes; the ones most at risk, and so the
+    /// ones to read first in game, are the koi-keeps-the-accounts exchange (155), the intro (151), the
+    /// fresh-water exchange (148), the whole-Breach exchange (146), and the lending-library and
+    /// not-quite-enough lines (145 each).
+    /// Both need one look in game; if either is wrong the fix is local to this file.
     /// </summary>
     public static class ShrineStallLines
     {
@@ -44,7 +48,7 @@ namespace PlutoTheCat
             "Daifuku: Mind the bowl. Kinsuke is delicate.\nKinsuke: Kinsuke is structural. This entire stall rests on me.",
             "Daifuku: He has been rehearsing his sales pitch all morning.\nKinsuke: Buy something. That is the pitch. I workshopped it.",
             "Daifuku: Business has been slow today.\nKinsuke: Slow? I have been going in circles since sunrise.",
-            "Daifuku: Do not ask him about the water.\nKinsuke: It is fresh. Bogdan changes it, Pluto tests it, and Pluto tests it hourly.",
+            "Daifuku: Do not ask him about the water.\nKinsuke: It is fresh. Bogdan changes it every morning, and Pluto has his first sip before the kettle boils.",
             "Daifuku: The cone of shame is our steadiest seller.\nKinsuke: Nobody buys it twice. Everybody buys it once.",
             "Daifuku: Pluto knocked the stone lantern over again.\nKinsuke: He did not knock it over. He relocated it. Downward.",
             "Daifuku: You have been standing there a while.\nKinsuke: Take all the time you like. I have nothing but water and opinions.",
