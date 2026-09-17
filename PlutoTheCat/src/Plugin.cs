@@ -33,6 +33,12 @@ namespace PlutoTheCat
             ETGModMainBehaviour.WaitForGameManagerStart(GMStart);
         }
 
+        /// <summary>Unity calls this when the plugin object is destroyed (mod unload/game exit): unhook PlutoUnlockGate's stored delegate.</summary>
+        public void OnDestroy()
+        {
+            PlutoUnlockGate.Teardown();
+        }
+
         /// <summary>Runs one load step in isolation so one broken feature cannot take the rest down.</summary>
         private static bool Step(string name, Action action)
         {

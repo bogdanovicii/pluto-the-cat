@@ -77,11 +77,22 @@ class ShrineStallWiringTests(unittest.TestCase):
             'DungeonHooks.OnPostDungeonGeneration' in gate or 'DungeonHooks.OnPreDungeonGeneration' in gate,
             'PlutoUnlockGate.cs missing a dungeon-start hook so the guard re-applies every run',
         )
-        self.assertIn('Teardown', gate, 'PlutoUnlockGate.cs missing a Teardown method to unhook the stored delegate')
+        self.assertIn('public static void Teardown', gate, 'PlutoUnlockGate.cs missing a Teardown method to unhook the stored delegate')
+        self.assertIn('DungeonHooks.OnPostDungeonGeneration -=', gate,
+                       'Teardown() must unsubscribe the same DungeonHooks event Apply() subscribed')
 
         plugin = self.source('Plugin.cs')
         gate_idx = plugin.find('Step("unlock gate", PlutoUnlockGate.Apply)')
         self.assertGreaterEqual(gate_idx, 0, 'Plugin.cs missing Step("unlock gate", PlutoUnlockGate.Apply)')
+
+        # Teardown() must actually be called somewhere, not just exist to satisfy this test: Plugin is a
+        # BaseUnityPlugin (MonoBehaviour), so Unity's own OnDestroy is a real engine-invoked call site.
+        destroy_idx = plugin.find('OnDestroy()')
+        self.assertGreaterEqual(destroy_idx, 0, 'Plugin.cs missing an OnDestroy() method to unhook PlutoUnlockGate on teardown')
+        destroy_body_end = plugin.find('}', plugin.find('{', destroy_idx))
+        destroy_body = plugin[destroy_idx:destroy_body_end]
+        self.assertIn('PlutoUnlockGate.Teardown()', destroy_body,
+                       "Plugin.cs's OnDestroy() must call PlutoUnlockGate.Teardown() to unhook the stored delegate")
 
         unlocks_idx = plugin.find('Step("unlocks", PlutoUnlocks.Init)')
         self.assertGreaterEqual(unlocks_idx, 0, 'Plugin.cs missing Step("unlocks", PlutoUnlocks.Init)')
