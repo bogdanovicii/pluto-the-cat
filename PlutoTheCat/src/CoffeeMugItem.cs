@@ -260,7 +260,8 @@ namespace PlutoTheCat
         {
             private CoffeeMugItem item;
             private PlayerController owner;
-            private RoomHandler room;
+            private RoomHandler room;      // the puddle's own room: whose enemies it slows
+            private RoomHandler ownerRoom; // the thrower's room: the puddle ends when they leave it
             private Vector2 center;
             private float remaining;
             private float scan;
@@ -271,7 +272,8 @@ namespace PlutoTheCat
             {
                 item = source;
                 owner = user;
-                room = user != null ? user.CurrentRoom : null;
+                room = at.GetAbsoluteRoom();
+                ownerRoom = user != null ? user.CurrentRoom : null;
                 center = at;
                 remaining = PlutoConfig.CoffeeSlowSeconds;
                 scan = 0f;
@@ -280,7 +282,7 @@ namespace PlutoTheCat
             private void Update()
             {
                 if (ended) return;
-                if (owner == null || owner.healthHaver == null || owner.healthHaver.IsDead || owner.CurrentRoom != room)
+                if (owner == null || owner.healthHaver == null || owner.healthHaver.IsDead || owner.CurrentRoom != ownerRoom)
                 {
                     End();
                     return;
@@ -334,6 +336,7 @@ namespace PlutoTheCat
                 item = null;
                 owner = null;
                 room = null;
+                ownerRoom = null;
                 Destroy(gameObject);
             }
 

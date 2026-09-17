@@ -409,7 +409,7 @@ class CatSetWiringTests(unittest.TestCase):
             'CatItemKit.HitboxOverlaps(enemy, min, max)',
             'remaining = PlutoConfig.CoffeeSlowSeconds',
             'CatItemKit.Slow(enemy,', 'SlowId = "pluto_coffee_slow"',
-            'RemoveEffect(SlowId)', 'owner.CurrentRoom != room',
+            'RemoveEffect(SlowId)', 'owner.CurrentRoom != ownerRoom',
             # Espresso on use.
             'PlayerHasActiveSynergy(PlutoSynergies.Espresso)',
             'as CatnipPouchItem',
@@ -455,6 +455,14 @@ class CatSetWiringTests(unittest.TestCase):
             'Effects/cat_set/coffee_shard_003.png', 'Effects/cat_set/coffee_shard_004.png',
         ):
             self.assertTrue((ROOT / 'PlutoTheCat/Resources' / resource).exists(), resource)
+
+    def test_coffee_puddle_scans_its_own_room(self):
+        mug = self.source('CoffeeMugItem.cs')
+        # A mug thrown through a doorway slows enemies in the puddle's room, not the thrower's.
+        self.assertIn('room = at.GetAbsoluteRoom();', mug)
+        self.assertIn('ownerRoom = user != null ? user.CurrentRoom : null;', mug)
+        self.assertIn('owner.CurrentRoom != ownerRoom', mug)
+        self.assertNotIn('owner.CurrentRoom != room', mug)
 
     def test_catnip_zoomies_are_extendable(self):
         tricks = self.requires(
