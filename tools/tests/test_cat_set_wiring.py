@@ -47,14 +47,29 @@ class CatSetWiringTests(unittest.TestCase):
             'impactHandled', 'CatItemKit.HitboxOverlaps(',
             'CatItemKit.ValidEnemy(', 'healthHaver.IsBoss',
             'CatSetRules.RollFlinch(Random.value, PlutoConfig.SprayFlinchChance)',
-            'behaviorSpeculator.InterruptAndDisable()',
+            'behaviorSpeculator.Interrupt()',
             'CatItemKit.Stun(enemy, PlutoConfig.SprayFlinchSeconds)',
             'PlutoCharmEffect.ExtendOwned(enemy, PlutoConfig.SprayCharmBonusSeconds)',
             'PlayerHasActiveSynergy(PlutoSynergies.BathTime)',
+            'bool eligibleActor =', '!enemy.IsHarmlessEnemy',
+            '!enemy.healthHaver.IsBoss',
         )
         self.assertNotIn('gun.InfiniteAmmo', spray)
         self.assertNotIn('PreventStartingOwnerFromDropping', spray)
+        # InterruptAndDisable sets BehaviorSpeculator.enabled = false permanently; a 0.5 s flinch must only Interrupt.
+        self.assertNotIn('InterruptAndDisable', spray)
         self.assertRegex(spray, r'SetProjectileSpriteRight\("pluto_spray_mist_001",\s*(?:8|9|10),\s*(?:8|9|10)')
+
+        collision = spray.index('private void OnCollision(CollisionData collision)')
+        water = spray.index('AddWater(collision.Contact)', collision)
+        owner = spray.index('PlayerController owner =', water)
+        eligible = spray.index('bool eligibleActor =', owner)
+        bath = spray.index('PlutoCharmEffect.ExtendOwned(', eligible)
+        flinch_filter = spray.index('CatItemKit.ValidEnemy(enemy)', bath)
+        self.assertLess(water, owner)
+        self.assertLess(owner, eligible)
+        self.assertLess(eligible, bath)
+        self.assertLess(bath, flinch_filter)
 
         for resource in (
             'WeaponCollection/pluto_spray_bottle_idle_001.png',

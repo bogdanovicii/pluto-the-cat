@@ -112,9 +112,13 @@ namespace PlutoTheCat
 
                 AddWater(collision.Contact);
                 PlayerController owner = projectile.Owner as PlayerController;
+                bool eligibleActor = enemy.healthHaver != null
+                    && !enemy.healthHaver.IsDead
+                    && !enemy.IsHarmlessEnemy
+                    && !enemy.healthHaver.IsBoss;
 
                 // Bath Time is deliberately checked before ValidEnemy rejects an already charmed target.
-                if (owner != null && owner.PlayerHasActiveSynergy(PlutoSynergies.BathTime)
+                if (eligibleActor && owner != null && owner.PlayerHasActiveSynergy(PlutoSynergies.BathTime)
                     && PlutoCharmEffect.ExtendOwned(enemy, PlutoConfig.SprayCharmBonusSeconds))
                 {
                     if (!loggedBathTime)
@@ -127,7 +131,8 @@ namespace PlutoTheCat
 
                 if (!CatItemKit.ValidEnemy(enemy) || enemy.healthHaver.IsBoss) return;
                 if (!CatSetRules.RollFlinch(Random.value, PlutoConfig.SprayFlinchChance)) return;
-                if (enemy.behaviorSpeculator != null) enemy.behaviorSpeculator.InterruptAndDisable();
+                // A flinch only cancels the current attack; it must never disable the behavior speculator.
+                if (enemy.behaviorSpeculator != null) enemy.behaviorSpeculator.Interrupt();
                 CatItemKit.Stun(enemy, PlutoConfig.SprayFlinchSeconds);
                 if (!loggedFlinch)
                 {
