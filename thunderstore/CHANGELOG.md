@@ -1,5 +1,31 @@
 # Changelog
 
+## 2.20.0 (test build, not released)
+
+- **The Shrine Stall**, in the Breach beside the regular shop: Daifuku (a ginger cat) and Kinsuke (a koi in a
+  bowl) run a meta-shop under a red torii gate, selling permanent per-save unlocks for cat items in Hegemony
+  credits.
+- **Important change for existing players: the ten cat items from the 2.17.0/2.19.0 cat sets now need
+  unlocking before they drop.** Ball of Yarn, Catnip Pouch, Hairball, Scratching Post, Toilet Paper Roll, Coffee
+  Mug, Jingle Bell Collar, Cone of Shame, Spray Bottle and Feather Teaser no longer appear in any chest, shop or
+  reward until bought from the stall (8 credits for the first six, 15 for the last four). Buying one hands you a
+  copy for the current run immediately, removes it from the stall's mat, and it then drops normally in every run
+  after. Locked items show as undiscovered in the Ammonomicon and flip to the full page on purchase. Unlocks are
+  per-save and survive quitting to the menu; a different save slot has its own unlocks, tracked by an extended
+  `GungeonFlags` value mirrored by a stable string key so the unlock survives other mods changing the game's
+  flag ids.
+  Testing-only escape hatch: `StallUnlocksDisabled = true` (config section `Shrine Stall 2.20`) treats every
+  item as already unlocked and leaves the stall standing as decoration.
+- **Daifuku and Kinsuke** have an intro line, a 25-exchange running back-and-forth (repeats after all 25 have
+  been seen once, then a stopper line), and their own purchase/insufficient-credits lines.
+- Config: every new number lives in the `Shrine Stall 2.20` section (`StallPriceBallOfYarn`,
+  `StallPriceCatnipPouch`, `StallPriceHairball`, `StallPriceScratchingPost`, `StallPriceToiletPaperRoll`,
+  `StallPriceCoffeeMug`, `StallPriceJingleBellCollar`, `StallPriceConeOfShame`, `StallPriceSprayBottle`,
+  `StallPriceFeatherTeaser`, `StallPosition`, `StallUnlocksDisabled`) and is range-checked at load.
+- In-game checklist `docs/shrine-stall-2200-test-checklist.md`; nothing in this round has been seen running (no
+  game on the build machine), so placement, draw order, dialogue rendering and the loot gating are all open
+  questions for the first in-game pass.
+
 ## 2.19.0 (test build, not released)
 
 - **The cat set**: five new pieces in the loot pool for every character, each with its own art, Ammonomicon page and lore about Bogdan and Bianca's house:

@@ -25,6 +25,17 @@ Adds **Pluto the Cat** as a new playable Gungeoneer. He is a chunky brown tabby-
   - **Coffee Mug** (active): push Bianca's favourite mug off the table. It shatters into a ring of 10 shards and leaves a coffee puddle that slows enemies standing in it for 3 seconds.
 - **Cat set synergies**: Bath Time (Spray Bottle + Wet Food Can: misting a charmed enemy makes the charm last 2 s longer, up to 6 s added to that charm however long it already was, without hurting it), Playtime (Feather Teaser + Ball of Yarn: the lure also tangles what it distracts, and the tangle wins: a tangled enemy stays put instead of chasing the feather), Shredder (Toilet Paper Roll + Scratching Post: a streamer that runs its course bursts into damaging confetti), Matching Cones (Cone of Shame + Coco Blue: Coco wears a cone too and holds one more bullet) and Espresso (Coffee Mug + Catnip Pouch: coffee during zoomies adds 2 s; needs room for two actives, e.g. a Backpack).
 - **Config**: every cat set number is in the `Cat Set 2.19` section of the BepInEx config (including `SprayCharmMaxBonusSeconds`, the most seconds Bath Time can add to one charm) and is range-checked at load.
+- **The Shrine Stall (new in 2.20.0) — important change for existing players**: Daifuku (a ginger cat) and
+  Kinsuke (a koi living in a bowl) have set up shop under a red torii gate in the Breach, right beside the
+  regular shop. **The ten cat items above — Ball of Yarn, Catnip Pouch, Hairball, Scratching Post, Toilet Paper
+  Roll, Coffee Mug, Jingle Bell Collar, Cone of Shame, Spray Bottle and Feather Teaser — no longer drop in
+  chests, shops or rewards until you buy them from the stall.** Each unlock is a one-time purchase for your save
+  (8 Hegemony credits for the first six, 15 for the last four); buying one hands you a copy to carry into the
+  current run right away, and it drops normally in every run after that. Until you unlock an item it also shows
+  as undiscovered in the Ammonomicon. Daifuku and Kinsuke have their own running back-and-forth if you talk to
+  them more than once. If you would rather have everything drop as before, set `StallUnlocksDisabled = true`
+  under `[Shrine Stall 2.20]` in the BepInEx config — the stall stays standing as decoration and every item acts
+  already unlocked.
 
 ## Install (r2modman)
 

@@ -1,7 +1,7 @@
 # Pluto the Cat — Enter the Gungeon mod
 
 A BepInEx / Alexandria mod that adds Pluto (a real chunky tabby-and-white cat) as a playable Gungeoneer. Current
-version: **2.19.0** (`thunderstore/manifest.json`, `PlutoTheCat/src/Plugin.cs`). Player-facing feature list:
+version: **2.20.0** (`thunderstore/manifest.json`, `PlutoTheCat/src/Plugin.cs`). Player-facing feature list:
 `thunderstore/README.md`; full history: `thunderstore/CHANGELOG.md`.
 
 What ships today, in short:
@@ -20,6 +20,14 @@ What ships today, in short:
   added to that charm however long it already was, without damaging the charmed enemy), Playtime (+ Ball of Yarn: the tangle wins over the feather, so a tangled enemy stops
   instead of chasing), Shredder (+ Scratching Post), Matching Cones (+ Coco Blue) and Espresso (+ Catnip Pouch). Every
   number is in the config section `Cat Set 2.19`; in-game checklist `docs/cat-set-2190-test-checklist.md`.
+- **Shrine Stall** (Breach, 2.20.0): Daifuku (a ginger cat) and Kinsuke (a koi in a bowl) run a stall beside the
+  Breach shop, under a red torii gate. **The ten cat items above (the five-piece cat set and Yasupen's items are
+  unaffected; specifically Ball of Yarn, Catnip Pouch, Hairball, Scratching Post, Toilet Paper Roll, Coffee Mug,
+  Jingle Bell Collar, Cone of Shame, Spray Bottle and Feather Teaser no longer drop until unlocked at the stall**,
+  a permanent per-save purchase for 8 or 15 Hegemony credits depending on the item. Buying one hands a copy over
+  for the current run immediately and the item then drops normally in every run after. Config section
+  `Shrine Stall 2.20` (prices, stall position, `StallUnlocksDisabled` to unlock everything for testing); in-game
+  checklist `docs/shrine-stall-2200-test-checklist.md`.
 - **Samurai Pluto** (alternate costume, 2.16.0): unlocked by beating Pluto's past (the Vet Visit), switched at the
   kimono stand in the Breach. Starts with the **Taiyaki Cannon** and the **Katana** instead of the kibble sack, and has
   his own boss-intro card.
