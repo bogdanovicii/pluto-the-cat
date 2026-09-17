@@ -352,6 +352,69 @@ class ShrineStallWiringTests(unittest.TestCase):
         self.assertIn('PlaceBackdropProps()', move_body, 'MoveStall must also re-place the three backdrop props at the new position')
         self.assertIn('_shopObject = shop;', stall, 'Init() must keep a reference to the built shop GameObject so it can later be moved')
 
+    def test_npc_position_is_local_offset_not_world_duplicate(self):
+        """2.20.2 root cause 1 (tester report: Daifuku entirely absent): SetUpFoyerShop parents the NPC
+        to the shop root and then sets its WORLD position to the npcPosition argument BEFORE the root is
+        later moved to `position` (verified against the Alexandria 0.5.10 IL - Transform::set_parent at
+        IL_04fb, then Transform::set_position at IL_0509, while the root is still a fresh GameObject at
+        Unity's (0,0,0) default). So npcPosition is Daifuku's offset from the shop root, and the final
+        world position is `position + npcPosition`. Passing PlutoConfig.StallPosition for BOTH put Daifuku
+        at roughly double his intended distance from the Breach origin, ~28 tiles from his own props. This
+        must stay Vector3.zero: a regression back to PlutoConfig.StallPosition silently reintroduces the
+        exact bug the tester hit, with no error logged anywhere."""
+        stall = self.source('ShrineStall.cs')
+        npc_position_line = next((l for l in stall.splitlines() if '// npcPosition:' in l), None)
+        self.assertIsNotNone(npc_position_line, 'ShrineStall.cs missing the npcPosition argument (marked by a trailing "// npcPosition:" comment)')
+        self.assertIn('Vector3.zero', npc_position_line,
+                       'npcPosition must be Vector3.zero - it is Daifuku\'s offset from the shop root at '
+                       'build time, not a second copy of PlutoConfig.StallPosition (see the comment above '
+                       'the SetUpFoyerShop call for the IL evidence)')
+        self.assertNotIn('PlutoConfig.StallPosition', npc_position_line,
+                          'npcPosition must not reuse PlutoConfig.StallPosition - SetUpFoyerShop already '
+                          'adds that in separately (as BreachShopComp.offset) when the shop root is placed, '
+                          'so passing it here doubles Daifuku\'s distance from the Breach origin')
+
+    def test_stall_offset_centers_counter_under_torii(self):
+        """2.20.2 root cause 2 (tester report: counter sits low and to the left of the torii): the design
+        (docs/superpowers/specs/2026-09-17-shrine-stall-design.md) wants the counter UNDER the gate. Both
+        props are bottom-center pivoted, so centering the 3-tile-wide counter under the 4.875-tile-wide
+        torii needs StallOffset.x == ToriiOffset.x, not the earlier -2.0625 nudge (which aligned the
+        counter to the torii's left EDGE, not its center, and read as "left of the gate" in-game)."""
+        stall = self.source('ShrineStall.cs')
+        # Capture the FULL first-argument expression (not just its leading literal), so an old
+        # "-3.0f - 2.0625f" style nudge is actually evaluated rather than truncated to "-3.0" and
+        # spuriously matching.
+        torii_match = re.search(r'ToriiOffset = new Vector3\(([^,]+),', stall)
+        stall_match = re.search(r'StallOffset = new Vector3\(([^,]+),', stall)
+        self.assertIsNotNone(torii_match, 'ShrineStall.cs missing a parseable ToriiOffset declaration')
+        self.assertIsNotNone(stall_match, 'ShrineStall.cs missing a parseable StallOffset declaration')
+        # Safe evaluator for the tiny subset of C# float arithmetic these fields use (e.g. "-3.0f",
+        # "-3.0f - 2.0625f"): sum the signed float literals rather than calling eval() on source text.
+        def to_number(expr):
+            cleaned = re.sub(r'(?<![\d.])f(?![\w])', '', expr)
+            terms = re.findall(r'[+-]?\s*[\d.]+', cleaned)
+            self.assertTrue(terms, 'could not parse float literals out of %r' % expr)
+            return sum(float(t.replace(' ', '')) for t in terms)
+        torii_x = to_number(torii_match.group(1))
+        stall_x = to_number(stall_match.group(1))
+        self.assertEqual(torii_x, stall_x,
+                          'StallOffset.x must equal ToriiOffset.x so the counter is centered under the '
+                          'torii (both sprites are bottom-center pivoted; equal X centers one under the '
+                          'other) - got ToriiOffset.x=%r, StallOffset.x=%r' % (torii_x, stall_x))
+
+    def test_kinsuke_bowl_rests_on_measured_counter_height(self):
+        """2.20.2 root cause 3 (tester report: the bowl floats near the torii's crossbeam): the old
+        28/16 = 1.75-tile Y offset was a guess ("near the top of the sprite"). Measuring stall.png
+        (48x36px, bottom-center pivot, 16px/tile) pixel-by-pixel: the counter's top lip (where the opaque
+        pixels widen from the narrower noren curtain above to the full 48px width) starts at row 20 (from
+        the top), so the counter surface sits (36 - 20) / 16 = 1.0 tile above the ground line - not 1.75."""
+        stall = self.source('ShrineStall.cs')
+        kinsuke_match = re.search(r'KinsukeOffset = StallOffset \+ new Vector3\([\d.]+f / 16f, ([\d.]+)f / 16f,', stall)
+        self.assertIsNotNone(kinsuke_match, 'ShrineStall.cs missing a parseable KinsukeOffset declaration')
+        self.assertEqual(float(kinsuke_match.group(1)), 16.0,
+                          "KinsukeOffset's Y numerator over 16f must be 16 (i.e. 1.0 tile, the measured "
+                          "counter-top height), not the old guessed 28 (1.75 tiles)")
+
     def test_stall_registration(self):
         self.requires(
             'ShrineStall.cs',

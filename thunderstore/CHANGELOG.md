@@ -1,5 +1,37 @@
 # Changelog
 
+## 2.20.3 (test build, not released)
+
+- **Fix: Daifuku was being placed twice as far from the Breach origin as intended, so he never appeared
+  next to his own stall.** The 2.20.2 tester reported the torii rendering correctly but Daifuku entirely
+  absent, with nothing near the stall interactable. Verified against the Alexandria 0.5.10 IL:
+  `ShopAPI.SetUpFoyerShop` parents the shopkeeper's GameObject to the shop's own root and then sets the
+  shopkeeper's WORLD position to the `npcPosition` argument while that root is still freshly created at
+  Unity's (0,0,0) default - so `npcPosition` is really the shopkeeper's offset FROM the shop root, not a
+  second copy of where the whole stall goes. `ShrineStall.cs` passed `PlutoConfig.StallPosition` for both
+  the shop's placement and `npcPosition`, so once the shop root was later moved to that same position
+  (Alexandria's `BreachShopTools.PlaceBreachShops`), Daifuku ended up at `StallPosition + StallPosition` -
+  about 28 tiles from his own torii, counter and koi bowl. `npcPosition` is now `Vector3.zero`. This also
+  fixes `pluto_stall here`/`pluto_stall <x> <y>`, which had the same doubling bug for any session where the
+  shop had already built.
+- **Fix: the stall counter rendered to the left of the torii gate instead of under it.** An earlier
+  art-review note aligned the counter's center 6px right of the torii's LEFT EDGE rather than centering it
+  under the gate as the design calls for ("Under the gate: a counter..."). Since both sprites are
+  bottom-center pivoted, centering one 3-tile-wide sprite under a 4.875-tile-wide one needs no X offset at
+  all; the stall's offset now matches the torii's.
+- **Fix: Kinsuke's koi bowl floated about three quarters of a tile above the counter, near the torii's
+  crossbeam.** The old Y offset (28/16 tiles) was a guess at "near the top of the sprite". `stall.png`
+  (48x36px) was measured pixel-by-pixel this round: the counter's top lip starts 20 rows down from the top
+  of a bottom-center-pivoted 36px-tall sprite, so the counter surface sits `(36 - 20) / 16 = 1.0` tile above
+  the ground line, not 1.75. The bowl's Y offset is corrected to match.
+- **Known still-wrong: the default `StallPosition` (19.7, 22.1).** It was derived from `FoyerPosition`
+  (14.6, 22.1), which is consumed by a different coordinate space (Alexandria's `CharacterAPI`, for where
+  Pluto himself stands) than the Breach shop placement this reads - the same kind of unverified-arithmetic
+  mistake that produced this whole round of bugs. It is left as-is on purpose rather than replaced with
+  another guess; the tester's own `pluto_stall here` readings during 2.20.2 testing put the real walkable
+  Breach area around x=40-42, y=43-59, and the next `pluto_stall here` / `pluto_stall save` on this build
+  should supply the real value.
+
 ## 2.20.2 (test build, not released)
 
 - **Fix: Yasupen never actually registered since 2.18.0.** `ItemBuilder.SetupItem` derives the id an item

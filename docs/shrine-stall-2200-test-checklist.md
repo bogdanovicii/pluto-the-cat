@@ -52,14 +52,22 @@ None of the three backdrop props sets an explicit sorting layer or order, and al
 
 ## 3. Placement: offsets and the Breach shop door
 
-The torii offset, the stall offset, Kinsuke's offset (all in `ShrineStall.cs`) and `talkPointOffset` (currently
-`Vector3.zero` in the `SetUpFoyerShop` call) are all unverified guesses, picked from a pixel-math comment with no
-in-game confirmation.
+2.20.2 testing found Daifuku placed roughly 28 tiles from his own stall (root cause: `ShopAPI.SetUpFoyerShop`
+parents Daifuku to the shop root and sets his WORLD position to the `npcPosition` argument before the root is
+later moved, so `npcPosition` and the shop's own placement argument were both adding `StallPosition` - fixed in
+2.20.3 by passing `Vector3.zero` for `npcPosition`), and the counter sitting left of the torii rather than under
+it (fixed in 2.20.3 by centering `StallOffset` on `ToriiOffset`), and Kinsuke's bowl floating near the torii's
+crossbeam (fixed in 2.20.3 with a pixel-measured counter height). Re-verify all of it on this build - `talkPointOffset`
+(currently `Vector3.zero` in the `SetUpFoyerShop` call) is still an unverified guess with no in-game
+confirmation, and `StallPosition`'s own default is still known wrong (see item below).
 - [ ] The whole stall (torii + counter + Kinsuke + Daifuku) sits beside the Breach shop without overlapping the
   shop door or blocking its interaction prompt. Walk up to the Breach shop door from a few angles and confirm the
   prompt still appears normally.
-- [ ] The torii and stall counter look anchored together (stall roughly in front of/under the torii), not
-  floating apart or overlapping oddly.
+- [ ] **Daifuku himself is visible, standing at/behind the counter** - not just the torii and counter props. If
+  he is still missing, that is a regression of the 2.20.3 `npcPosition` fix; report it separately from any of
+  the cosmetic offset issues below.
+- [ ] The torii and stall counter look anchored together, counter centered **under** the torii gate (not to its
+  left or right), not floating apart or overlapping oddly.
 - [ ] Kinsuke's bowl looks like it is resting on the counter surface, not floating above it, sunk into it, or off
   to the side.
 - [ ] Talking to Daifuku (interact key) opens the dialogue from a natural distance/angle — `talkPointOffset` is
@@ -67,6 +75,9 @@ in-game confirmation.
   the value to tune.
 - [ ] Daifuku's hitbox (`IntVector2(20, 18)` size, `IntVector2(5, 0)` offset) is reachable from the front of the
   stall without having to stand somewhere unnatural.
+- [ ] **`StallPosition`'s default (19.7, 22.1) is still known wrong** - it was derived from `FoyerPosition`,
+  which lives in a different coordinate space. Use `pluto_stall here` at a spot where the fixed assembly reads
+  well and `pluto_stall save` to write the real value back, same as the 2.20.1 workflow above.
 
 ## 4. Loot gating actually works
 

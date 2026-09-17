@@ -124,13 +124,23 @@ namespace PlutoTheCat
         public static int StallPriceFeatherTeaser = 15;
         // 2.20.1: the (10.5, 22.1) default was a guess made with no game install and ran the stall
         // off-screen (user report: "it is outside the screen in the breach"). ShrineStall.cs's own
-        // offsets put the leftmost prop (stall.png) 5.0625 tiles left of StallPosition (ToriiOffset.x
-        // -3.0, StallOffset.x -3.0 - 2.0625 = -5.0625; Daifuku himself sits at offset 0, the rightmost
-        // point of the assembly). FoyerPosition (14.6, 22.1) is where Pluto stands and is known visible,
-        // so this default puts the assembly's LEFT edge at Pluto's own spot and lets it run right from
-        // there: 14.6 + 5.0625 = 19.6625, rounded to 19.7. Y is kept at FoyerPosition's 22.1 (same ground
-        // line). STILL UNVERIFIED - this session has no game install - the user confirms or corrects it
-        // in-game with the pluto_stall console command (ShrineStall.cs) and pluto_stall save.
+        // offsets put the leftmost prop (stall.png) left of StallPosition; FoyerPosition (14.6, 22.1) is
+        // where Pluto stands and is known visible, so this default put the assembly's LEFT edge at
+        // Pluto's own spot: 19.7 = 14.6 + 5.0625, rounded, using the (now-superseded) offset arithmetic
+        // of that round.
+        //
+        // 2.20.3: DO NOT re-derive this value from FoyerPosition again - that is exactly the mistake that
+        // produced the 2.20.2 placement bug the tester reported (torii rendering, but low/left of where
+        // it should be, Daifuku entirely missing ~28 tiles away). FoyerPosition (14.6, 22.1) is consumed
+        // by Alexandria's CharacterAPI for where PLUTO HIMSELF stands, a different coordinate space/system
+        // than BreachShopTools' placement of a foyer shop's root - the two are not interchangeable, and
+        // arithmetic built on that assumption is unverified by construction. The tester's own in-game
+        // `pluto_stall here` readings during the 2.20.2 test put the actual walkable Breach play area
+        // around x=40-42, y=43-59 - nowhere near (19.7, 22.1). The value below is KNOWN WRONG and is left
+        // as-is deliberately (not replaced with another guess) until the tester runs `pluto_stall here` /
+        // `pluto_stall save` again on the build that carries the ShrineStall.cs root-cause fixes (parent-
+        // then-world-position npcPosition bug, counter-under-torii offset, measured bowl height) - only
+        // then will a `pluto_stall here` reading describe the assembly this default is meant to place.
         public static Vector3 StallPosition = new Vector3(19.7f, 22.1f, 0f);
         public static bool StallUnlocksDisabled = false;
 

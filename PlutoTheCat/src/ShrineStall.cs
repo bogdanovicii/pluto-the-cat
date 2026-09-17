@@ -37,28 +37,41 @@ namespace PlutoTheCat
         private static GameObject _shopObject;
         private static bool _commandRegistered;
 
-        // Task 4's art review found torii.png (78x48px) and stall.png (48x36px) share no anchor. Both
-        // props below use a bottom-center sprite pivot, so placing them at the same Y sits their bottom
-        // rows on one ground line; the X offsets are picked so the stall's center sits 6px right of the
-        // torii's left edge, at this game's 16px/unit scale:
-        //   toriiLeftEdge = toriiX - (78/2)/16 = toriiX - 2.4375
-        //   stallCenterX  = toriiLeftEdge + 6/16 = toriiX - 2.0625
-        // UNVERIFIED: picked from the art-review note alone. This session has no game install and the
-        // referenced Assembly-CSharp.dll is a stripped stub, so this has never been seen composited
-        // in-game. Re-check both offsets (and the ground-line Y) the first time the stall is visible.
+        // 2.20.3 root-cause fix (placement round 2): the design (docs/superpowers/specs/
+        // 2026-09-17-shrine-stall-design.md, "Under the gate: a counter...") wants the stall counter
+        // CENTERED UNDER the torii gate, not offset from it. The earlier -2.0625 nudge came from an
+        // art-review note about aligning the counter 6px right of the torii's LEFT EDGE, which is a
+        // different, and wrong, target - it put the counter to the left of the gate instead of under it
+        // (tester report, 2.20.2). Both torii.png (78x48px) and stall.png (48x36px) are bottom-center
+        // pivoted, so centering one 3-tile-wide sprite under a 4.875-tile-wide one bottom-center pivoted
+        // needs no offset at all: StallOffset.x == ToriiOffset.x. Same Y for both keeps their bottom rows
+        // on one ground line. Still no game install this session - re-confirm visually the first time the
+        // stall is on screen.
         private static readonly Vector3 ToriiOffset = new Vector3(-3.0f, 0f, 0f);
-        private static readonly Vector3 StallOffset = new Vector3(-3.0f - 2.0625f, 0f, 0f);
+        private static readonly Vector3 StallOffset = new Vector3(-3.0f, 0f, 0f);
 
         // Kinsuke's bowl (kinsuke_idle_*, 22x20px) rests on the stall counter (design: "Daifuku stands
         // behind the counter, Kinsuke's bowl rests on it"), so it is offset from the stall itself rather
-        // than from the torii. Same bottom-center pivot convention as the other props. UNVERIFIED, same
-        // caveat as above, plus one more unknown: stall.png's own internal composition (how much of its
-        // 36px height is a flat counter surface the bowl could plausibly sit on top of) was never
-        // inspected pixel-by-pixel - the y offset below (28px, most of the sprite's height) is a guess at
-        // "near the top of the counter", the x offset (12px right of the stall's center) just keeps the
-        // bowl clear of the stall's own center where the three purchasable items sit. Re-check both,
-        // and stall.png's actual composition, the first time this is visible in-game.
-        private static readonly Vector3 KinsukeOffset = StallOffset + new Vector3(12f / 16f, 28f / 16f, 0f);
+        // than from the torii. Same bottom-center pivot convention as the other props.
+        //
+        // 2.20.3: measured stall.png (48x36px, bottom-center pivot, 16px/tile) pixel-by-pixel instead of
+        // guessing. Rows 0-19 (top-down) span x=11-47: that is the noren curtain, and it is right-biased
+        // in its own canvas (center ~x=29 of 48). Rows 20-25 widen to x=0-47 (some rows x=0-46): that
+        // widening is the counter's top lip, i.e. the counter's actual playing surface starts at row 20.
+        // With a bottom-center pivot the sprite's bottom row sits on the ground line, so the surface's
+        // height above ground is (spriteHeight - topRow) / pixelsPerTile = (36 - 20) / 16 = 1.0 tile. The
+        // old value (28/16 = 1.75 tiles) put the bowl three quarters of a tile above the counter, floating
+        // near the torii's crossbeam (tester report, 2.20.2) - it was guessed as "near the top of the
+        // sprite", not measured against the actual counter geometry.
+        // Re-checked the X too, since the curtain's right bias could mislead a guess about where the
+        // counter's visible mass sits: averaging the left/right opaque edges of rows 20-35 (the counter
+        // itself, below the curtain) gives a mass-center at x=24.16 of 48 - i.e. within 0.16px (~0.01
+        // tile) of the sprite's own pivot (x=24, the 0.5 pivot on a 48px-wide canvas). The counter is
+        // already centered on StallOffset; the curtain's bias does not carry over to it. The 12px
+        // (0.75-tile) rightward nudge below is therefore kept as the deliberate design choice it always
+        // was - clearing the three purchasable items that sit at the stall's own center - not a
+        // measurement correction.
+        private static readonly Vector3 KinsukeOffset = StallOffset + new Vector3(12f / 16f, 16f / 16f, 0f);
 
         public static void Init()
         {
@@ -103,8 +116,30 @@ namespace PlutoTheCat
                 Plugin.SHOP_ROOT + "/daifuku_talk_004",
             };
 
-            // position and npcPosition both use PlutoConfig.StallPosition: this is a single stationary
-            // shopkeeper, not a shop with a separate items table offset from the NPC.
+            // 2.20.3 root-cause fix: npcPosition is NOT "where Daifuku ends up" - it is his offset from
+            // the shop root's ORIGIN at build time, before the root is later moved to `position`. Verified
+            // against the Alexandria 0.5.10 IL (ikdasm; monodis crashes on this assembly):
+            // SetUpFoyerShop parents the NPC GameObject to the new CustomShopController's transform
+            // (`callvirt instance void Transform::set_parent`, IL_04fb) and IMMEDIATELY sets that NPC's
+            // WORLD position to npcPosition (`callvirt instance void Transform::set_position`, IL_0509) -
+            // at that point the shop root is still a freshly-`new`'d GameObject sitting at the Unity
+            // default of (0,0,0), so this bakes the NPC's local offset from the root as npcPosition - 0 =
+            // npcPosition. Only later does BreachShopTools.PlaceBreachShops (same assembly) Instantiate
+            // the registered shop and set the CLONE's root position to BreachShopComp.offset, which is
+            // exactly the `position` argument we pass here (`stfld ... BreachShopComp::offset` reads
+            // ldarg.2, i.e. `position`, at IL_04bb-04c1). Instantiate preserves each child's local
+            // transform, so Daifuku's final WORLD position is position + npcPosition.
+            // Before this fix both were PlutoConfig.StallPosition, so Daifuku ended up at
+            // StallPosition + StallPosition (~doubled distance from the Breach origin - roughly (39.4,
+            // 44.2) against his own props at (19.7, 22.1), about 28 tiles apart) while the props (placed
+            // by the separate method below that is not subject to this double-application) stayed put -
+            // explaining why Daifuku read as simply absent and nothing near the stall was interactable.
+            // Passing Vector3.zero here makes Daifuku's local offset from the shop root
+            // zero, so his final world position is just `position` - i.e. PlutoConfig.StallPosition,
+            // same as the props. This also fixes pluto_stall's "here"/<x> <y> path (MoveStall, below):
+            // it sets _shopObject.transform.position directly, and with npcPosition zero the NPC's local
+            // offset from that root is (0,0,0), so it lands exactly on the new position instead of a
+            // further PlutoConfig.StallPosition away from it.
             GameObject shop = ShopAPI.SetUpFoyerShop(
                 "Daifuku", "pluto_shrine_stall",
                 PlutoConfig.StallPosition,
@@ -119,7 +154,10 @@ namespace PlutoTheCat
                 ShrineStallLines.PurchaseFailedKey,
                 ShrineStallLines.IntroKey,
                 Vector3.zero,               // talkPointOffset; unverified, tune once visible in game
-                PlutoConfig.StallPosition,  // npcPosition
+                Vector3.zero,               // npcPosition: NPC's local offset from the shop root at build
+                                            // time (see the comment above this call), not a second copy
+                                            // of the world position - must stay zero for a single
+                                            // stationary shopkeeper co-located with his own props
                 ShopAPI.VoiceBoxes.BELLO,
                 ShopAPI.defaultItemPositions,
                 1f,                         // costModifier
