@@ -30,8 +30,10 @@ Adds **Pluto the Cat** as a new playable Gungeoneer. He is a chunky brown tabby-
   regular shop. **The ten cat items above — Ball of Yarn, Catnip Pouch, Hairball, Scratching Post, Toilet Paper
   Roll, Coffee Mug, Jingle Bell Collar, Cone of Shame, Spray Bottle and Feather Teaser — no longer drop in
   chests, shops or rewards until you buy them from the stall.** Each unlock is a one-time purchase for your save
-  (8 Hegemony credits for the first six, 15 for the last four); buying one hands you a copy to carry into the
-  current run right away, and it drops normally in every run after that. Until you unlock an item it also shows
+  (8 Hegemony credits for the first six, 15 for the last four); buying one unlocks that item permanently, and
+  from then on it drops normally in the Gungeon like the rest of Pluto's loot — the purchase is the unlock, not
+  a copy handed over in the Breach. The mat shows the first three still-locked items in a fixed order, so buying
+  one just moves the next locked item up into the free spot. Until you unlock an item it also shows
   as undiscovered in the Ammonomicon. Daifuku and Kinsuke have their own running back-and-forth if you talk to
   them more than once. If you would rather have everything drop as before, set `StallUnlocksDisabled = true`
   under `[Shrine Stall 2.20]` in the BepInEx config — the stall stays standing as decoration and every item acts

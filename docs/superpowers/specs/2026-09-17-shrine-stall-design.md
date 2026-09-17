@@ -47,16 +47,32 @@ save starts the collection again.
 
 ## How it works
 
-Alexandria's foyer meta-shop already implements the core loop. `ShopAPI.SetUpFoyerShop`
-sets `BaseShopController.FoyerMetaShopForcedTiers = true`, and `CustomShopController.DoSetup`
-then:
+Alexandria's foyer meta-shop already implements the core loop. `ShopAPI.SetUpFoyerShop` sets
+`BaseShopController.baseShopType = 6` and builds a single `ExampleBlueprintPrefab`; it leaves
+`FoyerMetaShopForcedTiers` at its default `false` (only `SetUpShop` touches that field, and it
+also sets it `false`). With `currencyType == META_CURRENCY` and a blueprint present,
+`CustomShopController.DoSetup` then:
 
 - stocks **only** items whose `encounterTrackable.PrerequisitesMet()` is false, so unlocked
   items leave the stall on their own;
 - prices each item at its `WeightedGameObject.weight` in the shop's own loot table, written
   to `PickupObject.CustomCost` with `UsesCustomCost = true`;
-- on purchase copies the item's `FLAG` prerequisite `saveFlagToCheck` into
-  `SaveFlagToSetOnAcquisition`, so buying sets the unlock flag.
+- at *setup* time (not on purchase) instantiates the shared blueprint prefab per slot, copies
+  the real item's journal fields onto the clone, and copies the real item's `FLAG`
+  prerequisite's `saveFlagToCheck` into the clone's `SaveFlagToSetOnAcquisition` — so it is the
+  blueprint clone the player picks up, and the game's own pickup path is what sets the unlock
+  flag.
+
+Two consequences of that blueprint branch, both read from the Alexandria 0.5.10 IL and both
+worked around rather than fixed here (they are Alexandria's code):
+
+- the branch never assigns `customCanBuy`, `removeCurrency`, `customPrice`, `OnPurchase` or
+  `OnSteal` on the `CustomShopItemController` — those five are wired only in the
+  *non*-blueprint branch. So the mod's own `OnPurchase` callback is never invoked for this
+  shop. `META_CURRENCY` is charged natively, so the other four nulls are inert.
+- `PlutoUnlocks.Reconcile()` therefore carries the unlock the rest of the way: it runs on
+  every dungeon start and reads the flag the game set, writing the stable string mirror from
+  it (and, in the drift case, the flag from the mirror).
 
 So the design is: give each of the ten items a FLAG prerequisite, build a shop loot table
 whose weights are the credit prices, and let Alexandria do the rest.
@@ -90,10 +106,18 @@ what the engine and Alexandria both understand.
 
 Because only the `…FullPrereqs` loot selectors consult prerequisites, and chest selection
 could not be read from the stubbed reference assembly, a second guard runs on every dungeon
-start: locked items are removed from the live loot tables with
-`LootUtility.RemovePickupFromLootTables`, and unlocked ones re-added. This is required
-anyway, since `ItemDB.DungeonStart()` re-injects `ModLootPerFloor` into
-`Dungeon.baseChestContents` every run.
+start. It has to sweep three collections, not one:
+
+- `RewardManager.GunsLootTable` / `.ItemsLootTable`, via
+  `LootUtility.RemovePickupFromLootTables` — whose entire body touches only those two;
+- `ETGMod.Databases.Items.ModLootPerFloor`, because `ItemDB.AddSpecific` puts the same
+  `WeightedGameObject` there as well as in the RewardManager tables;
+- the current run's `Dungeon.baseChestContents.defaultItemDrops.elements`, because
+  `ItemDB.DungeonStart` — a Harmony **prefix** on `Dungeonator.Dungeon.Start` — has already
+  `AddRange`d `ModLootPerFloor` into it by the time `OnPostDungeonGeneration` fires.
+
+Sweeping only the first pair (as the first implementation did) would leave the backstop
+touching none of the collection that actually feeds chests.
 
 ### Prices
 
@@ -109,18 +133,38 @@ Payment uses `ShopCurrencyType.META_CURRENCY`, which is Hegemony credits: Alexan
 `GameStatsManager.GetPlayerStatValue(TrackedStats.META_CURRENCY)` and charges by setting the
 stat and registering `META_CURRENCY_SPENT_AT_META_SHOP`.
 
-### Buying also hands over the item
+### Buying unlocks the item — it does not hand a copy over
 
-Alexandria gives the purchased item to the player with `LootEngine.GivePrefabToPlayer`, so a
-purchase both unlocks the item forever and drops one into Pluto's hands right there in the
-Breach, to carry into the run. This is kept: it makes a purchase feel immediate, and it
-matches how Breach purchases already behave.
+An earlier draft of this section said a purchase also drops a copy into Pluto's hands. It does
+not. Alexandria calls `LootEngine.GivePrefabToPlayer(this.item.gameObject, player)`, and in the
+foyer meta-shop path `this.item` is the **blueprint clone**, not the cat item — so what the
+player picks up is the blueprint. The purchase's real effect is the permanent unlock: the
+clone's `SaveFlagToSetOnAcquisition` sets the item's unlock flag, the item leaves the stall,
+and from then on it drops normally in the Gungeon like any other loot-pool piece.
+
+Handing over a real copy as well would mean instantiating the item ourselves after the fact;
+decided against (2026-09-17, user) — the unlock is the product.
 
 ### Three slots
 
 `itemPositions.Length` sets the number of slots; the default three positions are used, which
-is exactly the three-on-the-mat display. The shop re-rolls its stock from the loot table on
-each Breach visit, so bought items are replaced by other locked ones.
+is exactly the three-on-the-mat display.
+
+The stock is **deterministic, and is not re-rolled**. Because `SetUpFoyerShop` leaves
+`FoyerMetaShopForcedTiers` false, `DoSetup` fills each of the three slots by scanning the
+shop's compiled loot table from the top and taking the first entry that is not already stocked
+and whose `PrerequisitesMet()` is false. So the mat always shows the first three still-locked
+items in `PlutoUnlocks.Ids` order, on every Breach visit, with no randomness.
+
+Consequences, all accepted (2026-09-17, user):
+
+- buying an item does not shuffle the mat; the next still-locked item in table order simply
+  moves up into the free slot;
+- when fewer than three items remain locked, the leftover slots are filled with `null` (a
+  price of `1` is pushed alongside, and the controller loop skips null slots) — they render as
+  **empty spots on the mat**, not as an error;
+- with all ten unlocked the mat is three empty spots and the stall still stands and still
+  talks. Nothing logs and nothing throws.
 
 ## Dialogue
 

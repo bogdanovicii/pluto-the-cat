@@ -24,8 +24,9 @@ What ships today, in short:
   Breach shop, under a red torii gate. **The ten cat items above (the five-piece cat set and Yasupen's items are
   unaffected; specifically Ball of Yarn, Catnip Pouch, Hairball, Scratching Post, Toilet Paper Roll, Coffee Mug,
   Jingle Bell Collar, Cone of Shame, Spray Bottle and Feather Teaser no longer drop until unlocked at the stall**,
-  a permanent per-save purchase for 8 or 15 Hegemony credits depending on the item. Buying one hands a copy over
-  for the current run immediately and the item then drops normally in every run after. Config section
+  a permanent per-save purchase for 8 or 15 Hegemony credits depending on the item. Buying one unlocks that item
+  for good — it then drops normally in the Gungeon; the purchase is the unlock and does not also hand a copy
+  over. The mat shows the first three still-locked items in a fixed order, not a fresh roll per visit. Config section
   `Shrine Stall 2.20` (prices, stall position, `StallUnlocksDisabled` to unlock everything for testing); in-game
   checklist `docs/shrine-stall-2200-test-checklist.md`.
 - **Samurai Pluto** (alternate costume, 2.16.0): unlocked by beating Pluto's past (the Vet Visit), switched at the

@@ -19,6 +19,14 @@ anything else:
 - [ ] Daifuku, Kinsuke, the torii and the stall counter are all visible in the Breach. If any one of the four is
   missing, check for `shrine stall: missing prop resource ...` in the log (torii/stall/Kinsuke are placed by a
   separate code path, `PlaceBackdropProps`, that fails independently of Daifuku's own NPC and logs per-prop).
+- [ ] **The props survive leaving and coming back.** They are unparented `GameObject`s with no
+  `DontDestroyOnLoad`, so Unity destroys them when the Breach unloads; they are re-placed on every
+  `DungeonHooks.OnFoyerAwake`. Alexandria re-places Daifuku itself, so if the re-placement is broken the symptom
+  is Daifuku standing alone in mid-air with no torii, counter or Kinsuke. Check all four are still there:
+  - [ ] after finishing or abandoning a run and returning to the Breach;
+  - [ ] after **dying** and returning to the Breach;
+  - [ ] after several Breach → run → Breach cycles in one session — and confirm there is exactly one of each
+    prop, not a stack of duplicates piling up at the same spot (each foyer load destroys the previous set first).
 
 ## 2. Draw order (torii, stall counter, Kinsuke's bowl)
 
@@ -50,18 +58,27 @@ in-game confirmation.
 
 ## 4. Loot gating actually works
 
-The FLAG prerequisite on each item is the primary lock; the per-run loot-table guard (`PlutoUnlockGate`,
-re-applied on every `DungeonHooks.OnPostDungeonGeneration`) is a backstop whose ordering against the mod API's
-own loot re-injection (`ItemDB.DungeonStart` writing into `Dungeon.baseChestContents`) could not be determined
-without the game installed.
+The FLAG prerequisite on each item is the primary lock. The per-run loot-table guard (`PlutoUnlockGate`,
+re-applied on every `DungeonHooks.OnPostDungeonGeneration`) is the backstop, and it now sweeps all three
+collections that matter, not just the two `LootUtility.RemovePickupFromLootTables` touches:
+`RewardManager.GunsLootTable`/`.ItemsLootTable`, `ETGMod.Databases.Items.ModLootPerFloor` (so the next
+`Dungeon.Start` cannot re-inject a locked item) and the current run's
+`Dungeon.baseChestContents.defaultItemDrops.elements` (because `ItemDB.DungeonStart` is a Harmony *prefix* on
+`Dungeon.Start` and has already filled it by the time this hook runs). The ordering is no longer an unknown —
+it was read from the ModTheGungeonAPI IL — but nothing here has been seen running, and the *re-add* side (an
+unlocked item being put back into `ModLootPerFloor["ANY"]` and the live chest table at weight 1) is the part
+most likely to be wrong in practice.
 - [ ] With no items unlocked (fresh save), none of the ten gated items (Ball of Yarn, Catnip Pouch, Hairball,
   Scratching Post, Toilet Paper Roll, Coffee Mug, Jingle Bell Collar, Cone of Shame, Spray Bottle, Feather
   Teaser) appears in any chest, shop, or boss/floor reward across at least 3-4 floors of play.
 - [ ] Unlock one item at the stall, then do a full run: that one item can now appear in loot, and the other nine
   still cannot.
-- [ ] If a locked item ever turns up in loot, note which floor/source and whether it was the first floor after a
-  fresh dungeon generation (that would point at the ordering-with-`ItemDB.DungeonStart` unknown above) versus a
-  later floor in the same run (that would point at a different bug).
+- [ ] If a locked item ever turns up in loot, note which floor/source and whether it was the first floor of a run
+  or a later one — a first-floor-only leak points at the guard running too late for that floor, a later-floor leak
+  points at the `ModLootPerFloor` sweep not sticking.
+- [ ] The opposite failure, and the newly risky one: an **unlocked** item must still appear in chests. After
+  unlocking one item, play 3-4 floors and confirm it can actually drop — if unlocked items stop dropping
+  entirely, the guard is removing them from `baseChestContents` without the re-add landing.
 
 ## 5. Per-save persistence
 
@@ -71,22 +88,36 @@ without the game installed.
   the item is still unlocked (drops normally, stall no longer offers it).
 - [ ] Start or switch to a **different** save slot: that slot's unlocks are independent — nothing purchased on
   the first slot is unlocked on the second.
+- [ ] **Co-op.** Start a two-player game, have **player 2** buy an item at the stall, then finish or abandon the
+  run and come back to the Breach. The unlock is stored per *save*, not per player
+  (`GameStatsManager.SetFlag`/`ForceUnlock`), so it should be unlocked for both — the item should be gone from
+  the mat and should drop for either player. Note specifically whether the purchase registered at all when the
+  buyer was not player 1, and whether the mat updated for the host.
 
 ## 6. Flag-id drift (the string mirror)
 
 `GungeonFlags` values from `ETGModCompatibility.ExtendEnum` are assigned per-save based on registration order,
 so installing or removing another mod that also extends `GungeonFlags` can shift the numeric ids. The string
 mirror (`bogdan.etg.plutothecat:<item>`, written by `PlutoUnlocks.Unlock` via `GameStatsManager.ForceUnlock`)
-exists specifically so unlocks survive that shift. A fix-round review found that until this build, nothing in
-the mod ever called `PlutoUnlocks.Unlock` at all — the foyer shop's `OnPurchase` slot was left `null`, so a
-purchase may have set the `GungeonFlags` value (Alexandria copies the FLAG prerequisite's `saveFlagToCheck`
-into `PickupObject.SaveFlagToSetOnAcquisition` on its own) but never wrote the string mirror or called
-`GameStatsManager.Save()`. `ShrineStall.OnPurchase` now calls `PlutoUnlocks.Unlock` on every purchase, but that
-wiring itself has not been run in game — check it before trusting the drift result below.
-- [ ] **First, confirm the mirror is actually being written at all**: unlock an item at the stall, and check the
-  log for `shrine stall: purchased and unlocked <id>` (from `ShrineStall.OnPurchase`). If that line is missing,
-  the purchase callback did not fire or did not match the item back to its id — the drift check below cannot
-  mean anything until this line appears.
+exists specifically so unlocks survive that shift.
+
+How the mirror actually gets written changed in the final fix round, and this is the single most important thing
+to confirm in game. Reading the Alexandria 0.5.10 IL showed that `CustomShopController.DoSetup`'s foyer
+meta-shop (blueprint) branch **never assigns the `OnPurchase` delegate at all** — those five callbacks are wired
+only in its non-blueprint branch — so `ShrineStall.OnPurchase` is expected never to fire here, and its log line
+is expected to be **absent**. What is expected to happen instead: the blueprint clone carries the item's
+`SaveFlagToSetOnAcquisition`, the game's own pickup path sets the `GungeonFlags` value, and
+`PlutoUnlocks.Reconcile()` (run from `PlutoUnlockGate` on load and on every dungeon start) writes the string
+mirror from that flag. Neither half has been seen running.
+- [ ] **First, confirm the unlock is recorded at all.** Buy an item, then leave the Breach and start a run (that
+  is when `Reconcile` next runs) and look in the log for
+  `unlocks: flag said unlocked but the mirror did not, mirror written for <id>`. That line appearing is the
+  expected, working path.
+- [ ] If instead `shrine stall: purchased and unlocked <id> (matched by save flag)` appears, Alexandria *did*
+  invoke the callback — also fine, and better (the mirror is written immediately). Note which of the two you saw.
+- [ ] If **neither** line ever appears, the unlock is being kept only as a `GungeonFlags` value with no mirror:
+  the item will work now but will be lost the first time another flag-extending mod shifts the ids. Everything
+  below in this section is meaningless until one of the two lines shows up.
 - [ ] Unlock at least one item. Install another mod that also extends `GungeonFlags` (any Alexandria/ETGMod mod
   that registers its own custom flags), relaunch, and confirm the previously unlocked item is still unlocked.
 - [ ] Now remove that other mod and relaunch again: the item must still read as unlocked (this is the actual
@@ -95,25 +126,39 @@ wiring itself has not been run in game — check it before trusting the drift re
 
 ## 7. Buying an item
 
-- [ ] Buying an item at the stall: charges the correct number of Hegemony credits (8 for Ball of Yarn, Catnip
+A purchase **unlocks only**. Alexandria's `LootEngine.GivePrefabToPlayer` is handed
+`CustomShopItemController.item`, which in the foyer meta-shop path is the shared *blueprint clone*, not the cat
+item — so nothing hands a real copy of the item to Pluto, by design. The docs were corrected to match.
+- [ ] Buying an item at the stall charges the correct number of Hegemony credits (8 for Ball of Yarn, Catnip
   Pouch, Hairball, Scratching Post, Toilet Paper Roll and Coffee Mug; 15 for Jingle Bell Collar, Cone of Shame,
-  Spray Bottle and Feather Teaser — `Shrine Stall 2.20` config defaults), permanently unlocks that item for the
-  save, and hands one copy of it to Pluto to carry into the current run immediately (not just an unlock with
-  nothing handed over). Check the log for `shrine stall: purchased and unlocked <id>` on every purchase (see
-  §6) — its absence means the unlock's string mirror was never written even if the item itself was handed over.
+  Spray Bottle and Feather Teaser — `Shrine Stall 2.20` config defaults) and permanently unlocks that item.
+- [ ] **BLOCKING — what you actually receive.** Watch the moment of purchase carefully and write down exactly
+  what, if anything, lands in Pluto's hands or on the floor. Expected: nothing usable — either no pickup at all,
+  or a blueprint-looking object. If a blueprint item ends up in Pluto's inventory, or a pickup appears that
+  cannot be picked up / looks broken / persists in the Breach, that is a real bug to report even though the
+  unlock itself worked.
 - [ ] The bought item disappears from the stall's mat on the same visit (it is now unlocked, so
   `encounterTrackable.PrerequisitesMet()` is true and the foyer shop no longer stocks it).
 - [ ] After that purchase, the item drops normally from chests/shops/rewards in later runs, same as any of
-  Pluto's other loot-pool pieces.
-- [ ] Trying to buy with insufficient credits fails cleanly: no credits are deducted, no item is unlocked or
-  handed over, and the "cannot afford" dialogue plays (see Dialogue below).
+  Pluto's other loot-pool pieces. This is the only way the player gets the item — confirm it works.
+- [ ] Trying to buy with insufficient credits fails cleanly: no credits are deducted, nothing is unlocked, and
+  the "cannot afford" dialogue plays (see Dialogue below).
 
-## 8. The mat: item count and prices
+## 8. The mat: fixed order, fixed count, prices
 
-- [ ] The mat shows three items at a time (an assumption about Alexandria's default foyer-shop slot count, not
-  a value read from its source — if a different number shows up, that is not necessarily a bug, just this
-  checklist's guess being wrong), drawn from whichever of the ten are still locked; buying one causes another
-  locked item to appear in its place if any remain.
+The stock is **deterministic and never re-rolled**. `SetUpFoyerShop` leaves `FoyerMetaShopForcedTiers` false, so
+`DoSetup` fills each of the three slots by scanning the shop's loot table from the top and taking the first
+entry not already stocked whose `PrerequisitesMet()` is false. The mat is therefore always the first three
+still-locked items in `PlutoUnlocks.Ids` order (Ball of Yarn, Catnip Pouch, Hairball, then Scratching Post,
+Toilet Paper Roll, Coffee Mug, Jingle Bell Collar, Cone of Shame, Spray Bottle, Feather Teaser).
+- [ ] On a fresh save the mat shows exactly Ball of Yarn, Catnip Pouch and Hairball.
+- [ ] Leaving the Breach and coming back shows **the same three**, in the same spots — no re-roll.
+- [ ] Buying one of them leaves the other two where they were, and the next locked item in that order (Scratching
+  Post) moves up into the free spot.
+- [ ] With only one or two items still locked, the leftover spots are simply **empty** — no placeholder, no
+  error, no exception in the log.
+- [ ] With all ten unlocked the mat is three empty spots, Daifuku and Kinsuke are still there and still talk, and
+  nothing throws. (Easiest way to reach this state: `StallUnlocksDisabled = true`, see §10.)
 - [ ] Prices on the mat read 8 or 15 credits, matching the tier a given item belongs to (listed above), not some
   other rounding of the config value.
 
@@ -126,11 +171,21 @@ wiring itself has not been run in game — check it before trusting the drift re
 
 ## 10. `StallUnlocksDisabled` config toggle
 
+The toggle used to be consulted only by the loot-table guard, which meant items came back into the loot tables
+while still carrying an unmet FLAG prerequisite — so the stall still stocked all ten, prereq-respecting
+selectors still skipped them and the Ammonomicon still showed `???`. `PlutoUnlockGate.Apply()` now clears the
+prerequisites outright when the toggle is set. All four checks below have to pass, not just the drop one.
 - [ ] Set `StallUnlocksDisabled = true` under `[Shrine Stall 2.20]` in the BepInEx config and relaunch: all ten
-  items behave as already unlocked (they drop normally, and the Ammonomicon shows them as discovered) even
-  though nothing was purchased.
-- [ ] The stall itself still stands in the Breach with Daifuku and Kinsuke — it becomes pure decoration (nothing
-  to buy, or everything shows as already-owned/no-op), rather than disappearing or erroring.
+  items drop normally in runs even though nothing was purchased.
+- [ ] **The stall's mat is empty** — three empty spots, nothing on offer, because every item now counts as
+  unlocked. If the stall still stocks items under the toggle, the prerequisites are not being cleared.
+- [ ] **The Ammonomicon shows all ten as discovered** (full entries, not `???`), again without buying anything.
+- [ ] The stall itself still stands in the Breach with Daifuku and Kinsuke — pure decoration, rather than
+  disappearing or erroring.
+- [ ] Set the toggle back to `false` and relaunch: items that were never actually bought go back to locked
+  (the toggle must not have written real unlocks into the save — `PlutoUnlocks.Reconcile` deliberately reads the
+  raw flag and mirror, not `IsUnlocked`, precisely so this cannot happen). Anything genuinely bought stays
+  unlocked.
 
 ## 11. Dialogue
 
@@ -153,13 +208,17 @@ line. Every exchange is `"Daifuku: ...\nKinsuke: ..."` — one literal `\n` betw
   and the lending-library ("Everything on this mat belonged to Pluto first...") and not-quite-enough
   (purchase-failed) lines.
 
-## 12. Kinsuke is a static sprite
+## 12. Kinsuke's bob
 
-Kinsuke is placed as a single unanimated frame (`kinsuke_idle_001.png`), not the full four-frame idle clip — a
-deliberate reduction because Alexandria's shop-animation helpers were confirmed (via IL) to attach a new clip to
-Daifuku's own animator rather than create a second animated sprite.
-- [ ] Confirm Kinsuke reads acceptably as a still bowl on the counter at 1x, rather than looking obviously broken
-  or like a bug (e.g. a "frozen" character where motion is expected).
+Kinsuke now cycles all four `kinsuke_idle_*` frames at 4 fps, driven by `ShrineStall.PropFlipbook`, a small
+component on his own prop GameObject that advances the `SpriteRenderer` on `BraveTime.DeltaTime`. (Alexandria's
+shop-animation helpers are still unusable for him: both were confirmed via IL to attach a clip to Daifuku's own
+animator rather than create a second sprite.)
+- [ ] Kinsuke visibly bobs in his bowl, and the loop reads as a loop — not a stutter, not a single frame stuck,
+  not a visible jump between the last frame and the first.
+- [ ] 4 fps looks right beside Daifuku's 6 fps idle (the koi should read calmer than the cat). If it looks too
+  slow or too fast, `KinsukeFps` in `ShrineStall.cs` is the one number to change.
+- [ ] Pausing the game stops the bob (it is on `BraveTime.DeltaTime`, so it follows the game's own time scale).
 
 ## 13. Art at 1x
 

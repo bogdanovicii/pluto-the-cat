@@ -8,9 +8,13 @@
 - **Important change for existing players: the ten cat items from the 2.17.0/2.19.0 cat sets now need
   unlocking before they drop.** Ball of Yarn, Catnip Pouch, Hairball, Scratching Post, Toilet Paper Roll, Coffee
   Mug, Jingle Bell Collar, Cone of Shame, Spray Bottle and Feather Teaser no longer appear in any chest, shop or
-  reward until bought from the stall (8 credits for the first six, 15 for the last four). Buying one hands you a
-  copy for the current run immediately, removes it from the stall's mat, and it then drops normally in every run
-  after. Locked items show as undiscovered in the Ammonomicon and flip to the full page on purchase. Unlocks are
+  reward until bought from the stall (8 credits for the first six, 15 for the last four). Buying one **unlocks it
+  permanently** — it leaves the stall's mat and from then on drops normally in the Gungeon like any other loot;
+  the purchase is the unlock, it does not also hand you a copy to carry out of the Breach. The mat shows the
+  first three still-locked items in a fixed order and is not re-rolled between visits: buying one just moves the
+  next locked item up into the free spot, and once fewer than three remain locked the leftover spots are simply
+  empty (with all ten unlocked the mat is empty and the stall stays standing).
+  Locked items show as undiscovered in the Ammonomicon and flip to the full page on purchase. Unlocks are
   per-save and survive quitting to the menu; a different save slot has its own unlocks, tracked by an extended
   `GungeonFlags` value mirrored by a stable string key so the unlock survives other mods changing the game's
   flag ids.
