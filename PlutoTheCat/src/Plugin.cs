@@ -72,6 +72,7 @@ namespace PlutoTheCat
             Step("cone of shame", ConeOfShameItem.Init);
             Step("coffee mug", CoffeeMugItem.Init);
             Step("yasupen", YasupenItem.Init);
+            Step("unlocks", PlutoUnlocks.Init);
 
             CustomCharacterData built = null;
             Step("character", () =>
