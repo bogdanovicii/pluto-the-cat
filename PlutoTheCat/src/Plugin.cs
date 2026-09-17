@@ -25,6 +25,7 @@ namespace PlutoTheCat
         public const string CHARACTER_ROOT = "PlutoTheCat/Characters/Pluto";
         public const string COMPANION_ROOT = "PlutoTheCat/Resources/Companions/coco";
         public const string VFX_ROOT = "PlutoTheCat/Resources/VFX";
+        public const string SHOP_ROOT = "PlutoTheCat/Resources/Shop";
 
 
         public void Start()
@@ -80,6 +81,7 @@ namespace PlutoTheCat
             Step("yasupen", YasupenItem.Init);
             Step("unlocks", PlutoUnlocks.Init);
             Step("unlock gate", PlutoUnlockGate.Apply);
+            Step("shrine stall", ShrineStall.Init);
 
             CustomCharacterData built = null;
             Step("character", () =>
