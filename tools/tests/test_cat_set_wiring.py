@@ -1,6 +1,7 @@
 """Source-level wiring checks for the Round 2 cat set engine integrations."""
 import pathlib
 import re
+import struct
 import unittest
 
 
@@ -511,6 +512,89 @@ class CatSetWiringTests(unittest.TestCase):
         config = self.source('PlutoConfig.cs')
         for key, value in (('CatnipSeconds', '7f'), ('CatnipSpeedBonus', '2f'), ('CatnipFireRateMultiplier', '1.25f')):
             self.assertIn('public static float ' + key + ' = ' + value + ';', config)
+
+    def test_round2_registration(self):
+        plugin = self.source('Plugin.cs')
+        synergies = self.source('PlutoSynergies.cs')
+
+        # All five pickups: exact ID, fixed quality, normal loot pool, init step before synergies.
+        roster = (
+            ('SprayBottleGun.cs', 'SprayBottleGun', 'spray_bottle', 'C', 'spray bottle', 'Add'),
+            ('FeatherTeaserGun.cs', 'FeatherTeaserGun', 'feather_teaser', 'B', 'feather teaser', 'Add'),
+            ('ToiletPaperRollItem.cs', 'ToiletPaperRollItem', 'toilet_paper_roll', 'C', 'toilet paper roll', 'Init'),
+            ('ConeOfShameItem.cs', 'ConeOfShameItem', 'cone_of_shame', 'B', 'cone of shame', 'Init'),
+            ('CoffeeMugItem.cs', 'CoffeeMugItem', 'coffee_mug', 'C', 'coffee mug', 'Init'),
+        )
+        synergy_step = plugin.index('Step("synergies", PlutoSynergies.Init)')
+        for filename, cls, slug, quality, step, init in roster:
+            text = self.source(filename)
+            self.assertEqual(1, text.count('public const string ID = "pluto:' + slug + '"'), filename)
+            qualities = re.findall(r'\.quality = PickupObject\.ItemQuality\.(\w+);', text)
+            self.assertEqual([quality], qualities, filename)
+            self.assertNotIn('EXCLUDED', text, filename)
+            if filename.endswith('Gun.cs'):
+                self.assertEqual(1, text.count('ETGMod.Databases.Items.Add(gun, null, "ANY")'), filename)
+            else:
+                # Alexandria's SetupItem adds passive/active items to the normal loot pool.
+                self.assertEqual(1, text.count('ItemBuilder.SetupItem(item, '), filename)
+                self.assertNotIn('Databases.Items.Add', text, filename)
+            call = 'Step("' + step + '", ' + cls + '.' + init + ');'
+            self.assertEqual(1, plugin.count(call), call)
+            self.assertLess(plugin.index(call), synergy_step, call)
+
+        # Five exact synergy pairs, each registered once.
+        for const, name, pair in (
+            ('BathTime', 'Bath Time', 'SprayBottleGun.ID, WetFoodCanItem.ID'),
+            ('Playtime', 'Playtime', 'FeatherTeaserGun.ID, BallOfYarnItem.ID'),
+            ('Shredder', 'Shredder', 'ToiletPaperRollItem.ID, ScratchingPostItem.ID'),
+            ('MatchingCones', 'Matching Cones', 'ConeOfShameItem.ID, CocoBlueItem.ID'),
+            ('Espresso', 'Espresso', 'CoffeeMugItem.ID, CatnipPouchItem.ID'),
+        ):
+            self.assertIn('public const string ' + const + ' = "' + name + '";', synergies)
+            self.assertEqual(1, synergies.count('Register(' + const + ','), const)
+            self.assertEqual(1, synergies.count('Register(' + const + ', new List<string> { ' + pair + ' });'), const)
+
+        # Generated resource manifest.
+        res = ROOT / 'PlutoTheCat' / 'Resources'
+        weapons = RES / 'WeaponCollection'
+        for prefix, counts in (('pluto_spray_bottle_', {'idle': 1, 'fire': 2, 'reload': 3}),
+                               ('pluto_feather_teaser_', {'idle': 1, 'charge': 1, 'fire': 1, 'empty': 1, 'return': 1})):
+            for clip, count in counts.items():
+                frames = sorted(weapons.glob(prefix + clip + '_[0-9][0-9][0-9].png'))
+                self.assertEqual(count, len(frames), prefix + clip)
+                for frame in frames:
+                    self.assertTrue(frame.with_suffix('.jtk2d').exists(), frame.name + ' has no .jtk2d')
+        for name in ('pluto_spray_mist_001', 'pluto_water_drop_001', 'pluto_water_splash_001',
+                     'pluto_feather_lure_001', 'pluto_feather_lure_002', 'pluto_loose_feather_burst_001'):
+            self.assertTrue((RES / 'ProjectileCollection' / (name + '.png')).exists(), name)
+        self.assertFalse((RES / 'ProjectileCollection' / 'pluto_feather_lure_003.png').exists())
+        for name in ('pluto_spray_bottle_idle_001', 'pluto_feather_teaser_idle_001'):
+            path = RES / 'Ammonomicon Encounter Icon Collection' / (name + '.png')
+            self.assertEqual((24, 32), png_size(path), name)
+        for name in ('toilet_paper_roll_icon', 'cone_of_shame_icon', 'coffee_mug_icon'):
+            self.assertEqual((16, 16), png_size(res / 'Items' / (name + '.png')), name)
+        effects = res / 'Effects' / 'cat_set'
+        for name in ('toilet_paper_streamer_001', 'toilet_paper_bits_001', 'toilet_paper_confetti_001',
+                     'coffee_puddle_001'):
+            self.assertTrue((effects / (name + '.png')).exists(), name)
+        shards = [(effects / ('coffee_shard_00%d.png' % i)).read_bytes() for i in range(1, 5)]
+        self.assertEqual(4, len(set(shards)), 'mug shards must be four distinct sprites')
+        coco = res / 'Companions' / 'coco'
+        for clip in ('idle', 'move', 'pet', 'block', 'ko'):
+            knight = sorted((coco / ('knight_' + clip)).glob('*.png'))
+            cone = sorted((coco / ('cone_' + clip)).glob('*.png'))
+            self.assertTrue(knight, 'knight_' + clip)
+            self.assertEqual(len(knight), len(cone), 'cone_' + clip)
+            self.assertEqual([png_size(p) for p in knight], [png_size(p) for p in cone], 'cone_' + clip)
+        for preview in ('cat-set-items-2190', 'spray-bottle-2190', 'feather-teaser-2190', 'coco-cones-2190'):
+            self.assertTrue((ROOT / 'docs' / 'art-preview' / (preview + '.png')).exists(), preview)
+
+
+def png_size(path):
+    with open(str(path), 'rb') as handle:
+        header = handle.read(24)
+    assert header[:8] == b'\x89PNG\r\n\x1a\n', str(path)
+    return struct.unpack('>II', header[16:24])
 
 
 if __name__ == '__main__':
