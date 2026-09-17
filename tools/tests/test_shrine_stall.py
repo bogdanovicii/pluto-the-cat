@@ -138,15 +138,22 @@ class ShrineStallWiringTests(unittest.TestCase):
         )
         self.assertIn('Plugin.Log', stall, 'ShrineStall.cs must log the outcome through Plugin.Log')
 
-        # Finding 1 (round 1 review): Kinsuke's koi art must actually be attached to the shop, or he
-        # is permanently invisible in game (SetUpFoyerShop's returned GameObject is the only place a
-        # second character can be attached, and no later task re-touches shop registration).
-        self.assertIn('kinsuke_idle', stall, 'ShrineStall.cs never references the kinsuke_idle_* art')
-        self.assertTrue(
-            'ShopAPI.AddParentedAnimationToShop(' in stall or 'ShopAPI.AddUnparentedAnimationToShop(' in stall,
-            'ShrineStall.cs must attach Kinsuke to the shop GameObject via one of Alexandria\'s '
-            'AddParentedAnimationToShop / AddUnparentedAnimationToShop calls',
-        )
+        # Finding 1 (round 1 + round 2 review): Kinsuke's koi art must actually be visible in game as a
+        # second sprite, or he is permanently invisible/replaces Daifuku. AddParentedAnimationToShop /
+        # AddUnparentedAnimationToShop were tried in round 1 and confirmed (against the Alexandria IL) to
+        # register a dead clip on Daifuku's OWN animator rather than spawn a second sprite - a string
+        # match on 'kinsuke_idle' alone cannot tell a real fix from that dead one, so assert the actual
+        # wiring: Kinsuke goes through the same real-sprite PlaceProp(...) path as the torii and stall,
+        # and the two dead Alexandria calls are gone.
+        self.assertIn('PlaceProp("kinsuke_idle_001.png"', stall,
+                       'ShrineStall.cs must place Kinsuke as a real sprite GameObject via PlaceProp, '
+                       'the same way it places the torii and stall')
+        self.assertNotIn('AddParentedAnimationToShop', stall,
+                          'AddParentedAnimationToShop only adds a dead clip to Daifuku\'s own animator; '
+                          'it creates no second sprite for Kinsuke and must not be used')
+        self.assertNotIn('AddUnparentedAnimationToShop', stall,
+                          'AddUnparentedAnimationToShop only adds a dead clip to Daifuku\'s own animator; '
+                          'it creates no second sprite for Kinsuke and must not be used')
 
         # Finding 2 (round 1 review): ShrineStallLines' public contract is fixed by the plan's Task 6
         # section (IntroKey, GenericKey, StopperKey, PurchaseKey, PurchaseFailedKey, Register()), not by
