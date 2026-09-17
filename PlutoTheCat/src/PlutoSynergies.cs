@@ -29,6 +29,7 @@ namespace PlutoTheCat
         public const string Playtime = "Playtime";
         public const string Shredder = "Shredder";
         public const string MatchingCones = "Matching Cones";
+        public const string Espresso = "Espresso";
         // Knighted is a tier of Squire, not a registered synergy: Alexandria cannot require six junk, so CocoFriends
         // turns it on while Squire is active and Ser Junkan is a Holy (or Angelic) Knight.
         public const string Knighted = "Knighted";
@@ -55,6 +56,7 @@ namespace PlutoTheCat
             Register(Playtime, new List<string> { FeatherTeaserGun.ID, BallOfYarnItem.ID });
             Register(Shredder, new List<string> { ToiletPaperRollItem.ID, ScratchingPostItem.ID });
             Register(MatchingCones, new List<string> { ConeOfShameItem.ID, CocoBlueItem.ID });
+            Register(Espresso, new List<string> { CoffeeMugItem.ID, CatnipPouchItem.ID });           // mug extends zoomies
 
             CustomActions.OnNewPlayercontrollerSpawned += OnPlayerSpawned;
         }

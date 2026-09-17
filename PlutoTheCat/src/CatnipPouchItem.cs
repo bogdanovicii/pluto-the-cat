@@ -5,9 +5,10 @@ using Alexandria.ItemAPI;
 namespace PlutoTheCat
 {
     /// <summary>
-    /// Catnip Pouch (2.17): a timed active. Zoomies for CatnipSeconds (movement speed through CatTricks.TimedSpeed, so it
+    /// Catnip Pouch (2.17): a timed active. Zoomies for CatnipSeconds (movement speed through CatTricks.AcquireSpeed, so it
     /// shares the MaxSpeedBonus cap, plus a rate-of-fire multiplier, an afterimage trail and drifting catnip leaves), then a
     /// catnap for CatnapSeconds at 80 % speed. With Nip And Tuck (Puffed Up) the zoomies start with a free puff.
+    /// One loop counts zoomiesRemaining down, so Espresso (Coffee Mug) can extend a running zoomies and the catnap waits.
     /// Dropping the pouch or losing it mid-effect removes every modifier.
     /// </summary>
     public class CatnipPouchItem : PlayerItem
@@ -16,8 +17,10 @@ namespace PlutoTheCat
         private const float CatnapSpeed = 0.8f, LeafInterval = 0.3f;
         private PlayerController buffed;
         private Coroutine running;
-        private StatModifier fireMod, napMod;
+        private StatModifier speedMod, fireMod, napMod;
         private AfterImageTrailController trail;
+        private float zoomiesRemaining;
+        private bool zooming;
 
         public static void Init()
         {
@@ -46,16 +49,32 @@ namespace PlutoTheCat
             running = user.StartCoroutine(Zoomies(user));
         }
 
+        /// <summary>
+        /// Espresso: adds bonus seconds to the zoomies currently running for this wearer. Returns false and changes
+        /// nothing when the pouch is idle, napping, or held by someone else.
+        /// </summary>
+        public bool ExtendZoomies(PlayerController user, float bonus)
+        {
+            bool active = user != null && running != null && buffed == user && zooming && zoomiesRemaining > 0f;
+            if (!active) return false;
+            zoomiesRemaining = CatSetRules.ExtendRemaining(zoomiesRemaining, bonus, active);
+            m_activeDuration = CatSetRules.ExtendDuration(m_activeDuration, bonus);
+            Plugin.Log("catnip pouch: zoomies extended by " + bonus + " s (" + zoomiesRemaining + " s left)");
+            return true;
+        }
+
         private IEnumerator Zoomies(PlayerController user)
         {
             buffed = user;
+            zooming = true;
+            zoomiesRemaining = PlutoConfig.CatnipSeconds;
             IsCurrentlyActive = true;
             m_activeElapsed = 0f;
             m_activeDuration = PlutoConfig.CatnipSeconds;
             AkSoundEngine.PostEvent("Play_OBJ_dice_bless_01", user.gameObject);
             Plugin.Log("catnip pouch: zoomies for " + PlutoConfig.CatnipSeconds + " s");
 
-            user.StartCoroutine(CatTricks.TimedSpeed(user, PlutoConfig.CatnipSpeedBonus, PlutoConfig.CatnipSeconds));
+            speedMod = CatTricks.AcquireSpeed(user, PlutoConfig.CatnipSpeedBonus);
             fireMod = CatItemKit.Mod(PlayerStats.StatType.RateOfFire, StatModifier.ModifyMethod.MULTIPLICATIVE, PlutoConfig.CatnipFireRateMultiplier);
             user.ownerlessStatModifiers.Add(fireMod);
             user.stats.RecalculateStats(user, false, false);
@@ -72,11 +91,11 @@ namespace PlutoTheCat
             }
             if (user.PlayerHasActiveSynergy(PlutoSynergies.NipAndTuck)) PuffedUpItem.Trigger(user);
 
-            float elapsed = 0f, leaf = 0f;
-            while (user != null && CatItemRules.Catnip(elapsed, PlutoConfig.CatnipSeconds, PlutoConfig.CatnapSeconds) == CatItemRules.CatnipPhase.Zoomies)
+            float leaf = 0f;
+            while (user != null && zoomiesRemaining > 0f)
             {
                 float dt = BraveTime.DeltaTime;
-                elapsed += dt; leaf -= dt;
+                zoomiesRemaining -= dt; leaf -= dt;
                 if (leaf <= 0f)
                 {
                     leaf = LeafInterval;
@@ -98,11 +117,16 @@ namespace PlutoTheCat
             buffed = null;
         }
 
+        /// <summary>Idempotent: every modifier and the trail are released once, then the references are cleared.</summary>
         private void EndZoomies()
         {
+            zooming = false;
+            zoomiesRemaining = 0f;
             IsCurrentlyActive = false;
             if (trail != null) { trail.spawnShadows = false; Destroy(trail); }
             trail = null;
+            CatTricks.ReleaseSpeed(buffed, speedMod);
+            speedMod = null;
             if (buffed != null && fireMod != null && buffed.ownerlessStatModifiers.Remove(fireMod))
                 buffed.stats.RecalculateStats(buffed, false, false);
             fireMod = null;

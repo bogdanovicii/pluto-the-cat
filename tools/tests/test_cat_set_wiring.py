@@ -381,6 +381,129 @@ class CatSetWiringTests(unittest.TestCase):
 
         self.assertTrue((ROOT / 'PlutoTheCat/Resources/Items/cone_of_shame_icon.png').exists())
 
+    def test_coffee_mug(self):
+        mug = self.requires(
+            'CoffeeMugItem.cs',
+            'public class CoffeeMugItem : PlayerItem',
+            'public const string ID = "pluto:coffee_mug"',
+            'string name = "Coffee Mug"',
+            'ItemBuilder.SetupItem(item, "Off The Table",',
+            'Bogdan', 'Bianca', 'looked her in the eye',
+            'PickupObject.ItemQuality.C',
+            'ItemBuilder.CooldownType.Damage, PlutoConfig.CoffeeRechargeDamage',
+            'Plugin.ITEM_ROOT + "/coffee_mug_icon"',
+            # 3-tile throw toward aim that stops at the first collision, shattering once.
+            'unadjustedAimPoint.XY() - user.CenterPosition',
+            'baseData.range = PlutoConfig.CoffeeRange',
+            'OnDestruction', 'private bool armed', 'public void Disarm()',
+            # Configured player-owned shard ring.
+            'int count = PlutoConfig.CoffeeShardCount',
+            'CatSetRules.ShardAngle(i, count)',
+            'baseData.damage = PlutoConfig.CoffeeShardDamage',
+            'shard.Owner = owner',
+            'coffee_shard_00', 'coffee_puddle_001',
+            # Harmless/charmed enemies are neither hit nor slowed.
+            'CatItemKit.ValidEnemy(enemy)', 'PhysicsEngine.SkipCollision = true',
+            # Puddle slow: hitbox scan, owned slow id, released on exit/end/teardown.
+            'RoomHandler.ActiveEnemyType.All',
+            'CatItemKit.HitboxOverlaps(enemy, min, max)',
+            'remaining = PlutoConfig.CoffeeSlowSeconds',
+            'CatItemKit.Slow(enemy,', 'SlowId = "pluto_coffee_slow"',
+            'RemoveEffect(SlowId)', 'owner.CurrentRoom != room',
+            # Espresso on use.
+            'PlayerHasActiveSynergy(PlutoSynergies.Espresso)',
+            'as CatnipPouchItem',
+            'ExtendZoomies(user, PlutoConfig.CoffeeZoomiesBonusSeconds)',
+            # Teardown.
+            'public override void OnPreDrop(PlayerController user)',
+            'public override void OnDestroy()', 'private void Teardown()',
+            'Plugin.Log(',
+        )
+        self.assertNotIn('PickupObject.ItemQuality.EXCLUDED', mug)
+        # The slow is a plain speed effect: no goop at all (never damaging/fire), no manual velocity ownership.
+        for banned in ('Goop', 'BehaviorOverridesVelocity', 'MovementSpeed', 'CenterPosition, min'):
+            self.assertNotIn(banned, mug)
+        self.assertEqual(2, mug.count('Teardown();'))
+        # The mug shatters exactly once: the armed latch drops before any shard/puddle is spawned.
+        latch = mug.index('if (!armed')
+        disarm = mug.index('armed = false;', latch)
+        shatter = mug.index('.Shatter(', disarm)
+        self.assertLess(latch, disarm)
+        self.assertLess(disarm, shatter)
+        # Released enemies are exactly those previously slowed by this puddle and no longer inside it.
+        self.assertIn('slowed', mug[mug.index('RemoveEffect(SlowId)') - 400:mug.index('RemoveEffect(SlowId)')])
+
+        config = self.source('PlutoConfig.cs')
+        for key, typename, value in (
+            ('CoffeeRechargeDamage', 'float', '300f'), ('CoffeeRange', 'float', '3f'),
+            ('CoffeeShardCount', 'int', '10'), ('CoffeeShardDamage', 'float', '5f'),
+            ('CoffeeSlowSeconds', 'float', '3f'), ('CoffeeZoomiesBonusSeconds', 'float', '2f')):
+            self.assertIn('public static ' + typename + ' ' + key + ' = ' + value + ';', config)
+
+        synergy = self.requires(
+            'PlutoSynergies.cs', 'public const string Espresso = "Espresso"',
+            'Register(Espresso, new List<string> { CoffeeMugItem.ID, CatnipPouchItem.ID });',
+        )
+        self.assertEqual(1, synergy.count('Register(Espresso,'))
+        plugin = self.source('Plugin.cs')
+        self.assertLess(plugin.index('Step("coffee mug", CoffeeMugItem.Init)'),
+                        plugin.index('Step("synergies", PlutoSynergies.Init)'))
+
+        for resource in (
+            'Items/coffee_mug_icon.png', 'Effects/cat_set/coffee_puddle_001.png',
+            'Effects/cat_set/coffee_shard_001.png', 'Effects/cat_set/coffee_shard_002.png',
+            'Effects/cat_set/coffee_shard_003.png', 'Effects/cat_set/coffee_shard_004.png',
+        ):
+            self.assertTrue((ROOT / 'PlutoTheCat/Resources' / resource).exists(), resource)
+
+    def test_catnip_zoomies_are_extendable(self):
+        tricks = self.requires(
+            'CatTricks.cs',
+            'public static StatModifier AcquireSpeed(PlayerController p, float amount)',
+            'public static void ReleaseSpeed(PlayerController p, StatModifier boost)',
+            'PlutoConfig.MaxSpeedBonus - CurrentSpeedBonus(p)',
+        )
+        timed = tricks[tricks.index('public static IEnumerator TimedSpeed('):tricks.index('public static StatModifier AcquireSpeed(')]
+        self.assertIn('AcquireSpeed(p, amount)', timed)
+        self.assertIn('ReleaseSpeed(p, boost)', timed)
+
+        catnip = self.requires(
+            'CatnipPouchItem.cs',
+            'private float zoomiesRemaining',
+            'public bool ExtendZoomies(PlayerController user, float bonus)',
+            'CatSetRules.ExtendRemaining(zoomiesRemaining, bonus,',
+            'CatSetRules.ExtendDuration(m_activeDuration, bonus)',
+            'buffed == user',
+            'speedMod = CatTricks.AcquireSpeed(user, PlutoConfig.CatnipSpeedBonus)',
+            'CatTricks.ReleaseSpeed(buffed, speedMod)', 'speedMod = null',
+            'zoomiesRemaining = PlutoConfig.CatnipSeconds',
+            'while (user != null && zoomiesRemaining > 0f)',
+            'zoomiesRemaining -= dt',
+            # Existing Catnip behaviour and numbers are kept.
+            'PlutoConfig.CatnipFireRateMultiplier', 'PlutoVFX.Catnip', 'AfterImageTrailController',
+            'CatnapSpeed = 0.8f', 'LeafInterval = 0.3f', 'PlutoConfig.CatnapSeconds',
+            'PlutoSynergies.NipAndTuck', 'm_activeDuration = PlutoConfig.CatnipSeconds',
+        )
+        # One owned speed modifier and one loop: no detached TimedSpeed coroutine left running on drop.
+        self.assertNotIn('TimedSpeed', catnip)
+        self.assertEqual(1, catnip.count('while ('))
+        # Inactive or wrong wearer is a no-op: rejection happens before any state is touched.
+        extend = catnip[catnip.index('public bool ExtendZoomies('):]
+        self.assertLess(extend.index('return false;'), extend.index('CatSetRules.ExtendRemaining('))
+        # The catnap only starts after the (possibly extended) zoomies loop ends.
+        loop = catnip.index('while (user != null && zoomiesRemaining > 0f)')
+        end = catnip.index('EndZoomies();', loop)
+        nap = catnip.index('napMod = CatItemKit.Mod(', end)
+        self.assertLess(loop, end)
+        self.assertLess(end, nap)
+        stop = catnip[catnip.index('private void StopAll()'):]
+        self.assertIn('EndZoomies();', stop)
+        self.assertIn('EndNap();', stop)
+
+        config = self.source('PlutoConfig.cs')
+        for key, value in (('CatnipSeconds', '7f'), ('CatnipSpeedBonus', '2f'), ('CatnipFireRateMultiplier', '1.25f')):
+            self.assertIn('public static float ' + key + ' = ' + value + ';', config)
+
 
 if __name__ == '__main__':
     unittest.main()

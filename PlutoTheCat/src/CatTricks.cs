@@ -46,10 +46,22 @@ namespace PlutoTheCat
         /// <summary>Adds a timed speed boost, capped so all of Pluto's boosts together never exceed the config maximum.</summary>
         public static IEnumerator TimedSpeed(PlayerController p, float amount, float seconds)
         {
-            if (p == null) yield break;
+            StatModifier boost = AcquireSpeed(p, amount);
+            if (boost == null) yield break;
+            yield return new WaitForSeconds(seconds);
+            ReleaseSpeed(p, boost);
+        }
+
+        /// <summary>
+        /// Adds an untimed speed boost, capped like TimedSpeed. The caller owns the returned modifier and must hand it
+        /// back to ReleaseSpeed. Returns null (nothing changed) when there is no room left under the cap.
+        /// </summary>
+        public static StatModifier AcquireSpeed(PlayerController p, float amount)
+        {
+            if (p == null) return null;
             float room = PlutoConfig.MaxSpeedBonus - CurrentSpeedBonus(p);
             amount = Mathf.Min(amount, room);
-            if (amount <= 0f) yield break;
+            if (amount <= 0f) return null;
             StatModifier boost = new StatModifier
             {
                 statToBoost = PlayerStats.StatType.MovementSpeed,
@@ -60,7 +72,13 @@ namespace PlutoTheCat
             ourSpeedBoosts.Add(boost);
             p.ownerlessStatModifiers.Add(boost);
             p.stats.RecalculateStats(p, false, false);
-            yield return new WaitForSeconds(seconds);
+            return boost;
+        }
+
+        /// <summary>Removes a boost from AcquireSpeed. Safe to call with a null or already-released modifier.</summary>
+        public static void ReleaseSpeed(PlayerController p, StatModifier boost)
+        {
+            if (boost == null) return;
             ourSpeedBoosts.Remove(boost);
             if (p != null && p.ownerlessStatModifiers.Remove(boost))
                 p.stats.RecalculateStats(p, false, false);
