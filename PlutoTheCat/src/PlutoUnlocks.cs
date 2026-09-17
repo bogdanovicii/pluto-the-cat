@@ -62,12 +62,71 @@ namespace PlutoTheCat
             return Flags.ContainsKey(itemId);
         }
 
+        /// <summary>The raw GungeonFlags value for this id, ignoring the mirror and the config toggle.</summary>
+        public static bool FlagSet(string itemId)
+        {
+            if (GameStatsManager.Instance == null) return false;
+            return Flags.ContainsKey(itemId) && GameStatsManager.Instance.GetFlag(Flags[itemId]);
+        }
+
+        /// <summary>The raw string mirror for this id, ignoring the flag and the config toggle.</summary>
+        public static bool MirrorSet(string itemId)
+        {
+            if (GameStatsManager.Instance == null) return false;
+            return GameStatsManager.Instance.IsForceUnlocked(ShrineStallRules.MirrorKey(itemId));
+        }
+
         public static bool IsUnlocked(string itemId)
         {
             if (GameStatsManager.Instance == null) return false;
-            bool flag = Flags.ContainsKey(itemId) && GameStatsManager.Instance.GetFlag(Flags[itemId]);
-            bool mirror = GameStatsManager.Instance.IsForceUnlocked(ShrineStallRules.MirrorKey(itemId));
-            return ShrineStallRules.Unlocked(flag, mirror, PlutoConfig.StallUnlocksDisabled);
+            return ShrineStallRules.Unlocked(FlagSet(itemId), MirrorSet(itemId), PlutoConfig.StallUnlocksDisabled);
+        }
+
+        /// <summary>
+        /// Brings the flag and the string mirror back into agreement, in both directions, and flushes the
+        /// save only if something actually changed. Two real cases need this:
+        ///
+        /// - mirror set, flag clear: the flag-id drift scenario the mirror exists for. IsUnlocked() is true
+        ///   (so the item drops again) but the item's FLAG prerequisite reads the *flag*, so
+        ///   PrerequisitesMet() stays false: the stall re-stocks and re-charges an item the player already
+        ///   owns, and its Ammonomicon page reverts to "???".
+        /// - flag set, mirror clear: what a purchase actually leaves behind. Alexandria's foyer meta-shop
+        ///   path never assigns the OnPurchase delegate at all (CustomShopController.DoSetup only wires
+        ///   customCanBuy/removeCurrency/customPrice/OnPurchase/OnSteal in its NON-blueprint branch; the
+        ///   `baseShopType == 6 &amp;&amp; ExampleBlueprintPrefab != null` branch jumps straight past that block to
+        ///   the m_itemControllers.Add - verified in the Alexandria 0.5.10 IL). The game's own pickup path
+        ///   still sets PickupObject.SaveFlagToSetOnAcquisition, which DoSetup copies from our FLAG
+        ///   prerequisite onto the blueprint clone, so the flag lands even though our callback never runs.
+        ///   This is the only thing that then writes the mirror.
+        ///
+        /// Deliberately reads FlagSet/MirrorSet rather than IsUnlocked: IsUnlocked honours
+        /// PlutoConfig.StallUnlocksDisabled, and reconciling through it would burn all ten unlocks
+        /// permanently into the save the first time someone flipped the testing toggle on.
+        /// </summary>
+        public static void Reconcile()
+        {
+            if (GameStatsManager.Instance == null) return;
+            bool changed = false;
+            foreach (string id in Ids)
+            {
+                bool flag = FlagSet(id);
+                bool mirror = MirrorSet(id);
+                if (flag == mirror) continue;
+
+                if (mirror && Flags.ContainsKey(id))
+                {
+                    GameStatsManager.Instance.SetFlag(Flags[id], true);
+                    changed = true;
+                    Plugin.Log("unlocks: mirror said unlocked but the flag did not, flag set for " + id);
+                }
+                else if (flag)
+                {
+                    GameStatsManager.Instance.ForceUnlock(ShrineStallRules.MirrorKey(id));
+                    changed = true;
+                    Plugin.Log("unlocks: flag said unlocked but the mirror did not, mirror written for " + id);
+                }
+            }
+            if (changed) GameStatsManager.Save();
         }
 
         /// <summary>Sets the flag, writes the mirror, and flushes the save.</summary>

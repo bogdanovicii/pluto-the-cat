@@ -188,6 +188,123 @@ class ShrineStallWiringTests(unittest.TestCase):
                        'the method passed as OnPurchase (' + on_purchase_arg + ') must call '
                        'PlutoUnlocks.Unlock(...) so a purchase actually writes the string mirror')
 
+    def test_purchase_matches_by_save_flag(self):
+        """Final-review P1-A. The foyer meta-shop hands the OnPurchase callback a *blueprint clone*, not
+        the real cat item: CustomShopController.DoSetup's `baseShopType == 6 && ExampleBlueprintPrefab
+        != null` branch instantiates the one shared blueprint prefab, copies the real item's journal
+        fields and its FLAG prerequisite's saveFlagToCheck onto it
+        (`ldloc.s V_56; ldloc.s V_58; stfld PickupObject::SaveFlagToSetOnAcquisition`), then calls
+        CustomShopItemController.Initialize with *that* clone - and the invoke site passes
+        `this.item`. So every slot shares one PickupObjectId and a PickupObjectId comparison can never
+        match. Match on the save flag instead.
+
+        This is a source-text assertion and cannot prove the callback behaves correctly at runtime;
+        only an in-game purchase can (and, per the IL, the blueprint branch never assigns the
+        OnPurchase delegate at all - see the comment in ShrineStall.OnPurchase).
+        """
+        stall = self.source('ShrineStall.cs')
+        marker = '// CustomCanBuy / CustomRemoveCurrency / CustomPrice / OnPurchase / OnSteal'
+        line_start = stall.rfind('\n', 0, stall.find(marker)) + 1
+        on_purchase_arg = [a.strip() for a in stall[line_start:stall.find(marker)].split(',') if a.strip()][3]
+        method_match = re.search(
+            r'\bbool\s+' + re.escape(on_purchase_arg) + r'\s*\([^)]*\)\s*\{(.*?)\n        \}',
+            stall, re.S)
+        self.assertIsNotNone(method_match, 'could not find the OnPurchase method ' + on_purchase_arg)
+        body = method_match.group(1)
+        self.assertIn('SaveFlagToSetOnAcquisition', body,
+                       'the OnPurchase method must match the bought item by '
+                       'item.SaveFlagToSetOnAcquisition == PlutoUnlocks.Flag(id): the foyer meta-shop '
+                       'passes a blueprint clone whose PickupObjectId is shared by all ten slots')
+        self.assertIn('PlutoUnlocks.Flag(', body,
+                       'the OnPurchase method must compare against PlutoUnlocks.Flag(id)')
+        self.assertIn('PlutoUnlocks.IsRegistered(', body,
+                       'Flag(id) returns default(GungeonFlags) for an unregistered id, which would '
+                       'match any clone whose SaveFlagToSetOnAcquisition was never set - guard with '
+                       'PlutoUnlocks.IsRegistered(id)')
+
+    def test_unlock_reconciliation(self):
+        """Final-review P2-D (and the fallback for the dead OnPurchase delegate). Nothing reconciles the
+        string mirror and the GungeonFlags value, so in the drift scenario the mirror exists for,
+        IsUnlocked() is true (the item drops) while PrerequisitesMet() is false (the stall re-stocks and
+        re-charges it and its Ammonomicon page reverts). Reconcile must run both ways."""
+        unlocks = self.source('PlutoUnlocks.cs')
+        match = re.search(r'public static void Reconcile\(\)(.*?)\n        \}', unlocks, re.S)
+        self.assertIsNotNone(match, 'PlutoUnlocks.cs must expose a Reconcile() that syncs flag and mirror')
+        body = match.group(1)
+        self.assertIn('SetFlag(', body, 'Reconcile() must set the flag when only the mirror says unlocked')
+        self.assertIn('ForceUnlock(', body, 'Reconcile() must write the mirror when only the flag says unlocked')
+        self.assertIn('GameStatsManager.Save()', body, 'Reconcile() must flush the save when it changed something')
+        self.assertNotIn('IsUnlocked(', body,
+                          'Reconcile() must read the raw flag and raw mirror, not IsUnlocked(), or the '
+                          'StallUnlocksDisabled toggle would permanently write all ten unlocks into the save')
+        gate = self.source('PlutoUnlockGate.cs')
+        self.assertIn('PlutoUnlocks.Reconcile()', gate, 'PlutoUnlockGate must call PlutoUnlocks.Reconcile()')
+
+    def test_toggle_skips_prerequisites(self):
+        """Final-review P2-C. StallUnlocksDisabled was consulted only in ShrineStallRules.Unlocked, which
+        drives only RefreshLootTables - the FLAG prerequisite was still attached, so the stall kept
+        stocking all ten, prereq-respecting selectors kept skipping them and the Ammonomicon kept showing
+        ???. With the toggle on, no prerequisite may be attached."""
+        gate = self.source('PlutoUnlockGate.cs')
+        apply_match = re.search(r'public static void Apply\(\)(.*?)\n        \}\n', gate, re.S)
+        self.assertIsNotNone(apply_match, 'PlutoUnlockGate.cs missing Apply()')
+        self.assertIn('PlutoConfig.StallUnlocksDisabled', apply_match.group(1),
+                       'Apply() must consult PlutoConfig.StallUnlocksDisabled before attaching the FLAG '
+                       'prerequisites, or the toggle is not a real escape hatch')
+
+    def test_loot_guard_covers_chest_tables(self):
+        """Final-review P1-B. LootUtility.RemovePickupFromLootTables touches only RewardManager's
+        GunsLootTable and ItemsLootTable (verified in the Alexandria 0.5.10 IL). ItemDB.AddSpecific puts
+        the same WeightedGameObject into ModLootPerFloor too, and ItemDB.DungeonStart (a Harmony prefix on
+        Dungeonator.Dungeon.Start) AddRanges ModLootPerFloor into
+        Dungeon.baseChestContents.defaultItemDrops.elements - the collection that actually feeds chests.
+        The guard must sweep those as well."""
+        gate = self.source('PlutoUnlockGate.cs')
+        self.assertIn('ModLootPerFloor', gate,
+                       'the loot guard must sweep ETGMod.Databases.Items.ModLootPerFloor, which '
+                       'ItemDB.DungeonStart re-injects into the chest table every run')
+        self.assertIn('baseChestContents', gate,
+                       'the loot guard must sweep the current dungeon\'s baseChestContents, which '
+                       'ItemDB.DungeonStart has already filled by the time the guard runs')
+
+    def test_props_survive_a_run(self):
+        """Final-review P2-E. PlaceProp made unparented GameObjects once, from Init, with no
+        DontDestroyOnLoad: Unity destroys them on the next scene load, and only Daifuku is re-placed by
+        Alexandria, so after one run the shopkeeper stood alone in mid-air."""
+        stall = self.source('ShrineStall.cs')
+        self.assertIn('DungeonHooks.OnFoyerAwake +=', stall,
+                       'the backdrop props must be re-placed on every foyer load (DungeonHooks.OnFoyerAwake), '
+                       'since unparented GameObjects do not survive a scene change')
+        self.assertIn('public static void Teardown', stall, 'ShrineStall.cs missing Teardown()')
+        self.assertIn('DungeonHooks.OnFoyerAwake -=', stall,
+                       'Teardown() must unsubscribe the same hook Init() subscribed')
+        plugin = self.source('Plugin.cs')
+        destroy_idx = plugin.find('OnDestroy()')
+        destroy_body = plugin[destroy_idx:plugin.find('}', plugin.find('{', destroy_idx))]
+        self.assertIn('ShrineStall.Teardown()', destroy_body,
+                       "Plugin.cs's OnDestroy() must call ShrineStall.Teardown()")
+        # The props are only worth placing when the shop itself built: SetUpFoyerShop returning null
+        # means no Daifuku, and a torii with no shopkeeper under it is worse than nothing.
+        init_match = re.search(r'public static void Init\(\)(.*?)\n        \}\n', stall, re.S)
+        self.assertIsNotNone(init_match, 'ShrineStall.cs missing Init()')
+        init_body = init_match.group(1)
+        null_idx = init_body.find('if (shop == null)')
+        self.assertGreaterEqual(null_idx, 0, 'Init() must null-check the shop')
+        self.assertLess(null_idx, init_body.find('PlaceBackdropProps'),
+                         'PlaceBackdropProps() must not run when SetUpFoyerShop returned null')
+
+    def test_kinsuke_animates(self):
+        """The user asked for Kinsuke to bob in his bowl. All four kinsuke_idle_* frames must be driven by
+        a timer component that lives and dies with the prop."""
+        stall = self.source('ShrineStall.cs')
+        for i in range(1, 5):
+            self.assertIn('kinsuke_idle_%03d.png' % i, stall,
+                           'ShrineStall.cs must use all four kinsuke_idle frames, not just the first')
+        self.assertRegex(stall, r'class\s+\w+\s*:\s*MonoBehaviour',
+                          'Kinsuke needs a small MonoBehaviour to advance his frames on a timer')
+        self.assertIn('BraveTime.DeltaTime', stall,
+                       'the flipbook must advance on BraveTime.DeltaTime, like the rest of this codebase')
+
     def test_stall_registration(self):
         self.requires(
             'ShrineStall.cs',
@@ -196,7 +313,6 @@ class ShrineStallWiringTests(unittest.TestCase):
             'ShopAPI.VoiceBoxes.BELLO',
             'Plugin.SHOP_ROOT',
             'PlutoConfig.StallPosition',
-            'hitboxOffset',
             'ShrineStallRules.Price(',
             'GenericLootTable',
             'ShrineStallLines.',
@@ -208,6 +324,20 @@ class ShrineStallWiringTests(unittest.TestCase):
         )
         self.assertIn('Plugin.Log', stall, 'ShrineStall.cs must log the outcome through Plugin.Log')
 
+        # hitboxOffset: Alexandria computes this same default internally but discards it before use, so
+        # it has to be passed explicitly. Merely mentioning the name is not enough - a regression to
+        # `null` would still contain the word in its trailing comment, and a null offset silently makes
+        # Daifuku unclickable. Assert the value on the argument line itself.
+        hitbox_line = next((l for l in stall.splitlines() if '// hitboxOffset' in l), None)
+        self.assertIsNotNone(hitbox_line, 'ShrineStall.cs missing the hitboxOffset argument')
+        self.assertIn('new IntVector2(5, 0)', hitbox_line,
+                       'hitboxOffset must be passed explicitly as new IntVector2(5, 0) (Alexandria '
+                       "computes this default and then discards it); null leaves Daifuku unclickable")
+        hitbox_size_line = next((l for l in stall.splitlines() if '// hitboxSize' in l), None)
+        self.assertIsNotNone(hitbox_size_line, 'ShrineStall.cs missing the hitboxSize argument')
+        self.assertIn('new IntVector2(20, 18)', hitbox_size_line,
+                       'hitboxSize must be passed explicitly as new IntVector2(20, 18)')
+
         # Finding 1 (round 1 + round 2 review): Kinsuke's koi art must actually be visible in game as a
         # second sprite, or he is permanently invisible/replaces Daifuku. AddParentedAnimationToShop /
         # AddUnparentedAnimationToShop were tried in round 1 and confirmed (against the Alexandria IL) to
@@ -215,9 +345,9 @@ class ShrineStallWiringTests(unittest.TestCase):
         # match on 'kinsuke_idle' alone cannot tell a real fix from that dead one, so assert the actual
         # wiring: Kinsuke goes through the same real-sprite PlaceProp(...) path as the torii and stall,
         # and the two dead Alexandria calls are gone.
-        self.assertIn('PlaceProp("kinsuke_idle_001.png"', stall,
-                       'ShrineStall.cs must place Kinsuke as a real sprite GameObject via PlaceProp, '
-                       'the same way it places the torii and stall')
+        self.assertRegex(stall, r'PlaceProp\(\s*\n?\s*new\[\] \{ "kinsuke_idle_001\.png"',
+                          'ShrineStall.cs must place Kinsuke as a real sprite GameObject via PlaceProp, '
+                          'the same way it places the torii and stall')
         self.assertNotIn('AddParentedAnimationToShop', stall,
                           'AddParentedAnimationToShop only adds a dead clip to Daifuku\'s own animator; '
                           'it creates no second sprite for Kinsuke and must not be used')

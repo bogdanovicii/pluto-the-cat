@@ -24,7 +24,17 @@ namespace PlutoTheCat
         /// <summary>The extended GungeonFlags name for an item id, e.g. "pluto:coffee_mug" to "PLUTO_UNLOCK_COFFEE_MUG".</summary>
         public static string FlagName(string itemId) { return "PLUTO_UNLOCK_" + Suffix(itemId).ToUpperInvariant(); }
 
-        /// <summary>The string-mirror key for an item id, used because extended flag ids drift when other mods are installed.</summary>
+        /// <summary>
+        /// The string-mirror key for an item id, used because extended flag ids drift when other mods are
+        /// installed.
+        /// ASSUMPTION, and the one the whole mirror rests on: GameStatsManager.ForceUnlock/IsForceUnlocked
+        /// take an *encounter GUID* (vanilla passes EncounterTrackable.EncounterGuid), not a free-form
+        /// key. The key below is an arbitrary namespaced string that is deliberately not any real
+        /// encounter's GUID. That works only as long as the pair is a plain string set/contains check on a
+        /// per-save collection; if either side ever validates the argument against the encounter database,
+        /// or anything else enumerates the force-unlocked set expecting real GUIDs, these keys break.
+        /// Never verified in game.
+        /// </summary>
         public static string MirrorKey(string itemId) { return "bogdan.etg.plutothecat:" + Suffix(itemId); }
 
         /// <summary>The disagreement rule: a disabled config unlocks everything; otherwise either the flag or the mirror unlocks.</summary>
