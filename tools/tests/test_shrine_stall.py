@@ -305,6 +305,53 @@ class ShrineStallWiringTests(unittest.TestCase):
         self.assertIn('BraveTime.DeltaTime', stall,
                        'the flipbook must advance on BraveTime.DeltaTime, like the rest of this codebase')
 
+    def test_stall_placement_command(self):
+        """2.20.1: the (10.5, 22.1) launch default ran the shrine stall off-screen in the Breach (user
+        report). This asserts the fix has three real, independently-checkable parts: a better default,
+        a live pluto_stall console command wired into Init() (not just declared and never called), and a
+        way to persist a chosen position back to the config file."""
+        config = self.source('PlutoConfig.cs')
+
+        # A better default: the old (10.5, 22.1) guess must be gone from both the field initializer and
+        # the config's own fallback string, and StallPosition must still parse as a valid "x,y" pair.
+        self.assertNotIn('new Vector3(10.5f, 22.1f, 0f)', config,
+                          'PlutoConfig.cs must not keep the old off-screen (10.5, 22.1) StallPosition default')
+        self.assertNotIn('"10.5,22.1"', config,
+                          'PlutoConfig.cs must not keep the old off-screen "10.5,22.1" StallPosition config default')
+        default_match = re.search(r'public static Vector3 StallPosition = new Vector3\(([-0-9.f]+), ?([-0-9.f]+)f?, 0f\);', config)
+        self.assertIsNotNone(default_match, 'PlutoConfig.cs missing a parseable StallPosition default')
+        bind_default_match = re.search(r'"StallPosition",\s*"(-?[\d.]+),(-?[\d.]+)"', config)
+        self.assertIsNotNone(bind_default_match, 'PlutoConfig.cs\'s cfg.Bind("...", "StallPosition", ...) must have a literal "x,y" default string')
+
+        # A way to persist a moved position: keep a ConfigEntry reference (the vet_trophy_here pattern in
+        # PlutoVetVisit/src/PastConfig.cs) and expose a method that writes through it.
+        self.assertIn('ConfigEntry<string>', config, 'PlutoConfig.cs must keep a ConfigEntry reference for StallPosition so a move can be saved without a restart')
+        persist_match = re.search(r'public static bool PersistStallPosition\(\)(.*?)\n        \}', config, re.S)
+        self.assertIsNotNone(persist_match, 'PlutoConfig.cs missing a public PersistStallPosition() that pluto_stall save can call')
+        self.assertIn('.Value =', persist_match.group(1), 'PersistStallPosition() must write through the bound ConfigEntry, not just update the in-memory field')
+
+        # A live console command, actually wired into Init() - not just present as dead code elsewhere.
+        stall = self.source('ShrineStall.cs')
+        self.assertIn('ETGModConsole.Commands.AddUnit("pluto_stall"', stall,
+                       'ShrineStall.cs must register a pluto_stall console command')
+        init_match = re.search(r'public static void Init\(\)(.*?)\n        \}\n', stall, re.S)
+        self.assertIsNotNone(init_match, 'ShrineStall.cs missing Init()')
+        self.assertRegex(init_match.group(1), r'RegisterConsoleCommand\(\)',
+                          'Init() must call the method that registers pluto_stall, or the command never exists in a real run')
+
+        # here / <x> <y> / save / no-args, and moving the tracked shop GameObject, not just the props.
+        self.assertIn('GameManager.Instance.PrimaryPlayer', stall,
+                       'pluto_stall here must read the live player position (the vet_trophy_here pattern)')
+        self.assertIn('float.TryParse(args[0]', stall, 'pluto_stall must accept explicit <x> <y> coordinates')
+        self.assertIn('PlutoConfig.PersistStallPosition()', stall, 'pluto_stall save must call PlutoConfig.PersistStallPosition()')
+        move_match = re.search(r'private static void MoveStall\(Vector3 newPosition\)(.*?)\n        \}', stall, re.S)
+        self.assertIsNotNone(move_match, 'ShrineStall.cs missing a MoveStall(Vector3) that both here/<x> <y> paths share')
+        move_body = move_match.group(1)
+        self.assertIn('_shopObject', move_body,
+                       'MoveStall must move the tracked Daifuku GameObject, not just the backdrop props')
+        self.assertIn('PlaceBackdropProps()', move_body, 'MoveStall must also re-place the three backdrop props at the new position')
+        self.assertIn('_shopObject = shop;', stall, 'Init() must keep a reference to the built shop GameObject so it can later be moved')
+
     def test_stall_registration(self):
         self.requires(
             'ShrineStall.cs',

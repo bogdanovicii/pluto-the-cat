@@ -122,8 +122,22 @@ namespace PlutoTheCat
         public static int StallPriceConeOfShame = 15;
         public static int StallPriceSprayBottle = 15;
         public static int StallPriceFeatherTeaser = 15;
-        public static Vector3 StallPosition = new Vector3(10.5f, 22.1f, 0f);
+        // 2.20.1: the (10.5, 22.1) default was a guess made with no game install and ran the stall
+        // off-screen (user report: "it is outside the screen in the breach"). ShrineStall.cs's own
+        // offsets put the leftmost prop (stall.png) 5.0625 tiles left of StallPosition (ToriiOffset.x
+        // -3.0, StallOffset.x -3.0 - 2.0625 = -5.0625; Daifuku himself sits at offset 0, the rightmost
+        // point of the assembly). FoyerPosition (14.6, 22.1) is where Pluto stands and is known visible,
+        // so this default puts the assembly's LEFT edge at Pluto's own spot and lets it run right from
+        // there: 14.6 + 5.0625 = 19.6625, rounded to 19.7. Y is kept at FoyerPosition's 22.1 (same ground
+        // line). STILL UNVERIFIED - this session has no game install - the user confirms or corrects it
+        // in-game with the pluto_stall console command (ShrineStall.cs) and pluto_stall save.
+        public static Vector3 StallPosition = new Vector3(19.7f, 22.1f, 0f);
         public static bool StallUnlocksDisabled = false;
+
+        // Bound by BindShrineStall so pluto_stall save (ShrineStall.cs) can write a moved position
+        // straight back to the config file, the same way PlutoVetVisit's PastConfig keeps
+        // trophyXEntry/trophyYEntry for vet_trophy_here.
+        private static ConfigEntry<string> stallPositionEntry;
 
         private static readonly Action<string> Warn = message => Debug.LogWarning("[Pluto] config: " + message);
 
@@ -255,8 +269,29 @@ namespace PlutoTheCat
             StallPriceConeOfShame = PlutoConfigRules.Clamp("StallPriceConeOfShame", cfg.Bind(S, "StallPriceConeOfShame", StallPriceConeOfShame, "Hegemony credits to unlock the Cone of Shame.").Value, StallPriceConeOfShame, Warn);
             StallPriceSprayBottle = PlutoConfigRules.Clamp("StallPriceSprayBottle", cfg.Bind(S, "StallPriceSprayBottle", StallPriceSprayBottle, "Hegemony credits to unlock the Spray Bottle.").Value, StallPriceSprayBottle, Warn);
             StallPriceFeatherTeaser = PlutoConfigRules.Clamp("StallPriceFeatherTeaser", cfg.Bind(S, "StallPriceFeatherTeaser", StallPriceFeatherTeaser, "Hegemony credits to unlock the Feather Teaser.").Value, StallPriceFeatherTeaser, Warn);
-            StallPosition = Vec(cfg.Bind(S, "StallPosition", "10.5,22.1", "Where the Shrine Stall stands in the Breach (x,y).").Value, StallPosition);
+            stallPositionEntry = cfg.Bind(S, "StallPosition", "19.7,22.1", "Where the Shrine Stall stands in the Breach (x,y). Use the pluto_stall console command in-game to find a good spot, then pluto_stall save to write it here automatically.");
+            StallPosition = Vec(stallPositionEntry.Value, StallPosition);
             StallUnlocksDisabled = cfg.Bind(S, "StallUnlocksDisabled", StallUnlocksDisabled, "Testing only: treat all ten cat items as already unlocked.").Value;
+        }
+
+        /// <summary>
+        /// Writes the current StallPosition back to the config file, mirroring PlutoVetVisit's
+        /// PastConfig.SaveTrophyPosition (trophyXEntry/trophyYEntry). Called by ShrineStall's
+        /// "pluto_stall save" console command after "pluto_stall here"/"pluto_stall &lt;x&gt; &lt;y&gt;" has
+        /// already updated StallPosition in memory. Returns false (and changes nothing) if Bind(cfg) has
+        /// not run yet, so the caller can fall back to just logging the value for the user to paste in by hand.
+        /// </summary>
+        public static bool PersistStallPosition()
+        {
+            if (stallPositionEntry == null) return false;
+            stallPositionEntry.Value = FormatVec(StallPosition);
+            return true;
+        }
+
+        private static string FormatVec(Vector3 v)
+        {
+            return v.x.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture)
+                + "," + v.y.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture);
         }
 
         private static Vector3 Vec(string text, Vector3 fallback)

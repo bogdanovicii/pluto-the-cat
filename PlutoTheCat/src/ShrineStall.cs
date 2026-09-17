@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 using Alexandria.DungeonAPI;
 using Alexandria.Misc;
@@ -29,6 +31,11 @@ namespace PlutoTheCat
         private static readonly List<GameObject> Props = new List<GameObject>();
         private static readonly Dictionary<string, Sprite> SpriteCache = new Dictionary<string, Sprite>();
         private static System.Action _foyerHandler;
+
+        // The NPC GameObject SetUpFoyerShop built, kept so pluto_stall can move Daifuku himself (not just
+        // the backdrop props) without a Breach reload. Null until Init() succeeds; cleared by Teardown().
+        private static GameObject _shopObject;
+        private static bool _commandRegistered;
 
         // Task 4's art review found torii.png (78x48px) and stall.png (48x36px) share no anchor. Both
         // props below use a bottom-center sprite pivot, so placing them at the same Y sits their bottom
@@ -134,6 +141,7 @@ namespace PlutoTheCat
                 return;
             }
 
+            _shopObject = shop;
             Plugin.Log("shrine stall: registered at " + PlutoConfig.StallPosition);
 
             if (_foyerHandler == null)
@@ -142,6 +150,124 @@ namespace PlutoTheCat
                 DungeonHooks.OnFoyerAwake += _foyerHandler;
             }
             PlaceBackdropProps();
+
+            if (!_commandRegistered)
+            {
+                RegisterConsoleCommand();
+                _commandRegistered = true;
+            }
+        }
+
+        /// <summary>
+        /// pluto_stall console command (2.20.1): the (10.5, 22.1) launch default ran the whole assembly
+        /// off-screen in the Breach and nobody testing it could see the Breach to pick a better one by eye.
+        /// This lets the user walk to the right spot in-game and place it live, no restart required:
+        ///   pluto_stall            - report the current position and footprint (no move)
+        ///   pluto_stall here       - move the whole assembly to the player's current position
+        ///   pluto_stall &lt;x&gt; &lt;y&gt;   - move it to explicit coordinates
+        ///   pluto_stall save       - write the current position back to the config file
+        /// </summary>
+        private static void RegisterConsoleCommand()
+        {
+            ETGModConsole.Commands.AddUnit("pluto_stall", args =>
+            {
+                if (args == null || args.Length == 0)
+                {
+                    ReportStallStatus();
+                    return;
+                }
+
+                if (args.Length == 1 && string.Equals(args[0], "save", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (PlutoConfig.PersistStallPosition())
+                        Plugin.Log("shrine stall: saved " + FormatPos(PlutoConfig.StallPosition) + " to the config file.");
+                    else
+                        Plugin.Log("shrine stall: could not save (config not bound yet) - put StallPosition = "
+                            + FormatPos(PlutoConfig.StallPosition) + " in the config file by hand.");
+                    return;
+                }
+
+                Vector3 target;
+                if (args.Length == 1 && string.Equals(args[0], "here", StringComparison.OrdinalIgnoreCase))
+                {
+                    PlayerController player = GameManager.HasInstance ? GameManager.Instance.PrimaryPlayer : null;
+                    if (player == null)
+                    {
+                        Plugin.Log("shrine stall: no player found (are you in the Breach?)");
+                        return;
+                    }
+                    Vector2 at = player.CenterPosition;
+                    target = new Vector3(at.x, at.y, 0f);
+                }
+                else if (args.Length == 2
+                    && float.TryParse(args[0], NumberStyles.Float, CultureInfo.InvariantCulture, out float x)
+                    && float.TryParse(args[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float y))
+                {
+                    target = new Vector3(x, y, 0f);
+                }
+                else
+                {
+                    Plugin.Log("shrine stall: usage - pluto_stall (report) | pluto_stall here | pluto_stall <x> <y> | pluto_stall save");
+                    return;
+                }
+
+                MoveStall(target);
+            });
+        }
+
+        /// <summary>
+        /// Moves the whole assembly - Daifuku's NPC GameObject AND the three backdrop props - to a new
+        /// position, in memory only (the config file is untouched until "pluto_stall save"). Daifuku only
+        /// moves if the shop has actually been built this session (_shopObject != null); the props always
+        /// move because PlaceBackdropProps() re-reads PlutoConfig.StallPosition, which this always updates.
+        /// </summary>
+        private static void MoveStall(Vector3 newPosition)
+        {
+            PlutoConfig.StallPosition = newPosition;
+
+            if (_shopObject != null)
+            {
+                _shopObject.transform.position = newPosition;
+            }
+            else
+            {
+                Plugin.Log("shrine stall: Daifuku's GameObject is not tracked this session (has the shop "
+                    + "built yet?) - only the backdrop props were moved. Reload the Breach to also place Daifuku.");
+            }
+
+            PlaceBackdropProps();
+            Plugin.Log("shrine stall: moved to " + FormatPos(newPosition)
+                + " - put StallPosition = " + FormatPos(newPosition) + " in the config to keep it, or type pluto_stall save.");
+            LogFootprint();
+        }
+
+        private static void ReportStallStatus()
+        {
+            Plugin.Log("shrine stall: currently at " + FormatPos(PlutoConfig.StallPosition));
+            LogFootprint();
+        }
+
+        /// <summary>Logs how far left/right of StallPosition the assembly's four pieces (Daifuku at
+        /// offset zero, torii, stall, Kinsuke) reach, so the user can tell whether it now fits on screen.</summary>
+        private static void LogFootprint()
+        {
+            float[] offsets = { 0f, ToriiOffset.x, StallOffset.x, KinsukeOffset.x };
+            float minOffset = offsets[0], maxOffset = offsets[0];
+            foreach (float offset in offsets)
+            {
+                if (offset < minOffset) minOffset = offset;
+                if (offset > maxOffset) maxOffset = offset;
+            }
+            float left = PlutoConfig.StallPosition.x + minOffset;
+            float right = PlutoConfig.StallPosition.x + maxOffset;
+            Plugin.Log("shrine stall: footprint spans x=" + left.ToString("0.##", CultureInfo.InvariantCulture)
+                + " to x=" + right.ToString("0.##", CultureInfo.InvariantCulture)
+                + " at y=" + PlutoConfig.StallPosition.y.ToString("0.##", CultureInfo.InvariantCulture));
+        }
+
+        private static string FormatPos(Vector3 v)
+        {
+            return v.x.ToString("0.###", CultureInfo.InvariantCulture) + "," + v.y.ToString("0.###", CultureInfo.InvariantCulture);
         }
 
         /// <summary>Unhooks the foyer handler and drops the placed props. Safe to call if Init() never ran.</summary>
@@ -152,6 +278,7 @@ namespace PlutoTheCat
                 DungeonHooks.OnFoyerAwake -= _foyerHandler;
                 _foyerHandler = null;
             }
+            _shopObject = null;
             DestroyProps();
         }
 
@@ -256,7 +383,7 @@ namespace PlutoTheCat
         private static void DestroyProps()
         {
             foreach (GameObject prop in Props)
-                if (prop != null) Object.Destroy(prop);
+                if (prop != null) UnityEngine.Object.Destroy(prop);
             Props.Clear();
         }
 

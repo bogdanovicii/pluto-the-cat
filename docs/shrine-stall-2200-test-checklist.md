@@ -12,10 +12,16 @@ several of the failure modes below are silent by design.
 mistyped resource path or bad argument produces **no stall and no exception**, just a quiet gap in the Breach.
 `ShrineStall.Init` checks for that null and logs one of two lines; read the BepInEx log first, before looking at
 anything else:
-- [ ] The log contains `shrine stall: registered at (10.5, 22.1, 0.0)` (or whatever `StallPosition` is set to).
+- [ ] The log contains `shrine stall: registered at (19.7, 22.1, 0.0)` (or whatever `StallPosition` is set to).
   If instead it contains `shrine stall: SetUpFoyerShop returned null; see the [CharAPI]/Alexandria log lines
   above for the failed resource path`, the stall failed to build — copy the Alexandria/CharAPI lines immediately
   above it into the report; do not assume the stall is simply invisible.
+- [ ] **If the stall (or any part of it) is off screen**, do not just report it — place it yourself with the
+  `pluto_stall` console command (2.20.1) and report the value it logs: walk to a spot where the whole assembly
+  (Daifuku, Kinsuke, the torii and the counter) would read well, then type `pluto_stall here`. Check the
+  BepInEx log for the `shrine stall: moved to ...` line and the footprint line right after it, and paste both
+  into the report. `pluto_stall save` then writes that position into the config so the next test build keeps it
+  without you having to redo this.
 - [ ] Daifuku, Kinsuke, the torii and the stall counter are all visible in the Breach. If any one of the four is
   missing, check for `shrine stall: missing prop resource ...` in the log (torii/stall/Kinsuke are placed by a
   separate code path, `PlaceBackdropProps`, that fails independently of Daifuku's own NPC and logs per-prop).

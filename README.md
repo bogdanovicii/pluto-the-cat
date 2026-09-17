@@ -28,7 +28,10 @@ What ships today, in short:
   for good — it then drops normally in the Gungeon; the purchase is the unlock and does not also hand a copy
   over. The mat shows the first three still-locked items in a fixed order, not a fresh roll per visit. Config section
   `Shrine Stall 2.20` (prices, stall position, `StallUnlocksDisabled` to unlock everything for testing); in-game
-  checklist `docs/shrine-stall-2200-test-checklist.md`.
+  checklist `docs/shrine-stall-2200-test-checklist.md`. If the stall is off-screen, use the `pluto_stall` console
+  command (2.20.1): `pluto_stall here` moves it to where you're standing, `pluto_stall <x> <y>` to exact
+  coordinates, `pluto_stall` alone reports its current position and footprint, and `pluto_stall save` writes the
+  chosen position back into the config file.
 - **Samurai Pluto** (alternate costume, 2.16.0): unlocked by beating Pluto's past (the Vet Visit), switched at the
   kimono stand in the Breach. Starts with the **Taiyaki Cannon** and the **Katana** instead of the kibble sack, and has
   his own boss-intro card.

@@ -37,7 +37,10 @@ Adds **Pluto the Cat** as a new playable Gungeoneer. He is a chunky brown tabby-
   as undiscovered in the Ammonomicon. Daifuku and Kinsuke have their own running back-and-forth if you talk to
   them more than once. If you would rather have everything drop as before, set `StallUnlocksDisabled = true`
   under `[Shrine Stall 2.20]` in the BepInEx config — the stall stays standing as decoration and every item acts
-  already unlocked.
+  already unlocked. If the stall is off-screen for you, use the `pluto_stall` console command (2.20.1):
+  `pluto_stall here` moves the whole thing (Daifuku included) to where you're standing, `pluto_stall <x> <y>`
+  moves it to exact coordinates, `pluto_stall` alone reports the current position, and `pluto_stall save` writes
+  it back into the config file so it survives a restart.
 
 ## Install (r2modman)
 

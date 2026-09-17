@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.20.1 (test build, not released)
+
+- **Fix: the Shrine Stall was off-screen in the Breach.** The 2.20.0 `StallPosition` default (10.5, 22.1) was
+  picked with no game install to check it against, and a tester reported the whole assembly (Daifuku, Kinsuke,
+  the torii and the counter) running off the edge of the screen. The default is now (19.7, 22.1) — placed so
+  the assembly's left edge lines up with Pluto's own known-visible spot in the Breach and runs right from there
+  — but this is still an on-paper guess, not a confirmed fix.
+- **New: `pluto_stall` console command** to place the stall live, without a restart. `pluto_stall here` moves
+  the whole assembly (Daifuku included) to where you are standing; `pluto_stall <x> <y>` moves it to exact
+  coordinates; `pluto_stall` with no arguments reports the current position and how far the assembly reaches
+  left/right of it; `pluto_stall save` writes the current position back into the config file so it survives a
+  restart.
+
 ## 2.20.0 (test build, not released)
 
 - **The Shrine Stall**, in the Breach beside the regular shop: Daifuku (a ginger cat) and Kinsuke (a koi in a
