@@ -22,6 +22,28 @@ namespace PlutoTheCat
         private bool ownsGunState, previousAnimations;
         private float previousReloadTime;
         private static bool guardsInstalled;
+        private readonly List<DistractionLease> distractionLeases = new List<DistractionLease>();
+        private static readonly Dictionary<AIActor, SharedDistraction> SharedDistractions =
+            new Dictionary<AIActor, SharedDistraction>();
+
+        private sealed class DistractionLease
+        {
+            public AIActor enemy;
+            public PlayerController owner;
+            public RoomHandler room;
+            public FeatherLure source;
+            public Vector2 targetPosition;
+            public Coroutine routine;
+            public SharedDistraction shared;
+        }
+
+        private sealed class SharedDistraction
+        {
+            public AIActor enemy;
+            public bool previousOverride;
+            public Vector2 previousVelocity, appliedVelocity;
+            public readonly List<DistractionLease> leases = new List<DistractionLease>();
+        }
 
         public static void Add()
         {
@@ -145,10 +167,17 @@ namespace PlutoTheCat
         public override void Update()
         {
             base.Update();
-            if (!ownsGunState) return;
-            if (activeLure == null) { RestoreGunState(); return; }
-            if (gun == null || activeLure.Owner == null || activeLure.Owner.CurrentGun != gun)
-                CancelLure();
+            if (ownsGunState)
+            {
+                if (activeLure == null) RestoreGunState();
+                else if (gun == null || activeLure.Owner == null || activeLure.Owner.CurrentGun != gun) CancelLure();
+            }
+            if (distractionLeases.Count > 0)
+            {
+                List<DistractionLease> leases = new List<DistractionLease>(distractionLeases);
+                for (int i = 0; i < leases.Count; i++)
+                    if (!DistractionContextValid(leases[i])) EndDistraction(leases[i], true);
+            }
         }
 
         internal void ShowLure(bool returning)
@@ -159,8 +188,9 @@ namespace PlutoTheCat
             if (gun.spriteAnimator != null && !gun.spriteAnimator.IsPlaying(clip)) gun.spriteAnimator.Play(clip);
         }
 
-        internal void LureFinished(FeatherLure lure)
+        internal void LureFinished(FeatherLure lure, bool cancelDistractions, Vector2 lastPosition)
         {
+            DetachDistractionsFromLure(lure, lastPosition, cancelDistractions);
             if (activeLure != lure) return;
             activeLure = null;
             RestoreGunState();
@@ -184,20 +214,195 @@ namespace PlutoTheCat
 
         private void CancelLure()
         {
-            if (activeLure != null) activeLure.Finish();
+            if (activeLure != null) activeLure.Finish(true);
             activeLure = null;
             RestoreGunState();
+        }
+
+        private static Vector2 ChaseVelocity(AIActor enemy, Vector2 targetPosition)
+        {
+            Vector2 delta = targetPosition - enemy.CenterPosition;
+            return delta.sqrMagnitude < 0.0625f ? Vector2.zero : delta.normalized * enemy.MovementSpeed;
+        }
+
+        private static bool OwnsVelocity(SharedDistraction state)
+        {
+            return state.enemy != null && state.enemy.BehaviorOverridesVelocity
+                && state.enemy.BehaviorVelocity.Equals(state.appliedVelocity);
+        }
+
+        private static void ApplyDistractionVelocity(SharedDistraction state, DistractionLease lease)
+        {
+            state.enemy.behaviorSpeculator.Interrupt();
+            state.appliedVelocity = ChaseVelocity(state.enemy, lease.targetPosition);
+            state.enemy.BehaviorOverridesVelocity = true;
+            state.enemy.BehaviorVelocity = state.appliedVelocity;
+        }
+
+        private static bool AcquireDistractionOwnership(DistractionLease lease)
+        {
+            SharedDistraction state;
+            if (SharedDistractions.TryGetValue(lease.enemy, out state) && !OwnsVelocity(state))
+            {
+                // Another effect took the state. Invalidate the old generation without restoring over it.
+                SharedDistractions.Remove(lease.enemy);
+                state = null;
+            }
+            if (state == null)
+            {
+                state = new SharedDistraction
+                {
+                    enemy = lease.enemy,
+                    previousOverride = lease.enemy.BehaviorOverridesVelocity,
+                    previousVelocity = lease.enemy.BehaviorVelocity,
+                };
+                SharedDistractions.Add(lease.enemy, state);
+            }
+            state.leases.Add(lease);
+            lease.shared = state;
+            ApplyDistractionVelocity(state, lease);
+            return true;
+        }
+
+        private static bool UpdateDistractionOwnership(DistractionLease lease, Vector2 targetPosition)
+        {
+            SharedDistraction state = lease.shared;
+            SharedDistraction current;
+            if (state == null || !SharedDistractions.TryGetValue(lease.enemy, out current)
+                || !object.ReferenceEquals(current, state) || !object.ReferenceEquals(lease.shared, state)) return false;
+            lease.targetPosition = targetPosition;
+            if (!object.ReferenceEquals(state.leases[state.leases.Count - 1], lease)) return true;
+            if (!OwnsVelocity(state))
+            {
+                // Conditional restoration rule: external ownership wins, so abandon this whole generation.
+                SharedDistractions.Remove(lease.enemy);
+                return false;
+            }
+            // Interrupt is public in the referenced DLL. Repeating it prevents a fresh attack during the 1.5 s window
+            // without permanently disabling the BehaviorSpeculator.
+            state.enemy.behaviorSpeculator.Interrupt();
+            state.appliedVelocity = ChaseVelocity(state.enemy, lease.targetPosition);
+            state.enemy.BehaviorVelocity = state.appliedVelocity;
+            return true;
+        }
+
+        private static void ReleaseDistractionOwnership(DistractionLease lease)
+        {
+            SharedDistraction state = lease.shared;
+            lease.shared = null;
+            SharedDistraction current;
+            if (state == null || !SharedDistractions.TryGetValue(lease.enemy, out current)
+                || !object.ReferenceEquals(current, state)) return;
+            bool wasTop = state.leases.Count > 0
+                && object.ReferenceEquals(state.leases[state.leases.Count - 1], lease);
+            state.leases.Remove(lease);
+            if (state.leases.Count == 0)
+            {
+                if (OwnsVelocity(state))
+                {
+                    state.enemy.BehaviorOverridesVelocity = state.previousOverride;
+                    state.enemy.BehaviorVelocity = state.previousVelocity;
+                }
+                SharedDistractions.Remove(lease.enemy);
+                return;
+            }
+            if (!wasTop) return;
+            if (!OwnsVelocity(state))
+            {
+                SharedDistractions.Remove(lease.enemy);
+                return;
+            }
+            // The next-newest live lease takes over; never restore a nested lease's stale snapshot.
+            ApplyDistractionVelocity(state, state.leases[state.leases.Count - 1]);
+        }
+
+        internal void BeginDistraction(AIActor enemy, FeatherLure source, PlayerController owner,
+            RoomHandler room, Vector2 targetPosition)
+        {
+            if (enemy == null || enemy.behaviorSpeculator == null || owner == null || room == null) return;
+            DistractionLease lease = new DistractionLease
+            {
+                enemy = enemy,
+                owner = owner,
+                room = room,
+                source = source,
+                targetPosition = targetPosition,
+            };
+            if (!AcquireDistractionOwnership(lease)) return;
+            distractionLeases.Add(lease);
+            lease.routine = StartCoroutine(Distract(lease));
+            Plugin.Log("feather teaser: distract for " + PlutoConfig.FeatherDistractSeconds + " s");
+            if (owner.PlayerHasActiveSynergy(PlutoSynergies.Playtime))
+            {
+                BallOfYarnItem.ApplyTangle(enemy);
+                Plugin.Log("feather teaser: Playtime shared yarn tangle");
+            }
+        }
+
+        private bool DistractionContextValid(DistractionLease lease)
+        {
+            return lease != null && lease.owner != null && lease.owner.healthHaver != null
+                && !lease.owner.healthHaver.IsDead && gun != null && lease.owner.CurrentGun == gun
+                && lease.owner.CurrentRoom == lease.room && lease.room != null;
+        }
+
+        private IEnumerator Distract(DistractionLease lease)
+        {
+            float elapsed = 0f;
+            while (elapsed < PlutoConfig.FeatherDistractSeconds)
+            {
+                yield return null;
+                AIActor enemy = lease.enemy;
+                List<AIActor> enemies = lease.room != null
+                    ? lease.room.GetActiveEnemies(RoomHandler.ActiveEnemyType.All) : null;
+                if (!DistractionContextValid(lease) || !CatItemKit.ValidEnemy(enemy)
+                    || enemy.healthHaver.IsBoss || enemies == null || !enemies.Contains(enemy)) break;
+                Vector2 targetPosition = lease.source != null ? lease.source.LogicalPosition : lease.targetPosition;
+                if (!UpdateDistractionOwnership(lease, targetPosition)) break;
+                elapsed += BraveTime.DeltaTime;
+            }
+            EndDistraction(lease, false);
+        }
+
+        private void EndDistraction(DistractionLease lease, bool stopRoutine)
+        {
+            if (lease == null || !distractionLeases.Contains(lease)) return;
+            if (stopRoutine && lease.routine != null) StopCoroutine(lease.routine);
+            lease.routine = null;
+            ReleaseDistractionOwnership(lease);
+            distractionLeases.Remove(lease);
+            Plugin.Log("feather teaser: cleanup distraction");
+        }
+
+        private void DetachDistractionsFromLure(FeatherLure lure, Vector2 lastPosition, bool cancelDistractions)
+        {
+            List<DistractionLease> leases = new List<DistractionLease>(distractionLeases);
+            for (int i = 0; i < leases.Count; i++)
+            {
+                DistractionLease lease = leases[i];
+                if (lease.source != lure) continue;
+                lease.targetPosition = lastPosition;
+                lease.source = null;
+                if (cancelDistractions) EndDistraction(lease, true);
+            }
+        }
+
+        private void CancelAllDistractions()
+        {
+            List<DistractionLease> leases = new List<DistractionLease>(distractionLeases);
+            for (int i = 0; i < leases.Count; i++) EndDistraction(leases[i], true);
         }
 
         public override void OnSwitchedAwayFrom(GameActor owner, GunInventory inventory, Gun newGun, bool isNewGun)
         {
             CancelLure();
+            CancelAllDistractions();
             base.OnSwitchedAwayFrom(owner, inventory, newGun, isNewGun);
         }
 
-        public override void OnDropped() { CancelLure(); base.OnDropped(); }
-        public override void OnDestroy() { CancelLure(); base.OnDestroy(); }
-        private void OnDisable() { CancelLure(); }
+        public override void OnDropped() { CancelLure(); CancelAllDistractions(); base.OnDropped(); }
+        public override void OnDestroy() { CancelLure(); CancelAllDistractions(); base.OnDestroy(); }
+        private void OnDisable() { CancelLure(); CancelAllDistractions(); }
 
         /// <summary>Manual, substepped travel gives one hit per enemy per leg, including large hitboxes.</summary>
         public class FeatherLure : MonoBehaviour
@@ -215,15 +420,7 @@ namespace PlutoTheCat
             private bool returning, finished;
             private readonly HashSet<AIActor> outwardHits = new HashSet<AIActor>();
             private readonly HashSet<AIActor> returnHits = new HashSet<AIActor>();
-            private readonly Dictionary<AIActor, Distraction> distractions = new Dictionary<AIActor, Distraction>();
-
-            private class Distraction
-            {
-                public AIActor enemy;
-                public bool previousOverride;
-                public Vector2 previousVelocity, appliedVelocity;
-                public Coroutine routine;
-            }
+            internal Vector2 LogicalPosition { get { return position; } }
 
             internal void Bind(FeatherTeaserGun source, Projectile p, PlayerController owner)
             {
@@ -243,7 +440,7 @@ namespace PlutoTheCat
 
             private void Start()
             {
-                if (projectile == null || teaser == null) { Finish(); return; }
+                if (projectile == null || teaser == null) { Finish(true); return; }
                 if (projectile.sprite != null && projectile.sprite.Collection != null)
                     sprites = new[] { projectile.sprite.Collection.GetSpriteIdByName("pluto_feather_lure_001", -1),
                         projectile.sprite.Collection.GetSpriteIdByName("pluto_feather_lure_002", -1) };
@@ -260,10 +457,10 @@ namespace PlutoTheCat
             private void Update()
             {
                 if (finished) return;
-                if (projectile == null || projectile.specRigidbody == null || !OwnerValid()) { Finish(); return; }
+                if (projectile == null || projectile.specRigidbody == null || !OwnerValid()) { Finish(true); return; }
                 float dt = BraveTime.DeltaTime;
                 age += dt;
-                if (age > 10f) { Finish(); return; } // A teleported owner cannot leave a permanent lure behind.
+                if (age > 10f) { Finish(true); return; } // A teleported owner cannot leave a permanent lure behind.
                 projectile.specRigidbody.Velocity = Vector2.zero;
                 float travel = Speed * dt;
                 while (travel > 0f && !finished)
@@ -280,7 +477,7 @@ namespace PlutoTheCat
                     travel -= step;
                     if (!returning) distance += step;
                     float remaining = (target - position).magnitude;
-                    if (returning && remaining <= 0.001f) { Finish(); return; }
+                    if (returning && remaining <= 0.001f) { Finish(false); return; }
                     if (!returning && (distance >= PlutoConfig.FeatherRange - 0.001f || remaining <= 0.001f))
                     {
                         returning = true;
@@ -322,85 +519,20 @@ namespace PlutoTheCat
                         CatItemKit.Slow(enemy, PlutoConfig.FeatherBossSlowSeconds, 0.5f, "pluto_feather_slow");
                         Plugin.Log("feather teaser: boss slow for " + PlutoConfig.FeatherBossSlowSeconds + " s");
                     }
-                    else BeginDistraction(enemy);
+                    else teaser.BeginDistraction(enemy, this, Owner, room, position);
                 }
             }
 
-            private void BeginDistraction(AIActor enemy)
-            {
-                if (distractions.ContainsKey(enemy) || enemy.behaviorSpeculator == null) return;
-                Distraction state = new Distraction { enemy = enemy, previousOverride = enemy.BehaviorOverridesVelocity,
-                    previousVelocity = enemy.BehaviorVelocity };
-                enemy.behaviorSpeculator.Interrupt();
-                state.appliedVelocity = ChaseVelocity(enemy);
-                enemy.BehaviorOverridesVelocity = true;
-                enemy.BehaviorVelocity = state.appliedVelocity;
-                distractions.Add(enemy, state);
-                state.routine = StartCoroutine(Distract(state));
-                Plugin.Log("feather teaser: distract for " + PlutoConfig.FeatherDistractSeconds + " s");
-                if (Owner.PlayerHasActiveSynergy(PlutoSynergies.Playtime))
-                {
-                    BallOfYarnItem.ApplyTangle(enemy);
-                    Plugin.Log("feather teaser: Playtime shared yarn tangle");
-                }
-            }
-
-            private Vector2 ChaseVelocity(AIActor enemy)
-            {
-                Vector2 delta = projectile.specRigidbody.UnitCenter - enemy.CenterPosition;
-                return delta.sqrMagnitude < 0.0625f ? Vector2.zero : delta.normalized * enemy.MovementSpeed;
-            }
-
-            private IEnumerator Distract(Distraction state)
-            {
-                float elapsed = 0f;
-                while (elapsed < PlutoConfig.FeatherDistractSeconds)
-                {
-                    yield return null;
-                    AIActor enemy = state.enemy;
-                    List<AIActor> enemies = room != null ? room.GetActiveEnemies(RoomHandler.ActiveEnemyType.All) : null;
-                    if (finished || projectile == null || !OwnerValid() || !CatItemKit.ValidEnemy(enemy)
-                        || enemy.healthHaver.IsBoss || enemies == null || !enemies.Contains(enemy)) break;
-                    // If another behavior took the velocity, relinquish it without overwriting its state.
-                    if (!OwnsVelocity(state)) break;
-                    state.appliedVelocity = ChaseVelocity(enemy);
-                    enemy.BehaviorVelocity = state.appliedVelocity;
-                    elapsed += BraveTime.DeltaTime;
-                }
-                RestoreDistraction(state, false);
-            }
-
-            private static bool OwnsVelocity(Distraction state)
-            {
-                return state.enemy != null && state.enemy.BehaviorOverridesVelocity
-                    && state.enemy.BehaviorVelocity.Equals(state.appliedVelocity);
-            }
-
-            private void RestoreDistraction(Distraction state, bool stopRoutine)
-            {
-                if (stopRoutine && state.routine != null) StopCoroutine(state.routine);
-                state.routine = null;
-                if (OwnsVelocity(state))
-                {
-                    state.enemy.BehaviorOverridesVelocity = state.previousOverride;
-                    state.enemy.BehaviorVelocity = state.previousVelocity;
-                }
-                distractions.Remove(state.enemy);
-                Plugin.Log("feather teaser: cleanup distraction");
-            }
-
-            internal void Finish()
+            internal void Finish(bool cancelDistractions)
             {
                 if (finished) return;
                 finished = true;
-                List<Distraction> states = new List<Distraction>(distractions.Values);
-                for (int i = 0; i < states.Count; i++) RestoreDistraction(states[i], true);
-                if (teaser != null) teaser.LureFinished(this);
+                if (teaser != null) teaser.LureFinished(this, cancelDistractions, position);
                 if (projectile != null) projectile.DieInAir(false, true, true, false);
             }
 
-            private void OnDestroy() { Finish(); }
-            private void OnDisable() { Finish(); }
+            private void OnDestroy() { Finish(true); }
+            private void OnDisable() { Finish(true); }
         }
     }
 }

@@ -162,10 +162,37 @@ class CatSetWiringTests(unittest.TestCase):
         self.assertNotRegex(feather, r'ClipShotsRemaining\s*=\s*[^=]')
         self.assertIn('OnSwitchedAwayFrom', feather)
         self.assertIn('state.enemy.BehaviorVelocity.Equals(state.appliedVelocity)', feather)
-        # Natural expiry must clear its handle without asking Unity to stop the coroutine
-        # that is currently executing; teardown paths still stop stored handles.
-        self.assertIn('RestoreDistraction(state, false)', feather)
-        self.assertIn('RestoreDistraction(states[i], true)', feather)
+        # A returned lure releases the gun/reload gate but its independently hosted
+        # distraction lease keeps running for the full configured duration.
+        self.assertIn('Finish(false)', feather)
+        self.assertIn('LureFinished(this, cancelDistractions, position)', feather)
+        self.assertIn('DetachDistractionsFromLure(lure, lastPosition, cancelDistractions)', feather)
+        self.assertIn('lease.targetPosition = lastPosition', feather)
+        self.assertIn('lease.source = null', feather)
+        distract_method = feather.index('private IEnumerator Distract(DistractionLease lease)')
+        lure_class = feather.index('public class FeatherLure : MonoBehaviour')
+        self.assertLess(distract_method, lure_class)
+        self.assertIn('elapsed < PlutoConfig.FeatherDistractSeconds', feather[distract_method:lure_class])
+        # Interrupting once is insufficient: an AI can begin another attack before 1.5 s.
+        # The active ownership lease must suppress firing on every frame without disabling AI.
+        update_owner = feather.index('private static bool UpdateDistractionOwnership(')
+        release_owner = feather.index('private static void ReleaseDistractionOwnership(', update_owner)
+        self.assertIn('behaviorSpeculator.Interrupt()', feather[update_owner:release_owner])
+        # Co-op/multiple lures share one nesting-safe ownership generation per enemy.
+        self.assertIn('Dictionary<AIActor, SharedDistraction> SharedDistractions', feather)
+        self.assertIn('List<DistractionLease> leases', feather)
+        self.assertIn('state.leases[state.leases.Count - 1]', feather)
+        self.assertIn('ReferenceEquals(current, state)', feather)
+        self.assertIn('ReferenceEquals(lease.shared, state)', feather)
+        self.assertIn('state.enemy.BehaviorOverridesVelocity = state.previousOverride', feather)
+        self.assertIn('state.enemy.BehaviorVelocity = state.previousVelocity', feather)
+        self.assertIn('EndDistraction(lease, false)', feather)
+        self.assertIn('EndDistraction(leases[i], true)', feather)
+        # Outbound and return are separate valid hits; each starts its own full lease.
+        self.assertNotIn('distractionLeases[i].enemy == enemy && distractionLeases[i].source == source', feather)
+        for teardown in ('OnSwitchedAwayFrom', 'OnDropped', 'OnDestroy', 'OnDisable'):
+            start = feather.index(teardown)
+            self.assertIn('CancelAllDistractions()', feather[start:start + 260])
         # Substeps must actually reach the end point before changing legs, even at low frame times.
         self.assertIn('private Vector2 origin, position, direction', feather)
         self.assertIn('position += move', feather)
