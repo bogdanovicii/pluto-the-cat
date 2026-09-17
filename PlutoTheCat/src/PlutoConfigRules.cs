@@ -155,6 +155,21 @@ namespace PlutoTheCat
             return r;
         }
 
+        // 2.20.0 shipped StallPosition defaulting to (10.5, 22.1), which put the Shrine Stall off-screen; 2.20.1
+        // raised the default to (19.7, 22.1). BepInEx keeps a value an existing config already has, so anyone
+        // who ran 2.20.0 stays stuck on the broken position after updating unless PlutoConfig migrates it away
+        // on load. Narrow on purpose: it only matches this exact legacy value, so it can never overwrite a
+        // position a player deliberately chose (including one that happens to be near, but not exactly, it).
+        public static bool IsLegacyBrokenStallPosition(float x, float y)
+        {
+            return Near(x, 10.5f) && Near(y, 22.1f);
+        }
+
+        private static bool Near(float a, float b)
+        {
+            return Math.Abs(a - b) < 0.0001f;
+        }
+
         private static void Warn(Action<string> warn, string message)
         {
             if (warn != null) warn(message);

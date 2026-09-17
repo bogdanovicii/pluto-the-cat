@@ -40,6 +40,9 @@ class CompanionKitTests(unittest.TestCase):
     def test_shrine_stall_rules(self):
         run_cases(self, [SRC / 'ShrineStallRules.cs'], ROOT / 'tools/tests/shrine_stall_cases.cs')
 
+    def test_stall_position_migration_rules(self):
+        run_cases(self, [SRC / 'PlutoConfigRules.cs'], ROOT / 'tools/tests/stall_position_migration_cases.cs')
+
     def test_yasupen_wiring(self):
         src = (SRC / 'YasupenItem.cs').read_text(encoding='utf-8')
         for needle in ('YasupenRules.SlideReady(', 'YasupenRules.BargainCasings(', 'YasupenRules.PriceMultiplier(',

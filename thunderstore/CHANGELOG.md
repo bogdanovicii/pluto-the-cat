@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.20.2 (test build, not released)
+
+- **Fix: Yasupen never actually registered since 2.18.0.** `ItemBuilder.SetupItem` derives the id an item
+  registers under from the GameObject's own name, not from the `ID` constant the file declares. Yasupen's
+  GameObject is named "Yasupen's Price Tag", so he registered as `pluto:yasupen's_price_tag` instead of
+  `pluto:yasupen` - nothing was ever bound to `pluto:yasupen`, so `give pluto:yasupen` and the Penguin Pals
+  synergy could never have worked. He is now renamed back to `pluto:yasupen` right after setup, the same way
+  HairballItem already handled this, with a log line if that rename ever fails again.
+- **Fix: the 2.20.0 broken `StallPosition` default is now migrated automatically.** 2.20.0 shipped with
+  `StallPosition` defaulting to (10.5, 22.1), which put the Shrine Stall off-screen; 2.20.1 raised the default
+  to (19.7, 22.1), but BepInEx keeps a value an existing config file already has, so anyone who ran 2.20.0
+  stayed stuck on the broken position after updating and would have seen no change. The config now detects the
+  exact old broken value on load and replaces it with the current default, logging that it did so; a position
+  you deliberately chose is never touched.
+
 ## 2.20.1 (test build, not released)
 
 - **Fix: the Shrine Stall was off-screen in the Breach.** The 2.20.0 `StallPosition` default (10.5, 22.1) was

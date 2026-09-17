@@ -271,6 +271,16 @@ namespace PlutoTheCat
             StallPriceFeatherTeaser = PlutoConfigRules.Clamp("StallPriceFeatherTeaser", cfg.Bind(S, "StallPriceFeatherTeaser", StallPriceFeatherTeaser, "Hegemony credits to unlock the Feather Teaser.").Value, StallPriceFeatherTeaser, Warn);
             stallPositionEntry = cfg.Bind(S, "StallPosition", "19.7,22.1", "Where the Shrine Stall stands in the Breach (x,y). Use the pluto_stall console command in-game to find a good spot, then pluto_stall save to write it here automatically.");
             StallPosition = Vec(stallPositionEntry.Value, StallPosition);
+            // See PlutoConfigRules.IsLegacyBrokenStallPosition: migrates anyone stuck on the 2.20.0 default that
+            // put the Shrine Stall off-screen, without touching a position a player deliberately chose.
+            if (PlutoConfigRules.IsLegacyBrokenStallPosition(StallPosition.x, StallPosition.y))
+            {
+                StallPosition = new Vector3(19.7f, 22.1f, 0f);
+                stallPositionEntry.Value = FormatVec(StallPosition);
+                Warn("StallPosition was still the broken 2.20.0 default (10.5, 22.1), which put the Shrine Stall " +
+                    "off-screen; migrated the config to the current default (19.7, 22.1). Use pluto_stall and " +
+                    "pluto_stall save if you want it somewhere else.");
+            }
             StallUnlocksDisabled = cfg.Bind(S, "StallUnlocksDisabled", StallUnlocksDisabled, "Testing only: treat all ten cat items as already unlocked.").Value;
         }
 

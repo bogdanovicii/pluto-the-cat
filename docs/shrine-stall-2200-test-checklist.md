@@ -22,6 +22,12 @@ anything else:
   BepInEx log for the `shrine stall: moved to ...` line and the footprint line right after it, and paste both
   into the report. `pluto_stall save` then writes that position into the config so the next test build keeps it
   without you having to redo this.
+- [ ] **If you ran the 2.20.0 build before this one**, your config already has `StallPosition = 10.5,22.1` (the
+  broken 2.20.0 default) written to it, and BepInEx keeps a value an existing config already has — installing
+  2.20.1's raised default on top of that does nothing by itself. 2.20.2 fixes this: on load it now detects that
+  exact old value and migrates it to the current default automatically, logging `StallPosition was still the
+  broken 2.20.0 default ...` when it does. You do not need to do anything by hand; deleting the `StallPosition`
+  key from `bogdan.etg.plutothecat.cfg` yourself also still works and is equivalent.
 - [ ] Daifuku, Kinsuke, the torii and the stall counter are all visible in the Breach. If any one of the four is
   missing, check for `shrine stall: missing prop resource ...` in the log (torii/stall/Kinsuke are placed by a
   separate code path, `PlaceBackdropProps`, that fails independently of Daifuku's own NPC and logs per-prop).

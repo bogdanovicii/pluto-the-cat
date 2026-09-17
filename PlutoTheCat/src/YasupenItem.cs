@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Alexandria.ItemAPI;
 using Dungeonator;
+using Gungeon;
 
 namespace PlutoTheCat
 {
@@ -18,6 +19,11 @@ namespace PlutoTheCat
     {
         public const string ID = "pluto:yasupen";
         public const string GUID = "bogdan.pluto.yasupen";
+        // ItemBuilder.SetupItem (Alexandria) derives the registered item id from the GameObject's own name
+        // (lowercased, spaces to underscores, apostrophes kept as-is), not from the ID constant above. The
+        // display name below is "Yasupen's Price Tag", so the item actually registers as this id - never
+        // "pluto:yasupen" - unless we rename it back right after SetupItem, same as HairballItem does.
+        private const string SetupId = "pluto:yasupen's_price_tag";
         private const string ROOT = "PlutoTheCat/Resources/Companions/yasupen";
         private static GameObject prefab;
 
@@ -33,6 +39,16 @@ namespace PlutoTheCat
                 "Donpen got the store, the fame and the nightcap first. Yasupen got a price-tag sticker and a lifelong " +
                 "grudge. He follows Pluto because a cat who knocks things off shelves is the best bargain hunter he has ever met.",
                 "pluto");
+            if (Game.Items.ContainsID(SetupId) && !Game.Items.ContainsID(ID))
+            {
+                Game.Items.Rename(SetupId, ID);
+                Plugin.Log("yasupen: renamed " + SetupId + " to " + ID);
+            }
+            else if (!Game.Items.ContainsID(ID))
+            {
+                Plugin.Log("yasupen: expected setup id " + SetupId + " not found and " + ID +
+                    " is not registered either; give pluto:yasupen and Penguin Pals will not work");
+            }
             item.quality = PickupObject.ItemQuality.B;
             item.CompanionGuid = GUID;
             item.Synergies = new CompanionTransformSynergy[0];   // must not be null
