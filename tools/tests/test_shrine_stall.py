@@ -51,6 +51,59 @@ class ShrineStallWiringTests(unittest.TestCase):
             self.assertLess(unlocks_idx, stall_idx,
                              'Step("unlocks", ...) must come before Step("shrine stall", ...)')
 
+    def test_unlock_gate(self):
+        self.requires(
+            'PlutoUnlockGate.cs',
+            'DungeonPrerequisite',
+            'prerequisiteType = DungeonPrerequisite.PrerequisiteType.FLAG',
+            'saveFlagToCheck =',
+            'requireFlag = true',
+            'encounterTrackable',
+            'LootUtility.RemovePickupFromLootTables(',
+            'LootUtility.AddItemToPool(',
+            'BallOfYarnItem.ID',
+            'CatnipPouchItem.ID',
+            'HairballItem.ID',
+            'ScratchingPostItem.ID',
+            'ToiletPaperRollItem.ID',
+            'CoffeeMugItem.ID',
+            'JingleBellCollarItem.ID',
+            'ConeOfShameItem.ID',
+            'SprayBottleGun.ID',
+            'FeatherTeaserGun.ID',
+        )
+        gate = self.source('PlutoUnlockGate.cs')
+        self.assertTrue(
+            'DungeonHooks.OnPostDungeonGeneration' in gate or 'DungeonHooks.OnPreDungeonGeneration' in gate,
+            'PlutoUnlockGate.cs missing a dungeon-start hook so the guard re-applies every run',
+        )
+        self.assertIn('Teardown', gate, 'PlutoUnlockGate.cs missing a Teardown method to unhook the stored delegate')
+
+        plugin = self.source('Plugin.cs')
+        gate_idx = plugin.find('Step("unlock gate", PlutoUnlockGate.Apply)')
+        self.assertGreaterEqual(gate_idx, 0, 'Plugin.cs missing Step("unlock gate", PlutoUnlockGate.Apply)')
+
+        unlocks_idx = plugin.find('Step("unlocks", PlutoUnlocks.Init)')
+        self.assertGreaterEqual(unlocks_idx, 0, 'Plugin.cs missing Step("unlocks", PlutoUnlocks.Init)')
+        self.assertLess(unlocks_idx, gate_idx, 'Step("unlock gate", ...) must come after Step("unlocks", ...)')
+
+        item_steps = [
+            'Step("ball of yarn", BallOfYarnItem.Init)',
+            'Step("catnip pouch", CatnipPouchItem.Init)',
+            'Step("jingle bell collar", JingleBellCollarItem.Init)',
+            'Step("hairball item", HairballItem.Init)',
+            'Step("scratching post", ScratchingPostItem.Init)',
+            'Step("toilet paper roll", ToiletPaperRollItem.Init)',
+            'Step("cone of shame", ConeOfShameItem.Init)',
+            'Step("coffee mug", CoffeeMugItem.Init)',
+            'Step("spray bottle", SprayBottleGun.Add)',
+            'Step("feather teaser", FeatherTeaserGun.Add)',
+        ]
+        for step in item_steps:
+            idx = plugin.find(step)
+            self.assertGreaterEqual(idx, 0, 'Plugin.cs missing ' + step)
+            self.assertLess(idx, gate_idx, step + ' must come before Step("unlock gate", ...)')
+
 
 if __name__ == '__main__':
     unittest.main()

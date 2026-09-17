@@ -73,6 +73,7 @@ namespace PlutoTheCat
             Step("coffee mug", CoffeeMugItem.Init);
             Step("yasupen", YasupenItem.Init);
             Step("unlocks", PlutoUnlocks.Init);
+            Step("unlock gate", PlutoUnlockGate.Apply);
 
             CustomCharacterData built = null;
             Step("character", () =>

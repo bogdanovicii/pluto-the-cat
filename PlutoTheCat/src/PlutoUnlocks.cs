@@ -52,6 +52,16 @@ namespace PlutoTheCat
             return Flags.TryGetValue(itemId, out flag) ? flag : default(GungeonFlags);
         }
 
+        /// <summary>
+        /// True once Init() has registered a real flag for this id. Flag(itemId) cannot tell this apart from a
+        /// genuine flag value of 0 (default(GungeonFlags)), so callers that build a prerequisite from Flag(...)
+        /// must check this first and skip the id when it is false.
+        /// </summary>
+        public static bool IsRegistered(string itemId)
+        {
+            return Flags.ContainsKey(itemId);
+        }
+
         public static bool IsUnlocked(string itemId)
         {
             if (GameStatsManager.Instance == null) return false;
