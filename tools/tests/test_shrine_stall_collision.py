@@ -93,7 +93,6 @@ class ShrineStallCollisionSourceTests(unittest.TestCase):
         for sig in (
             r'static\s+\w+\s+AttachCounterBody\(\s*GameObject\s+\w+\s*\)',
             r'static\s+\w+\s+AttachToriiBody\(\s*GameObject\s+\w+\s*\)',
-            r'static\s+\w+\s+AttachBackBlocker\(\s*GameObject\s+\w+\s*\)',
             r'static\s+\w+\s+ReinitializeShopBodies\(\s*GameObject\s+\w+\s*\)',
             r'static\s+void\s+LogBodies\(',
         ):
@@ -245,7 +244,7 @@ class ShrineStallCollisionWiringTests(unittest.TestCase):
         body = self.place_backdrop()
         self.assertRegex(body, r'AttachToriiBody\(_toriiProp\)', 'the torii prop must get its post bodies')
         self.assertRegex(body, r'AttachCounterBody\(_counterProp\)', 'the counter prop must get its body')
-        self.assertRegex(body, r'AttachBackBlocker\(_counterProp\)', 'the band behind the counter must be closed')
+        self.assertNotIn('AttachBackBlocker', body, 'the back fill is part of the counter body (2.20.9)')
         self.assertLess(body.index('_counterProp = PlaceProp'), body.index('AttachCounterBody'),
                         'bodies must be attached after the counter is placed')
 

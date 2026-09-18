@@ -30,8 +30,9 @@ namespace PlutoTheCat
     /// feet can touch the counter's front ground line: as close to the items and to Daifuku as the art allows.
     ///
     /// Kinsuke's bowl gets NO collider of its own: it rests on the counter top (bowl x [36, 48) lies inside the
-    /// counter's [-52, 52)), so the counter body already keeps the player away from it. A box at the bowl's own
-    /// height would float in mid-air behind the counter's footprint. Same for the three items on the counter:
+    /// counter's [-52, 52)) and its foot (y 17) stands inside the back fill's [9, 28), so the counter body (footprint
+    /// + back fill) already keeps the player away from it. A box at the bowl's own height would float in mid-air
+    /// behind the counter's footprint. Same for the three items on the counter:
     /// their own shop colliders ignore the player anyway (archaeology 1.5).
     ///
     /// Collision-matrix semantics are INFERRED (the game assembly here is a stub): HighObstacle blocks players,
@@ -117,12 +118,17 @@ namespace PlutoTheCat
         internal static readonly CollisionLayer PostLayer = CollisionLayer.HighObstacle;
         internal static readonly CollisionLayer BackBlockerLayer = CollisionLayer.PlayerBlocker;
 
-        /// <summary>Gives the counter prop (stall.png, already positioned) its footprint body. Call right after the
-        /// counter is placed. Returns the body, or null for a null prop.</summary>
+        /// <summary>Gives the counter prop (stall.png, already positioned) its WHOLE body in one go: the HighObstacle
+        /// footprint and the invisible PlayerBlocker back fill behind it, between the torii posts (on the counter's
+        /// body so its seam with the footprint is exact whatever the torii's own rounding). Both boxes go in ONE
+        /// AddColliders call: 2.20.8 appended the back fill to this body after it had been built, and in game that
+        /// appended collider stayed a 0x0 box at the transform (STALE) while the footprint was fine. Call right
+        /// after the counter is placed. Returns the body, or null for a null prop.</summary>
         internal static SpeculativeRigidbody AttachCounterBody(GameObject counterProp)
         {
-            return AddColliders(counterProp, "counter",
-                Box(CounterLayer, CounterBoxOffsetXPx, CounterBoxOffsetYPx, CounterBoxWidthPx, CounterBoxHeightPx));
+            return AddColliders(counterProp, "counter + back fill",
+                Box(CounterLayer, CounterBoxOffsetXPx, CounterBoxOffsetYPx, CounterBoxWidthPx, CounterBoxHeightPx),
+                Box(BackBlockerLayer, BackBlockerOffsetXPx, BackBlockerOffsetYPx, BackBlockerWidthPx, BackBlockerHeightPx));
         }
 
         /// <summary>Gives the torii prop (torii.png, already positioned) one small box under each post.</summary>
@@ -133,13 +139,11 @@ namespace PlutoTheCat
                 Box(PostLayer, RightPostBoxOffsetXPx, PostBoxOffsetYPx, PostBoxWidthPx, PostBoxHeightPx));
         }
 
-        /// <summary>Adds the invisible PlayerBlocker behind the counter, between the posts, to the COUNTER's body
-        /// (so its seam with the counter footprint is exact whatever the torii's own rounding). Call after
-        /// AttachCounterBody; if the counter has no body yet, one is created.</summary>
-        internal static SpeculativeRigidbody AttachBackBlocker(GameObject counterProp)
+        /// <summary>World y of the counter collider's front edge (its ground line): the player's feet cannot pass it.
+        /// Uses the counter prop's transform (the sprite's lower-left, where the Manual offsets are measured from).</summary>
+        internal static float CounterFrontY(GameObject counterProp)
         {
-            return AddColliders(counterProp, "back fill",
-                Box(BackBlockerLayer, BackBlockerOffsetXPx, BackBlockerOffsetYPx, BackBlockerWidthPx, BackBlockerHeightPx));
+            return counterProp.transform.position.y + CounterBoxOffsetYPx / PixelsPerTile;
         }
 
         /// <summary>
@@ -180,13 +184,13 @@ namespace PlutoTheCat
         /// from the player's actual centre, next to the max it is compared with (GetOverrideMaxDistance, or the
         /// assumed default) and an in-reach / OUT OF REACH verdict. Standing at the counter and re-running this
         /// settles the reach question. The distance to Daifuku's speech bubble anchor is logged separately and
-        /// labelled as not the reach.
+        /// labelled as not the reach. The bowl has no body on purpose, and its line says where it stands instead.
         /// </summary>
-        internal static void LogBodies(GameObject liveShop, GameObject counterProp, params GameObject[] otherProps)
+        internal static void LogBodies(GameObject liveShop, GameObject counterProp, GameObject toriiProp, GameObject bowlProp)
         {
             LogObjectBodies(counterProp);
-            if (otherProps != null)
-                foreach (GameObject prop in otherProps) LogObjectBodies(prop);
+            LogObjectBodies(toriiProp);
+            LogBowl(bowlProp, counterProp);
 
             if (liveShop == null)
             {
@@ -216,8 +220,9 @@ namespace PlutoTheCat
             };
         }
 
-        /// <summary>The house idiom (ToiletPaperRollItem.CreateSegment): body on the prop's own GameObject,
-        /// Manual colliders, then Reinitialize. Appends to an existing body instead of adding a second one.</summary>
+        /// <summary>The house idiom (ToiletPaperRollItem.CreateSegment): body on the prop's own GameObject, every
+        /// Manual collider in place BEFORE the body is ever initialised, then Reinitialize. Never appends to a body
+        /// that already exists: a collider added to an initialised body was never built (the 2.20.8 back fill).</summary>
         private static SpeculativeRigidbody AddColliders(GameObject prop, string what, params PixelCollider[] colliders)
         {
             if (prop == null)
@@ -226,17 +231,18 @@ namespace PlutoTheCat
                 return null;
             }
             SpeculativeRigidbody body = prop.GetComponent<SpeculativeRigidbody>();
-            if (body == null)
+            if (body != null)
             {
-                body = prop.AddComponent<SpeculativeRigidbody>();
-                body.CollideWithTileMap = false;
-                body.CollideWithOthers = true;
-                body.CanBePushed = false;
-                body.CanPush = false;
-                body.PixelColliders = new List<PixelCollider>();
+                Plugin.Log("shrine stall collision: '" + prop.name + "' already has a body - " + what
+                    + " NOT appended (a collider added to a built body stays 0x0); build each body in one call");
+                return body;
             }
-            if (body.PixelColliders == null) body.PixelColliders = new List<PixelCollider>();
-            body.PixelColliders.AddRange(colliders);
+            body = prop.AddComponent<SpeculativeRigidbody>();
+            body.CollideWithTileMap = false;
+            body.CollideWithOthers = true;
+            body.CanBePushed = false;
+            body.CanPush = false;
+            body.PixelColliders = new List<PixelCollider>(colliders);
 
             // Without a PhysicsEngine (the foyer can still be waking up) the body registers itself on its own
             // Start; Reinitialize is only for re-registering with an engine that exists.
@@ -254,13 +260,35 @@ namespace PlutoTheCat
             return body;
         }
 
+        /// <summary>The bowl deliberately has no body: its foot stands inside the back fill's area, which the counter
+        /// body makes solid. Say so, and flag it if a body ever does turn up on it.</summary>
+        private static void LogBowl(GameObject bowlProp, GameObject counterProp)
+        {
+            if (bowlProp == null) return;
+            if (bowlProp.GetComponent<SpeculativeRigidbody>() != null)
+            {
+                Plugin.Log("shrine stall collision: '" + bowlProp.name + "' has a body, but the bowl is meant to have none:");
+                LogObjectBodies(bowlProp);
+                return;
+            }
+            int left = CounterLeftPx + BackBlockerOffsetXPx;
+            int bottom = BackBlockerOffsetYPx;
+            Plugin.Log("shrine stall collision: '" + bowlProp.name + "' has NO body by design: the bowl's foot, counter frame ("
+                + (BowlAnchorXPx - BowlWidthPx / 2) + ".." + (BowlAnchorXPx + BowlWidthPx / 2) + ", " + BowlAnchorYPx
+                + ") px, stands inside the counter's PlayerBlocker back fill [" + left + ".." + (left + BackBlockerWidthPx)
+                + ") x [" + bottom + ".." + (bottom + BackBlockerHeightPx) + ") px, so the player cannot reach it"
+                + (counterProp != null && counterProp.GetComponent<SpeculativeRigidbody>() != null
+                    ? " (back fill: see the counter's collider 1 above)"
+                    : " - but the counter has NO body, so nothing keeps the player off it"));
+        }
+
         private static void LogObjectBodies(GameObject go)
         {
             if (go == null) return;
             SpeculativeRigidbody body = go.GetComponent<SpeculativeRigidbody>();
             if (body == null)
             {
-                Plugin.Log("shrine stall collision: '" + go.name + "' has NO body (walk-through)");
+                Plugin.Log("shrine stall collision: '" + go.name + "' has NO body - it is walk-through (its attach failed?)");
                 return;
             }
             LogBody(body);
@@ -299,9 +327,7 @@ namespace PlutoTheCat
         {
             // The standing line is the counter body's front edge (its ground line): the player's feet cannot pass
             // it, so a point on it directly under a target is the closest the player can get to that target.
-            float frontY = counterProp != null
-                ? counterProp.transform.position.y + CounterBoxOffsetYPx / PixelsPerTile
-                : liveShop.transform.position.y;
+            float frontY = counterProp != null ? CounterFrontY(counterProp) : liveShop.transform.position.y;
             Plugin.Log("shrine stall collision: counter front line y=" + F1(frontY)
                 + (counterProp == null ? " (no counter prop - using the shop root's y)" : ""));
             if (counterProp != null)
@@ -331,7 +357,8 @@ namespace PlutoTheCat
             {
                 tk2dBaseSprite daifukuSprite = talker.GetComponent<tk2dBaseSprite>();
                 float underX = daifukuSprite != null ? daifukuSprite.WorldCenter.x : talker.transform.position.x;
-                LogReachTo("Daifuku (talk)", underX, frontY, player, talker.GetDistanceToPoint, talker.GetOverrideMaxDistance());
+                LogReachTo("Daifuku (talk)", underX, frontY, player, talker.GetDistanceToPoint, talker.GetOverrideMaxDistance(),
+                    "its override");
                 if (talker.speakPoint != null)
                 {
                     // Where his speech bubble is anchored, over his head: a drawing point, not the reach.
@@ -351,11 +378,18 @@ namespace PlutoTheCat
                 CustomShopItemController item = items[i];
                 if (item == null) continue;
                 // Alexandria's CustomShopItemController has no reach setting of its own (GetOverrideMaxDistance
-                // returns -1), and for META_CURRENCY it measures to the plaque's sprite rectangle
-                // (UseOmnidirectionalItemFacing): this line is what the tester judges the items' reach by.
+                // returns -1), so ShrineStallReach's Harmony postfix raises it for our items. Calling the method
+                // here goes through that patch, so the max logged is the EFFECTIVE one the game compares with.
+                // For META_CURRENCY the item measures to the plaque's sprite rectangle (UseOmnidirectionalItemFacing).
                 float underX = item.sprite != null ? item.sprite.WorldCenter.x : item.transform.position.x;
+                float effective = item.GetOverrideMaxDistance();
+                string source = !ShrineStallReach.ItemReachPatched
+                    ? "the item-reach patch is NOT applied"
+                    : effective == ShrineStallReach.ShrineItemReachTiles
+                        ? "via the Harmony item-reach patch"
+                        : "patch applied but this item was NOT recognised as ours";
                 LogReachTo("item " + i + " '" + item.name + "'", underX, frontY, player,
-                    item.GetDistanceToPoint, item.GetOverrideMaxDistance());
+                    item.GetDistanceToPoint, effective, source);
             }
         }
 
@@ -365,12 +399,13 @@ namespace PlutoTheCat
         private const float AssumedDefaultReachTiles = 1f;
 
         private static void LogReachTo(string label, float underX, float frontY, PlayerController player,
-            DistanceTo measure, float overrideMax)
+            DistanceTo measure, float overrideMax, string overrideSource)
         {
             float max = overrideMax > 0f ? overrideMax : AssumedDefaultReachTiles;
             string maxText = overrideMax > 0f
-                ? F1(overrideMax) + " tiles (its override)"
-                : "game default, assumed ~" + F1(AssumedDefaultReachTiles) + " tile (override " + F1(overrideMax) + ")";
+                ? F1(overrideMax) + " tiles (" + overrideSource + ")"
+                : "game default, assumed ~" + F1(AssumedDefaultReachTiles) + " tile (override " + F1(overrideMax) + "; "
+                    + overrideSource + ")";
             Vector2 stand = new Vector2(underX, frontY);
             float fromFront = measure(stand);
             string line = "shrine stall collision: REACH to " + label + " = the interactable's own distance: from the "
@@ -382,7 +417,7 @@ namespace PlutoTheCat
                     + (fromPlayer <= max ? "in reach" : "OUT OF REACH") + ")";
             }
             line += "; max " + maxText + " -> from the counter front "
-                + (fromFront <= max ? "in reach" : "OUT OF REACH (player centre stands a little above the line; judge by the player figure)");
+                + (fromFront <= max ? "in reach" : "OUT OF REACH (player centre stands a little above the line; pluto_stall stand asks the game itself)");
             Plugin.Log(line);
         }
 

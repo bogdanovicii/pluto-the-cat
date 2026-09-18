@@ -114,8 +114,10 @@ class ShrineStallReviewTests(unittest.TestCase):
     def test_s1_items_reach_is_reported_for_the_tester(self):
         coll = self.collision()
         reach = self.body(coll, r'private static void LogReach\(GameObject liveShop, GameObject counterProp\)')
-        self.assertRegex(reach, r'LogReachTo\("item " \+ i[^;]*item\.GetDistanceToPoint, item\.GetOverrideMaxDistance\(\)\)',
+        self.assertRegex(reach, r'LogReachTo\("item " \+ i[^;]*item\.GetDistanceToPoint, effective[,)]',
                          'each item\'s reach must be measured by the item itself')
+        self.assertRegex(reach, r'float\s+effective\s*=\s*item\.GetOverrideMaxDistance\(\)\s*;',
+                         'the max is what the item itself returns (through the 2.20.9 reach patch)')
         to = self.body(coll, r'private static void LogReachTo\(')
         self.assertIn('REACH', to)
         self.assertIn('OUT OF REACH', to, 'the reach line must give the tester a verdict, not just a number')
@@ -244,7 +246,7 @@ class ShrineStallReviewTests(unittest.TestCase):
         coll = self.collision()
         reach = self.body(coll, r'private static void LogReach\(GameObject liveShop, GameObject counterProp\)')
         self.assertNotIn('talk point', reach.lower(), 'the speech point over Daifuku\'s head is not a talk point')
-        self.assertRegex(reach, r'LogReachTo\("Daifuku[^;]*talker\.GetDistanceToPoint, talker\.GetOverrideMaxDistance\(\)\)')
+        self.assertRegex(reach, r'LogReachTo\("Daifuku[^;]*talker\.GetDistanceToPoint, talker\.GetOverrideMaxDistance\(\)[,)]')
         self.assertIn('speech bubble anchor', reach, 'the straight-line value must be named for what it is')
         self.assertIn('not the reach', reach)
         to = self.body(coll, r'private static void LogReachTo\(')

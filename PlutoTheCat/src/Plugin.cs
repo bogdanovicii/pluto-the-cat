@@ -17,7 +17,7 @@ namespace PlutoTheCat
     {
         public const string GUID = "bogdan.etg.plutothecat";
         public const string NAME = "Pluto The Cat";
-        public const string VERSION = "2.20.8";
+        public const string VERSION = "2.20.9";
 
         // Embedded-resource roots (RootNamespace + folder path, '/' separated).
         public const string SPRITE_ROOT = "PlutoTheCat/Resources/SpriteRoot";
@@ -83,6 +83,7 @@ namespace PlutoTheCat
             Step("unlocks", PlutoUnlocks.Init);
             Step("unlock gate", PlutoUnlockGate.Apply);
             Step("shrine stall", ShrineStall.Init);
+            Step("shrine item reach", ShrineStallReach.ApplyItemReachPatch);   // once; our stall's items only
 
             CustomCharacterData built = null;
             Step("character", () =>

@@ -50,8 +50,9 @@ namespace PlutoTheCat
         private static bool _liveShopMovedByCommand;
 
         /// <summary>Alexandria names the shop root "&lt;prefix&gt;:&lt;name&gt;_Shop" and keys registeredShops by the
-        /// same string, so this prefix is how FindLiveShop tells our stall from another mod's.</summary>
-        private const string ShopPrefix = "pluto_shrine_stall";
+        /// same string, so this prefix is how FindLiveShop (and ShrineStallReach's item-reach patch) tells our
+        /// stall from another mod's.</summary>
+        internal const string ShopPrefix = "pluto_shrine_stall";   // also how ShrineStallReach knows our items
 
         // ---- Layout: the 2026-09-18 redesign, user-approved "as shown", item slots raised 2 px ----
         // Contract: .superpowers/sdd/2026-09-18-shrine-stall-redesign/art-spec.md section 5, the scene
@@ -296,6 +297,8 @@ namespace PlutoTheCat
         ///   pluto_stall save       - write the current position back to the config file
         ///   pluto_stall stock      - log what the live shop actually stocked, slot by slot
         ///   pluto_stall bodies     - log the stall's colliders and the reach to Daifuku and the items
+        ///   pluto_stall stand &lt;daifuku|0|1|2&gt; - warp to the counter front under that target and log which
+        ///                            interactable the game itself selected (Breach only; ShrineStallReach)
         /// </summary>
         private static void RegisterConsoleCommand()
         {
@@ -320,6 +323,13 @@ namespace PlutoTheCat
                     // Run it standing at the counter front after character select: reach is measured from
                     // the player too, and the shop items only exist once DoSetup has run.
                     ShrineStallCollision.LogBodies(FindLiveShop(), _counterProp, _toriiProp, _kinsukeProp);
+                    return;
+                }
+
+                if (args.Length == 2 && string.Equals(args[0], "stand", StringComparison.OrdinalIgnoreCase))
+                {
+                    // The headless reach test: the game, not our assumed default, says what is in reach.
+                    ShrineStallReach.Stand(args[1], FindLiveShop(), _counterProp);
                     return;
                 }
 
@@ -353,7 +363,7 @@ namespace PlutoTheCat
                 }
                 else
                 {
-                    Plugin.Log("shrine stall: usage - pluto_stall (report) | pluto_stall here | pluto_stall <x> <y> | pluto_stall save | pluto_stall stock | pluto_stall bodies");
+                    Plugin.Log("shrine stall: usage - pluto_stall (report) | pluto_stall here | pluto_stall <x> <y> | pluto_stall save | pluto_stall stock | pluto_stall bodies | pluto_stall stand <daifuku|0|1|2>");
                     return;
                 }
 
@@ -367,7 +377,7 @@ namespace PlutoTheCat
             ETGModConsole.Commands.AddUnit("pluto_here", args => ReportWhere("pluto_here"));
         }
 
-        private static void ReportWhere(string command)
+        internal static void ReportWhere(string command)
         {
             PlayerController player = GameManager.HasInstance ? GameManager.Instance.PrimaryPlayer : null;
             if (player == null)
@@ -581,13 +591,10 @@ namespace PlutoTheCat
             _kinsukeSprite = SpriteOf(_kinsukeProp);
 
             // P3 (redesign): the counter and the torii post bases are solid, and a player-only blocker closes
-            // the band behind the counter. The bowl sits on the counter top, inside the counter's body.
+            // the band behind the counter. The counter's footprint and that back fill are ONE body built in one
+            // call (2.20.9: appended later, the back fill stayed 0x0 in game). The bowl stands inside the back fill.
             if (_toriiProp != null) ShrineStallCollision.AttachToriiBody(_toriiProp);
-            if (_counterProp != null)
-            {
-                ShrineStallCollision.AttachCounterBody(_counterProp);
-                ShrineStallCollision.AttachBackBlocker(_counterProp);
-            }
+            if (_counterProp != null) ShrineStallCollision.AttachCounterBody(_counterProp);
 
             // 2.20.4 diagnostic (tester's ask): logs the live shop's whole hierarchy on every placement, so
             // "the shopkeeper is missing" or an unexplained sprite is hard data on the next run instead of

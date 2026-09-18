@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.20.9 (test build, not released)
+Fixes for the two failures in the 2.20.8 in-game test, plus a way to test reach without anyone standing at the counter.
+- **The wall behind the counter now works.** In 2.20.8 `pluto_stall bodies` showed the back fill (the invisible player-only wall behind the counter) as a 0x0 box, flagged STALE. It was added to the counter's collider after that collider had already been built, and the game never picked it up. The counter's footprint and the back fill are now built together in one step, and a finished collider is never added to afterwards. The box sizes are the same. Kinsuke's bowl still has no collider on purpose, because it stands inside the back fill's area. `pluto_stall bodies` now says that instead of calling the bowl walk-through.
+- **The three items can be reached across the counter.** In 2.20.8 every plaque measured 1.125 tiles from the counter front. The game's default reach is about 1 tile (a guess, since Alexandria leaves items at the default), so all three were out of reach. A small patch raises the reach to 1.5 tiles for this stall's items only. Other shops are untouched. `pluto_stall bodies` now reports the reach the game actually uses and says whether each item is in reach.
+- **New `pluto_stall stand <daifuku|0|1|2>` (Breach only).** It moves you to the counter front, 2 px in front of the counter's collider, right under Daifuku or item 0, 1 or 2. Half a second later it logs what the game itself chose to interact with: `shrine stall: stand <target>: the game selected <name> (expected <target>) -> REACH OK / NOT REACHED`, plus where you are standing. That answers the reach question without a human standing at the counter (in 2.20.8, `tp` didn't move the player). It also makes sure you can walk away afterwards, even if the move put you inside a collider.
+
 ## 2.20.8 (test build, not released)
 The Shrine Stall redesign, drawn to the mockups the user approved on 2026-09-18.
 - **Nothing to buy (P1):** the three items now sit on the counter top. Two of them used to hang past its right end, and the first sat over Daifuku. The game normally forces shop items to draw behind the counter; after stocking, their depth is reset so they draw in front of it. The item spots sit 2 px higher, so the crimson mats show under the plaques.

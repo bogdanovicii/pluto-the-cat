@@ -386,7 +386,7 @@ class ShrineStallWiringTests(unittest.TestCase):
         stall = self.source('ShrineStall.cs')
         self.assertIn('AddUnit("pluto_where", args => ReportWhere(', stall,
                        'ShrineStall.cs must register pluto_where on the shared read-only ReportWhere')
-        m = re.search(r'private static void ReportWhere\(string command\)(.*?)\n        \}', stall, re.S)
+        m = re.search(r'(?:private|internal) static void ReportWhere\(string command\)(.*?)\n        \}', stall, re.S)
         self.assertIsNotNone(m, 'ShrineStall.cs must define ReportWhere(string command)')
         body = m.group(1)
         self.assertIn('PrimaryPlayer', body, 'pluto_where must read the live player')
