@@ -6,6 +6,11 @@ Breach, beside the Breach shop, selling permanent per-save unlocks for ten cat i
 section `Shrine Stall 2.20`). Until unlocked, those ten no longer drop anywhere. Ordered riskiest first, because
 several of the failure modes below are silent by design.
 
+> **2.20.6 note.** The shop should now appear on the **first** Breach visit after launch. If it only
+> appears after returning from a run, the startup catch-up did not fire — look for either
+> `foyer was already up at startup - placed the shop now` or `foyer not up yet` in the log. To force a
+> foyer reload for testing, `load_level tt_foyer` in the console is faster than dying.
+>
 > **2.20.5 note.** Builds 2.20.0-2.20.4 moved and inspected the shop *template* rather than the live
 > copy Alexandria places each Breach load, so the shopkeeper was never where the stall was and
 > `pluto_stall` could not move him. The diagnostic block now reports the **live** shop: look for

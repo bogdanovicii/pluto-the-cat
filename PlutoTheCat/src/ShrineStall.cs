@@ -265,6 +265,7 @@ namespace PlutoTheCat
                 _foyerHandler = PlaceBackdropProps;
                 DungeonHooks.OnFoyerAwake += _foyerHandler;
             }
+            PlaceIfFoyerAlreadyUp();
             PlaceBackdropProps();
 
             if (!_commandRegistered)
@@ -341,17 +342,20 @@ namespace PlutoTheCat
         {
             PlutoConfig.StallPosition = newPosition;
 
+            // The template's offset is what PlaceBreachShops reads on the NEXT foyer load, so it has to be
+            // rewritten whether or not a live clone exists right now. 2.20.5 only did this inside the
+            // live-shop branch, and the tester's reload caught it: pluto_stall here had run while no clone
+            // existed yet (before the foyer race was understood), so the template kept its old offset and
+            // the reload placed the clone at 19.7,22.1 while the config said 19.75,19.688. The type is
+            // internal to Alexandria, so this goes through reflection; ReconcileLiveShopPosition() below
+            // is the backstop that makes a move stick even if that reflection ever stops working.
+            SetBreachOffset(_shopObject, newPosition);
+
             GameObject live = FindLiveShop();
             if (live != null)
             {
                 live.transform.position = newPosition;
-                // Also rewrite the placement offset both objects carry, or the next foyer load drops the
-                // stall back where it was: PlaceBreachShops re-reads BreachShopComp.offset off the
-                // template every time. The type is internal to Alexandria, so this goes through
-                // reflection rather than a direct reference - a no-op if that ever changes, which is why
-                // the in-memory move above does not depend on it.
                 SetBreachOffset(live, newPosition);
-                SetBreachOffset(_shopObject, newPosition);
             }
             else
             {
@@ -514,6 +518,7 @@ namespace PlutoTheCat
             // was 28 tiles away yet the bar was already there beside the torii). This turns "the
             // shopkeeper is missing" / "there is an unexplained white bar" into hard data on the very next
             // run instead of another round of screenshots and guessing.
+            ReconcileLiveShopPosition();
             LogShopDiagnostics();
         }
 
@@ -607,6 +612,74 @@ namespace PlutoTheCat
         /// Matched by component rather than by a "(Clone)" name suffix, so it survives Unity changing how
         /// it names clones, and filtered by our own prefix so another mod's breach shop is never touched.
         /// </summary>
+        /// <summary>
+        /// Closes the startup race that kept the stall empty for a whole session (2.20.0-2.20.5).
+        ///
+        /// Alexandria raises DungeonHooks.OnFoyerAwake from exactly one place - its
+        /// MainMenuFoyerControllerAwakePatch - and MainMenuFoyerController is the TITLE SCREEN's
+        /// controller, which lives in the Breach scene. At launch that Awake fires while the title menu is
+        /// up, which is before this mod's Init (it waits for GameManager start). So Alexandria's
+        /// PlaceBreachShops ran with our shop not yet registered and placed nothing of ours, and pressing
+        /// start does not reload the scene, so no second Awake ever came - which is also why our own
+        /// subscribed handler never fired at Breach load. Confirmed on the Steam machine: a forced foyer
+        /// reload (`load_level tt_foyer`) produced the live clone, positioned correctly, on the first try.
+        ///
+        /// So: if the foyer is already up by the time we register, invoke Alexandria's own placement now
+        /// rather than waiting for an Awake that has already happened. Its own PlaceBreachShops is used
+        /// (rather than cloning the template ourselves) because it also registers the shopkeeper's
+        /// TalkDoerLite as a room interactable, which is what makes him talkable. It calls
+        /// CleanupBreachShops first, so a later real foyer Awake running it again cannot duplicate him.
+        /// </summary>
+        private static void PlaceIfFoyerAlreadyUp()
+        {
+            if (UnityEngine.Object.FindObjectOfType<MainMenuFoyerController>() == null)
+            {
+                Plugin.Log("shrine stall: foyer not up yet - Alexandria will place the shop on its Awake");
+                return;
+            }
+            if (FindLiveShop() != null) return;   // already placed; nothing to catch up on
+
+            System.Type tools = typeof(ShopAPI).Assembly.GetType("Alexandria.NPCAPI.BreachShopTools");
+            System.Reflection.MethodInfo place = tools != null
+                ? tools.GetMethod("PlaceBreachShops", System.Reflection.BindingFlags.Public
+                    | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
+                : null;
+            if (place == null)
+            {
+                Plugin.Log("shrine stall: foyer was already up at startup but Alexandria's PlaceBreachShops "
+                    + "could not be found by reflection - the shop will only appear after the next Breach reload");
+                return;
+            }
+            try
+            {
+                place.Invoke(null, null);
+                Plugin.Log("shrine stall: foyer was already up at startup - placed the shop now instead of "
+                    + "waiting for a foyer Awake that already happened");
+            }
+            catch (Exception e)
+            {
+                Plugin.Log("shrine stall: placing the shop at startup failed: " + e.GetBaseException().Message);
+            }
+        }
+
+        /// <summary>
+        /// Puts the live clone where the config says, every time the props are placed. PlaceBreachShops
+        /// positions the clone from the template's BreachShopComp.offset; if that reflection-written
+        /// offset is ever stale or the write silently fails, this is what still makes a pluto_stall move
+        /// survive the next Breach load. Cheap and idempotent.
+        /// </summary>
+        private static void ReconcileLiveShopPosition()
+        {
+            GameObject live = FindLiveShop();
+            if (live == null) return;
+            Vector3 want = PlutoConfig.StallPosition;
+            if ((live.transform.position - want).sqrMagnitude < 0.0001f) return;
+            Plugin.Log("shrine stall: live shop was at " + FormatPos(live.transform.position)
+                + " but the config says " + FormatPos(want) + " - moved it");
+            live.transform.position = want;
+            SetBreachOffset(live, want);
+        }
+
         /// <summary>
         /// Rewrites Alexandria's BreachShopComp.offset, the value PlaceBreachShops positions the clone
         /// from on every foyer load. The component is internal to Alexandria 0.5.10, so it is reached by

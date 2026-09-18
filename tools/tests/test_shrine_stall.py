@@ -734,6 +734,69 @@ class ShrineStallWiringTests(unittest.TestCase):
                        'LogShopDiagnostics must report the LIVE shop; reporting the template is what made '
                        'the 2.20.4 run show every child at 0,0')
 
+    def test_shop_is_placed_even_when_the_foyer_awoke_before_we_registered(self):
+        """The startup race that kept the stall empty for a whole session in every build up to 2.20.5.
+
+        Alexandria raises OnFoyerAwake only from its patch on MainMenuFoyerController.Awake - the title
+        screen's controller, in the Breach scene - which runs at launch, before this mod registers. So
+        Alexandria's PlaceBreachShops placed nothing of ours, and starting a run does not reload the scene,
+        so there was never a second Awake. Confirmed on the Steam machine: a forced foyer reload produced
+        the live clone on the first try, and our own subscribed handler fired on that reload and never
+        before it. Init must therefore catch up itself when the foyer is already up."""
+        stall = self.source('ShrineStall.cs')
+        self.assertIn('private static void PlaceIfFoyerAlreadyUp()', stall,
+                       'ShrineStall.cs missing PlaceIfFoyerAlreadyUp()')
+        body = stall[stall.index('private static void PlaceIfFoyerAlreadyUp()'):]
+        body = body[:body.index('private static void ReconcileLiveShopPosition()')]
+        self.assertIn('FindObjectOfType<MainMenuFoyerController>()', body,
+                       'the catch-up must key off the same controller whose Awake raises OnFoyerAwake')
+        self.assertIn('"Alexandria.NPCAPI.BreachShopTools"', body,
+                       "the catch-up must use Alexandria's own placement (via reflection, the type is "
+                       "internal) so the shopkeeper's TalkDoerLite is registered as an interactable too")
+        self.assertIn('"PlaceBreachShops"', body)
+        self.assertIn('FindLiveShop() != null', body,
+                       'the catch-up must not re-place a shop that is already live')
+
+        init = stall[stall.index('public static void Init()'):]
+        init = init[:init.index('private static void RegisterConsoleCommand()')]
+        subscribe = init.index('DungeonHooks.OnFoyerAwake += _foyerHandler;')
+        catch_up = init.index('PlaceIfFoyerAlreadyUp();')
+        props = init.index('PlaceBackdropProps();', catch_up)
+        self.assertLess(subscribe, catch_up,
+                         'subscribe first, so a foyer Awake that lands during start-up is not missed either')
+        self.assertLess(catch_up, props,
+                         'the shop must exist before the props are placed and reconciled against it')
+
+    def test_a_move_updates_the_template_even_with_no_live_shop(self):
+        """2.20.5 regression caught by the tester's own log line: 'LIVE shop root ... at 19.7,22.1
+        (config says 19.75,19.688)'. pluto_stall here had been run while no clone existed yet, and the
+        template's offset was only rewritten inside the live-shop branch, so the next foyer load placed
+        the clone at the stale registered position. The template is what PlaceBreachShops reads, so it
+        must be rewritten unconditionally."""
+        stall = self.source('ShrineStall.cs')
+        move = stall[stall.index('private static void MoveStall'):]
+        move = move[:move.index('private static void ReportStallStatus')]
+        template_write = move.find('SetBreachOffset(_shopObject, newPosition);')
+        live_branch = move.find('if (live != null)')
+        self.assertNotEqual(template_write, -1, 'MoveStall must rewrite the template offset')
+        self.assertNotEqual(live_branch, -1)
+        self.assertLess(template_write, live_branch,
+                         'the template offset must be rewritten BEFORE and outside the live-shop branch, '
+                         'or a move made while no clone exists is lost on the next Breach load')
+
+    def test_every_placement_reconciles_the_live_shop_to_the_config(self):
+        """Backstop for the offset rewrite: BreachShopComp is internal to Alexandria and reached by
+        reflection, so if that write ever silently fails, re-asserting the live clone's position against
+        the config on every placement is what still makes a pluto_stall move stick."""
+        stall = self.source('ShrineStall.cs')
+        placement = stall[stall.index('private static void PlaceBackdropProps()'):]
+        placement = placement[:placement.index('private static void DestroyProps()')]
+        reconcile = placement.find('ReconcileLiveShopPosition();')
+        diag = placement.find('LogShopDiagnostics();')
+        self.assertNotEqual(reconcile, -1, 'PlaceBackdropProps must reconcile the live shop position')
+        self.assertLess(reconcile, diag,
+                         'reconcile before logging, so the diagnostics report the corrected position')
+
     def test_shopkeeper_diagnostic_logs_the_whole_shop_hierarchy(self):
         """The tester asked for a diagnostic that distinguishes a working stall from one with no visible
         shopkeeper, unconditionally (not behind a debug flag), at foyer placement time and after a
