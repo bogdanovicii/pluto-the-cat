@@ -1,15 +1,18 @@
-"""2.20.0 Shrine Stall art: Daifuku, Kinsuke and the stall dressing.
+"""Shrine Stall art that did not change in the 2026-09-18 redesign: Daifuku and the paper lantern.
 
 Copied by hand from the approved concept in reference/gemini/shrine_stall/ into
 row-strings on the mod palette.  Daifuku and Kinsuke are Breach NPCs, not
 ``AIActor``s, so nothing adds a runtime outline: unlike the Coco clips these keep
 their drawn ``o`` outline and the exporter must not strip it.
 
-Exports ``DAIFUKU_CLIPS`` (idle, talk), ``KINSUKE_CLIPS`` (idle), ``PROPS``
-(torii, stall) and ``BLUEPRINT``; ``tools/make_art.py`` writes them into
-PlutoTheCat/Resources/Shop/ under the exact names ShrineStall.cs loads.
+Exports ``DAIFUKU_CLIPS`` (idle, talk) and ``LANTERN``.  The redesigned torii, counter,
+Kinsuke's bowl and the ema slot plaque live in ``art_shrine_stall_v2.py`` (which hangs this
+LANTERN from its torii); ``tools/make_art.py`` writes both into PlutoTheCat/Resources/Shop/
+under the exact names ShrineStall.cs loads.  The 2.20.0 torii, noren stall, maneki-neko,
+stone lantern, koi banners and kanban blueprint were retired by that redesign (user decision
+D1) and are in git history if they ever return as separate props.
 """
-from pixel import check_rect as R, overlay, pad, flip_h
+from pixel import check_rect as R, overlay, pad
 
 
 DAIFUKU_W, DAIFUKU_H = 26, 32
@@ -138,84 +141,8 @@ DAIFUKU_TALK = [
 DAIFUKU_CLIPS = {'daifuku_idle': DAIFUKU_IDLE, 'daifuku_talk': DAIFUKU_TALK}
 
 
-# ---------------------------------------------------------------------- Kinsuke
-KINSUKE_W, KINSUKE_H = 22, 20
-
-# The bowl is fixed and only the koi and his bubbles move, so the glass reads as
-# glass instead of wobbling along with the fish.
-BOWL = R([
-    '.....oooooooo.....',
-    '...ooNNNNNNNNoo...',
-    '..oNNFFFFFFFFNNo..',
-    '.oNFFFFFFFFFFFFNo.',
-    'oNFFFFFFFFFFFFFFNo',
-    'oNFFFFFFFFFFFFFFNo',
-    'oNFFFFFFFFFFFFFFNo',
-    'oNFFFFFFFFFFFFFFNo',
-    'oNfFFFFFFFFFFFFfNo',
-    'oNffFFFFFFFFFFffNo',
-    '.oNffffffffffffNo.',
-    '..oNffffffffffNo..',
-    '...ooNffffffNoo...',
-    '.....oooooooo.....',
-])
-
-# Kohaku koi: a white forked tail at the back, a ginger body with a white saddle
-# patch and a dark eye near the pointed head, so the silhouette reads as a fish.
-KOI_RIGHT = R([
-    'oWo..kkkk.',
-    'oWWokkkkkk',
-    'oWWWkWokki',
-    'oWWokkiiii',
-    'oWo...iii.',
-])
-KOI_LEFT = R(flip_h(KOI_RIGHT))
-KOI_TURN = R([
-    'oWo...kkk.',
-    'oWWo.kkkkk',
-    'oWWWkkWoki',
-    'oWWo.kiiii',
-    'oWo....ii.',
-])
-
-BUBBLE = R([
-    '.o.',
-    'oKo',
-    '.o.',
-])
-
-
-def _kinsuke(koi, kx, ky, bx=None, by=None):
-    rows = overlay(pad(BOWL, KINSUKE_W, KINSUKE_H, 2, 5), koi, kx, ky)
-    if bx is not None:
-        rows = overlay(rows, BUBBLE, bx, by)
-    return R(rows)
-
-
-# Idle at 6 fps: a lazy circuit of the bowl with a bubble on the way up - Kinsuke
-# is always just about to say something.
-KINSUKE_IDLE = [
-    _kinsuke(KOI_RIGHT, 5, 11),
-    _kinsuke(KOI_TURN, 4, 10, 14, 12),
-    _kinsuke(KOI_LEFT, 5, 10, 15, 10),
-    _kinsuke(KOI_TURN, 6, 11),
-]
-
-KINSUKE_CLIPS = {'kinsuke_idle': KINSUKE_IDLE}
-
-
 # ------------------------------------------------------------------------ props
-def _blank(w, h):
-    rows = [['.'] * w for _ in range(h)]
-
-    def put(x, y, s):
-        for i, ch in enumerate(s):
-            if ch != '.':
-                rows[y][x + i] = ch
-
-    return rows, put
-
-
+# A paper lantern (7x7), hung from each end of the torii nuki.
 LANTERN = R([
     '..ooo..',
     '.oRRRo.',
@@ -224,186 +151,4 @@ LANTERN = R([
     'oRYYYRo',
     '.oRRRo.',
     '..ooo..',
-])
-
-KOI_BANNER = R([
-    '.oooooo.....',
-    'oRWRRRRoo.oo',
-    'oRoRRRRRRoRo',
-    'oRWRRRRoo.oo',
-    '.oooooo.....',
-])
-KOI_BANNER_BLUE = R([
-    '.oooooo.....',
-    'o2W2222oo.oo',
-    'o2o222222o2o',
-    'o2W2222oo.oo',
-    '.oooooo.....',
-])
-
-
-def _torii():
-    """78x48: the vermilion gate, a paper lantern under each half of the nuki and
-    the koi banner pole standing clear of the right pillar."""
-    rows, put = _blank(78, 48)
-    # kasagi: a dark tiled lintel whose ends step up, over a shadowed underside
-    put(0, 0, 'o' * 4); put(56, 0, 'o' * 4)
-    put(0, 1, '4' * 4 + 'o' * 4); put(52, 1, 'o' * 4 + '4' * 4)
-    put(0, 2, '4' * 8 + 'o' * 4); put(48, 2, 'o' * 4 + '4' * 8)
-    put(0, 3, '4' * 12 + 'o' * 36 + '4' * 12)
-    put(0, 4, '4' * 60)
-    put(0, 5, '0' * 60)
-    put(0, 6, 'o' * 60)
-    # shimaki: the red band under the roof
-    put(3, 7, 'o' + 'R' * 52 + 'o')
-    put(3, 8, 'o' + 'R' * 52 + 'o')
-    put(3, 9, 'o' + 'r' * 52 + 'o')
-    put(3, 10, 'o' * 54)
-    # gakuzuka: the short centre post between the two lintels
-    for y in range(11, 20):
-        put(27, y, 'oRRrro')
-    # nuki: the second lintel
-    put(7, 20, 'o' * 46)
-    put(7, 21, 'o' + 'R' * 44 + 'o')
-    put(7, 22, 'o' + 'R' * 44 + 'o')
-    put(7, 23, 'o' + 'r' * 44 + 'o')
-    put(7, 24, 'o' * 46)
-    # pillars on stone bases
-    for y in range(11, 44):
-        put(12, y, 'oRRRrro')
-        put(41, y, 'oRRRrro')
-    for y in range(44, 47):
-        put(11, y, 'oSSSSSSso')
-        put(40, y, 'oSSSSSSso')
-    put(11, 47, 'o' * 9)
-    put(40, 47, 'o' * 9)
-    # paper lanterns hung from the nuki
-    for lx in (20, 33):
-        put(lx + 3, 25, 'o')
-        for dy, line in enumerate(LANTERN):
-            put(lx, 26 + dy, line)
-    # koi banner pole, outside the gate so it never hides a pillar
-    put(61, 6, 'oAAo')
-    for y in range(7, 47):
-        put(62, y, 'oNo')
-    put(61, 47, 'ooooo')
-    for dy, line in enumerate(KOI_BANNER):
-        put(65, 12 + dy, line)
-    for dy, line in enumerate(KOI_BANNER_BLUE):
-        put(65, 21 + dy, line)
-    return R([''.join(r) for r in rows])
-
-
-TORII = _torii()
-
-MANEKI = R([
-    '.o...o...',
-    'oWo.oWo..',
-    'oWWoWWWo.',
-    'oWoWWoWo.',
-    'oWWWPWWWo',
-    '.oWWWWWo.',
-    '.oRRRRRo.',
-    'oWoAAAoWo',
-    'oWWWWWWWo',
-    '.ooooooo.',
-])
-
-STONE_LANTERN = R([
-    '....oo....',
-    '...oKKo...',
-    '..oooooo..',
-    '.oSSSSSSo.',
-    'oSSSSSSSSo',
-    'osssssssso',
-    '.oooooooo.',
-    '.oSSSSSSo.',
-    '.oSKKKKSo.',
-    '.oSKKKKSo.',
-    '.oSssssSo.',
-    '.oooooooo.',
-    '...oSSo...',
-    '...oSSo...',
-    '.oSSSSSSo.',
-    '.oooooooo.',
-])
-
-
-SCROLL = R([
-    'oooooooo',
-    'oEEEEEEo',
-    'oEEMMEEo',
-    'oEMMMMEo',
-    'oEEMMEEo',
-    'oEMEEMEo',
-    'oEEEEEEo',
-    'oooooooo',
-])
-
-
-def _stall():
-    """48x36: the noren curtain on its rod, the dark stall interior with its shelf
-    and shop scroll, the maneki-neko on the wooden counter, and a stone lantern."""
-    rows, put = _blank(48, 36)
-    put(11, 0, 'o' * 37)
-    put(11, 1, 'o' + 'M' * 35 + 'o')
-    put(11, 2, 'o' * 37)
-    for y in range(3, 12):
-        put(11, y, 'o' + ('7' if y < 5 else '5') * 35 + 'o')
-    for y in range(6, 12):          # the four panels the curtain is slit into
-        for x in (20, 29, 38):
-            put(x, y, '6')
-    put(11, 12, 'o' * 37)
-    for y in range(13, 23):         # the dark stall interior behind the counter
-        put(12, y, 'Q' * 35)
-    put(12, 17, 'X' * 35)           # a shelf line, so the interior is not a flat slab
-    for dy, line in enumerate(SCROLL):
-        put(36, 14 + dy, line)
-    for dy, line in enumerate(MANEKI):
-        put(14, 13 + dy, line)
-    put(11, 23, 'o' * 37)           # counter top
-    put(11, 24, 'o' + 'L' * 35 + 'o')
-    put(11, 25, 'o' + 'M' * 35 + 'o')
-    put(11, 26, 'o' * 37)
-    for y in range(27, 35):         # plank front
-        put(12, y, 'o' + 'M' * 33 + 'mo')
-    for y in range(27, 35):
-        for x in (21, 30, 39):
-            put(x, y, 'm')
-    put(12, 35, 'o' * 36)
-    for dy, line in enumerate(STONE_LANTERN):
-        put(0, 20 + dy, line)
-    return R([''.join(r) for r in rows])
-
-
-STALL = _stall()
-
-PROPS = {'torii': TORII, 'stall': STALL}
-
-
-# The blueprint is the hanging kanban Alexandria places by the stock: a wooden
-# board on a rope, with three price tags under it for the three item slots.
-BLUEPRINT = R([
-    '.........oo...........',
-    '........o..o..........',
-    '.......o....o.........',
-    '......o......o........',
-    '.....o........o.......',
-    '.oooooooooooooooooooo.',
-    'oLLLLLLLLLLLLLLLLLLLLo',
-    'oLM' + 'M' * 16 + 'MLo',
-    'oLM' + '...EE..EE..EE...'.replace('.', 'M') + 'MLo',
-    'oLM' + '...EE..EE..EE...'.replace('.', 'M') + 'MLo',
-    'oLM' + 'M' * 16 + 'MLo',
-    'oLM' + '.....EEEEEE.....'.replace('.', 'M') + 'MLo',
-    'oLM' + '....EEEEEEEE....'.replace('.', 'M') + 'MLo',
-    'oLM' + '....EEEEEEEE....'.replace('.', 'M') + 'MLo',
-    'oLM' + '.....EEEEEE.....'.replace('.', 'M') + 'MLo',
-    'oLM' + 'M' * 16 + 'MLo',
-    'oLLLLLLLLLLLLLLLLLLLLo',
-    '.oooooooooooooooooooo.',
-    '...oo.....oo.....oo...',
-    '..oYYo...oYYo...oYYo..',
-    '..oYyo...oYyo...oYyo..',
-    '...oo.....oo.....oo...',
 ])

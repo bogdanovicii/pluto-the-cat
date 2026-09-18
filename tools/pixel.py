@@ -71,6 +71,10 @@ PALETTE = {
     'k': (0xEF, 0xAC, 0x5E, 255),  # ginger light: warmer, yellower (h35 v94)
     'i': (0xC9, 0x76, 0x2E, 255),  # ginger base (h27 v79)
     'n': (0x8A, 0x45, 0x20, 255),  # ginger shadow: cooler, redder (h21 v54)
+    # 2.20 shrine stall redesign (2026-09-18): the torii is the largest red mass and needs three tones
+    # for its 3/4 read (lit left column of each post, top face of the nuki).  16 value points above 'R',
+    # hue-shifted warmer, so it reads as sunlit lacquer rather than orange.
+    't': (0xF0, 0x68, 0x48, 255),  # torii vermilion light (shade ramp: t > R > r)
 }
 
 

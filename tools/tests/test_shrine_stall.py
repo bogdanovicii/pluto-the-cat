@@ -1,6 +1,10 @@
 """Source-level wiring checks for the Shrine Stall 2.20 per-save unlock store."""
+import ast
+import operator
 import pathlib
 import re
+import sys
+import tempfile
 import unittest
 
 
@@ -9,6 +13,77 @@ SRC = ROOT / 'PlutoTheCat' / 'src'
 SHOP = ROOT / 'PlutoTheCat' / 'Resources' / 'Shop'
 PREVIEW = ROOT / 'docs' / 'art-preview' / 'shrine-stall-2200.png'
 KIT_CASES = ROOT / 'tools' / 'tests' / 'player_kit_cases.cs'
+TOOLS = ROOT / 'tools'
+
+PX = 16.0   # pixels per tile
+
+_OPS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul, ast.Div: operator.truediv}
+
+
+def cs_eval(expr, names=None):
+    """Evaluates the tiny subset of C# float arithmetic the stall layout uses ("21f / 16f",
+    "(18f + PlaqueHeight / 2f) / 16f", "-40f / 16f") without eval(): literals, + - * /, unary minus,
+    parentheses and names of already-parsed float constants."""
+    names = names or {}
+    cleaned = re.sub(r'(\d)f\b', r'\1', expr.strip())
+
+    def ev(node):
+        if isinstance(node, ast.Expression):
+            return ev(node.body)
+        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+            return float(node.value)
+        if isinstance(node, ast.Name):
+            if node.id not in names:
+                raise ValueError('unknown name %r in %r' % (node.id, expr))
+            return names[node.id]
+        if isinstance(node, ast.BinOp) and type(node.op) in _OPS:
+            return _OPS[type(node.op)](ev(node.left), ev(node.right))
+        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
+            return -ev(node.operand)
+        raise ValueError('unsupported expression %r' % expr)
+
+    return ev(ast.parse(cleaned, mode='eval'))
+
+
+def cs_float_consts(src):
+    """Every `const float Name = expr;` in declaration order, evaluated."""
+    consts = {}
+    for m in re.finditer(r'const float (\w+)\s*=\s*([^;]+);', src):
+        consts[m.group(1)] = cs_eval(m.group(2), consts)
+    return consts
+
+
+def split_args(text):
+    """Splits "a, (b, c), d" at top-level commas."""
+    out, depth, cur = [], 0, ''
+    for ch in text:
+        if ch == ',' and depth == 0:
+            out.append(cur)
+            cur = ''
+            continue
+        depth += ch == '('
+        depth -= ch == ')'
+        cur += ch
+    out.append(cur)
+    return [a.strip() for a in out]
+
+
+def vector_literals(text):
+    """Argument lists of every `new Vector3(...)` in text, in order, balanced-paren aware."""
+    found = []
+    for m in re.finditer(r'new Vector3\(', text):
+        i, depth = m.end(), 1
+        while depth:
+            depth += {'(': 1, ')': -1}.get(text[i], 0)
+            i += 1
+        found.append(split_args(text[m.end():i - 1]))
+    return found
+
+
+def png_size(name):
+    from PIL import Image
+    with Image.open(SHOP / name) as im:
+        return im.size
 
 # The ten gated ids (Task 2/3/5's contract), each paired with its config price key (Task 1) and the
 # Plugin.cs Step(...) call that loads it (Task 1-era item registration, unrelated to this round).
@@ -309,13 +384,24 @@ class ShrineStallWiringTests(unittest.TestCase):
         """2.20.7: pluto_where measures landmarks (the Breach shop door) for the redesign's collision
         work. It must log the player's position and must never move the stall."""
         stall = self.source('ShrineStall.cs')
-        m = re.search(r'AddUnit\("pluto_where", args =>(.*?)\n            \}\);', stall, re.S)
-        self.assertIsNotNone(m, 'ShrineStall.cs must register a pluto_where console command')
+        self.assertIn('AddUnit("pluto_where", args => ReportWhere(', stall,
+                       'ShrineStall.cs must register pluto_where on the shared read-only ReportWhere')
+        m = re.search(r'private static void ReportWhere\(string command\)(.*?)\n        \}', stall, re.S)
+        self.assertIsNotNone(m, 'ShrineStall.cs must define ReportWhere(string command)')
         body = m.group(1)
         self.assertIn('PrimaryPlayer', body, 'pluto_where must read the live player')
         self.assertIn('Plugin.Log(', body, 'pluto_where must log what it measured')
         for mover in ('MoveStall', 'SetBreachOffset', 'PersistStallPosition', '.position ='):
             self.assertNotIn(mover, body, 'pluto_where must not move or save anything (%s)' % mover)
+
+    def test_here_is_a_read_only_alias_of_where(self):
+        """2.20.7 tester note: users type `pluto_here`. It must be the same read-only reading as
+        pluto_where (never `pluto_stall here`, which MOVES the stall)."""
+        stall = self.source('ShrineStall.cs')
+        self.assertIn('AddUnit("pluto_here", args => ReportWhere(', stall,
+                       'pluto_here must be registered as an alias of pluto_where (the shared ReportWhere)')
+        self.assertNotRegex(stall, r'AddUnit\("pluto_here"[^\n]*MoveStall',
+                             'pluto_here must never move the stall')
 
     def test_stall_placement_command(self):
         """2.20.1: the (10.5, 22.1) launch default ran the shrine stall off-screen in the Breach (user
@@ -386,60 +472,110 @@ class ShrineStallWiringTests(unittest.TestCase):
                           'npcPosition must not reuse PlutoConfig.StallPosition - the shop root is already '
                           'placed there from BreachShopComp.offset, so passing it here doubles Daifuku\'s '
                           'distance from the Breach origin (the 2.20.2 bug: ~28 tiles from his own props)')
-        self.assertIn('DaifukuBehindCounter', npc_position_line,
-                       'npcPosition must be the DaifukuBehindCounter local offset. It is deliberately NOT '
-                       'zero: at zero he stands on the counter\'s own ground line, and the counter (2.25 '
-                       'tiles tall) is taller than he is (2), so it would cover him completely.')
-        offset_match = re.search(r'DaifukuBehindCounter\s*=\s*(-?[\d.]+)f', stall)
-        self.assertIsNotNone(offset_match, 'ShrineStall.cs missing a parseable DaifukuBehindCounter constant')
-        self.assertGreater(float(offset_match.group(1)), 0.0,
-                            'DaifukuBehindCounter must be positive: +Y is this engine\'s "further back", '
+        self.assertIn('DaifukuNpcPosition', npc_position_line,
+                       'npcPosition must be the DaifukuNpcPosition local offset (art-spec section 5: his '
+                       'bottom-centre 21 px behind and 21 px right of the counter\'s bottom-centre).')
+        layout = StallLayout(self)
+        self.assertGreater(layout.npc[1], 0.0,
+                            'DaifukuNpcPosition.y must be positive: +Y is this engine\'s "further back", '
                             'which both raises him above the counter lip and sorts him behind it')
 
-    def test_stall_offset_centers_counter_under_torii(self):
-        """2.20.2 root cause 2 (tester report: counter sits low and to the left of the torii): the design
-        (docs/superpowers/specs/2026-09-17-shrine-stall-design.md) wants the counter UNDER the gate. Both
-        props are bottom-center pivoted, so centering the 3-tile-wide counter under the 4.875-tile-wide
-        torii needs StallOffset.x == ToriiOffset.x, not the earlier -2.0625 nudge (which aligned the
-        counter to the torii's left EDGE, not its center, and read as "left of the gate" in-game)."""
-        stall = self.source('ShrineStall.cs')
-        # Capture the FULL first-argument expression (not just its leading literal), so an old
-        # "-3.0f - 2.0625f" style nudge is actually evaluated rather than truncated to "-3.0" and
-        # spuriously matching.
-        # Both may be written either as Vector3.zero (2.20.5 onwards, once the props were re-centered on
-        # the shopkeeper himself) or as an explicit new Vector3(x, ...). Accept either and compare the X.
-        def offset_x(name):
-            if re.search(name + r'\s*=\s*Vector3\.zero', stall):
-                return 0.0
-            match = re.search(name + r'\s*=\s*new Vector3\(([^,]+),', stall)
-            self.assertIsNotNone(match, 'ShrineStall.cs missing a parseable ' + name + ' declaration')
-            return to_number(match.group(1))
-        # Safe evaluator for the tiny subset of C# float arithmetic these fields use (e.g. "-3.0f",
-        # "-3.0f - 2.0625f"): sum the signed float literals rather than calling eval() on source text.
-        def to_number(expr):
-            cleaned = re.sub(r'(?<![\d.])f(?![\w])', '', expr)
-            terms = re.findall(r'[+-]?\s*[\d.]+', cleaned)
-            self.assertTrue(terms, 'could not parse float literals out of %r' % expr)
-            return sum(float(t.replace(' ', '')) for t in terms)
-        torii_x = offset_x('ToriiOffset')
-        stall_x = offset_x('StallOffset')
-        self.assertEqual(torii_x, stall_x,
-                          'StallOffset.x must equal ToriiOffset.x so the counter is centered under the '
-                          'torii (both sprites are bottom-center pivoted; equal X centers one under the '
-                          'other) - got ToriiOffset.x=%r, StallOffset.x=%r' % (torii_x, stall_x))
+    def test_stall_layout_matches_the_approved_art_spec(self):
+        """2026-09-18 redesign, user-approved "as shown" (+2 px item raise). art-spec section 5 is the
+        contract: the counter frame's origin is the counter's bottom-centre, which is the shop root R.
+        Props are LowerCenter-placed, so their offsets ARE their bottom-centres. Daifuku's npcPosition is
+        his sprite's LOWER-LEFT (archaeology 1.9, measured), so his bottom-centre is npcPosition + his
+        anchor column. Alexandria centres each shop item (MiddleCenter) on its ItemPoint, so an ItemPoint
+        is the slot's bottom-centre plus half the plaque's displayed height."""
+        L = StallLayout(self)
+        px = lambda v: (round(v[0] * PX, 4), round(v[1] * PX, 4))
 
-    def test_kinsuke_bowl_rests_on_measured_counter_height(self):
-        """2.20.2 root cause 3 (tester report: the bowl floats near the torii's crossbeam): the old
-        28/16 = 1.75-tile Y offset was a guess ("near the top of the sprite"). Measuring stall.png
-        (48x36px, bottom-center pivot, 16px/tile) pixel-by-pixel: the counter's top lip (where the opaque
-        pixels widen from the narrower noren curtain above to the full 48px width) starts at row 20 (from
-        the top), so the counter surface sits (36 - 20) / 16 = 1.0 tile above the ground line - not 1.75."""
+        self.assertEqual(px(L.stall), (0.0, 0.0), 'the counter anchor (bottom-centre) is the shop root')
+        self.assertEqual(px(L.torii), (0.0, 24.0), 'torii bottom-centre = R + (0, +24) px')
+        self.assertEqual(px(L.kinsuke), (42.0, 17.0), 'Kinsuke bottom-centre = R + (+42, +17) px')
+
+        dw, dh = png_size('daifuku_idle_001.png')
+        self.assertEqual((dw, dh), (26, 32), 'Daifuku is unchanged (26x32)')
+        self.assertEqual(L.daifuku_col, dw / 2, 'his bottom-centre column is half his 26-px canvas')
+        daifuku_bc = (L.npc[0] * PX + L.daifuku_col, L.npc[1] * PX)
+        self.assertEqual(daifuku_bc, (21.0, 21.0),
+                         'Daifuku bottom-centre = R + (+21, +21) px; npcPosition is his lower-left')
+
+        bw, bh = png_size('blueprint.png')
+        self.assertEqual((bw, bh), (14, 16), 'the slot plaque (blueprint.png) is the 14x16 ema')
+        self.assertEqual(L.plaque_h, bh, 'PlaqueHeight must be the displayed plaque height')
+        bottoms = [(it[0] * PX, it[1] * PX - L.plaque_h / 2) for it in L.items]
+        self.assertEqual(bottoms, [(-40.0, 18.0), (-21.0, 18.0), (-2.0, 18.0)],
+                         'item slot bottom-centres = (-40,+18), (-21,+18), (-2,+18) px (spec +16, raised '
+                         '2 px so the crimson mats show)')
+
+        # Every plaque (with the shop's 1-px runtime outline) stands on the counter's top face
+        # (heights 14..22 px) inside the counter (x -52..+51), clear of its neighbours and of Daifuku's
+        # drawn body (bbox cols 1-24 of his canvas).
+        daifuku_left = daifuku_bc[0] - L.daifuku_col + 1
+        spans = []
+        for x, y in bottoms:
+            self.assertTrue(14 <= y < 23, 'item at %r does not stand on the counter top face' % ((x, y),))
+            left, right = x - bw / 2 - 1, x + bw / 2 + 1
+            self.assertTrue(-52 <= left and right <= 52, 'item at x=%r hangs past the counter' % x)
+            spans.append((left, right))
+        for (l1, r1), (l2, r2) in zip(spans, spans[1:]):
+            self.assertLess(r1, l2, 'item slots overlap each other')
+        self.assertLess(spans[-1][1], daifuku_left, 'item C overlaps Daifuku')
+
+        kw, kh = png_size('kinsuke_idle_001.png')
+        self.assertEqual((kw, kh), (12, 14))
+        bowl_left, bowl_right = L.kinsuke[0] * PX - kw / 2, L.kinsuke[0] * PX + kw / 2
+        self.assertLessEqual(bowl_right, 52, 'the bowl hangs past the counter')
+        self.assertGreater(bowl_left, daifuku_bc[0] + L.daifuku_col - 2, 'the bowl overlaps Daifuku')
+        self.assertGreaterEqual((L.kinsuke[0] * PX - daifuku_bc[0]) / PX, 1.2,
+                                'bowl centre must be >= 1.2 tiles from Daifuku (it covered him in 2.20.7)')
+
+        # talkPointOffset is relative to Daifuku (his lower-left): centred over him, above his ears.
+        self.assertEqual(L.talk[0] * PX, L.daifuku_col, 'the speech point is centred over Daifuku')
+        self.assertGreaterEqual(L.talk[1] * PX, dh, 'the speech point is above his head')
+
         stall = self.source('ShrineStall.cs')
-        kinsuke_match = re.search(r'KinsukeOffset\s*=\s*StallOffset\s*\+\s*new Vector3\([^,]+,\s*([\d.]+)f\s*/\s*16f\s*,', stall)
-        self.assertIsNotNone(kinsuke_match, 'ShrineStall.cs missing a parseable KinsukeOffset declaration')
-        self.assertEqual(float(kinsuke_match.group(1)), 16.0,
-                          "KinsukeOffset's Y numerator over 16f must be 16 (i.e. 1.0 tile, the measured "
-                          "counter-top height), not the old guessed 28 (1.75 tiles)")
+        call = stall[stall.index('ShopAPI.SetUpFoyerShop('):]
+        call = call[:call.index(');')]
+        self.assertNotIn('ShopAPI.defaultItemPositions', call,
+                         'the default ItemPoints put two of three items past the counter (2.20.7 photo)')
+        self.assertRegex(call, r'\n\s*ItemPositions,', 'SetUpFoyerShop must get the counter-top ItemPositions')
+        talk_line = next((l for l in call.splitlines() if '// talkPointOffset' in l), '')
+        self.assertIn('DaifukuTalkPointOffset', talk_line)
+
+    def test_stall_offset_centers_counter_under_torii(self):
+        """2.20.2 root cause 2, still true for the redesign: the counter stands centred under the gate
+        (both LowerCenter-placed, so equal X)."""
+        L = StallLayout(self)
+        self.assertEqual(L.torii[0], L.stall[0])
+
+    def test_default_stall_position_is_the_users_spot_and_old_defaults_migrate(self):
+        """2026-09-18: the user chose 61.063,18.25 in game (the ±4.25-tile strip around it is clear
+        floor). It becomes the default in both places, and the two retired defaults - 10.5,22.1
+        (2.20.0, off-screen) and 19.7,22.1 (2.20.1-2.20.7, which the user moved away from) - migrate to
+        it on load. A position the player chose is never touched: only those exact values match."""
+        config = self.source('PlutoConfig.cs')
+        self.assertIn('public static Vector3 StallPosition = new Vector3(61.063f, 18.25f, 0f);', config)
+        self.assertRegex(config, r'"StallPosition",\s*"61\.063,18\.25"', 'the cfg.Bind default must be 61.063,18.25')
+        self.assertNotRegex(config, r'"StallPosition",\s*"19\.7,22\.1"')
+
+        bind = config[config.index('private static void BindShrineStall('):]
+        bind = bind[:bind.index('\n        }\n')]
+        cond = re.search(r'if \((.*IsLegacyBrokenStallPosition.*)\)\n', bind)
+        self.assertIsNotNone(cond, 'the migration must keep the 2.20.0 (10.5, 22.1) check')
+        self.assertIn('IsRetiredStallDefault(StallPosition.x, StallPosition.y)', cond.group(1),
+                      'the 2.20.1-2.20.7 default (19.7, 22.1) must migrate too')
+        block = bind[cond.end():]
+        block = block[:block.index('\n            }')]
+        self.assertIn('new Vector3(61.063f, 18.25f, 0f)', block, 'migrate to the new default')
+        self.assertIn('stallPositionEntry.Value = ', block, 'write the migrated value back to the file')
+
+        m = re.search(r'private static bool IsRetiredStallDefault\(float x, float y\)(.*?)\n        \}', config, re.S)
+        self.assertIsNotNone(m, 'PlutoConfig.cs missing IsRetiredStallDefault(float x, float y)')
+        self.assertIn('19.7f', m.group(1))
+        self.assertIn('22.1f', m.group(1))
+        self.assertIn('0.0001f', m.group(1), 'exact match (float noise only), like IsLegacyBrokenStallPosition')
 
     def test_stall_registration(self):
         self.requires(
@@ -670,55 +806,87 @@ class ShrineStallWiringTests(unittest.TestCase):
                        'PlaceProp must call UpdateZDepth() after setting HeightOffGround, like every other '
                        'tk2d depth site in this codebase')
 
-    def test_prop_depth_ordering_is_correct_after_world_y_is_accounted_for(self):
-        """The 2.20.4 build ordered the props by HeightOffGround alone and got the order wrong in game,
-        because that is not what decides depth. The tester derived the real relationship from our own
-        diagnostic output:
+    def test_draw_order_matches_the_approved_mockup(self):
+        """Depth, from the formula (measured in game, archaeology 3.6), never guessed:
 
-            z = worldY - heightOffGround        (lower z draws in front)
+            z = worldY - HeightOffGround        (lower z draws IN FRONT)
 
-        Kinsuke's bowl is the only prop raised in world Y (a tile, to sit on the counter lip), so that
-        lift also pushed it a tile backwards and swamped its -0.3: measured z came out counter 22.725,
-        torii 23.125, bowl 23.425 - the bowl behind everything, when it should be in front.
+        worldY is the sprite's bottom: props are LowerCenter-placed and their transform is the sprite's
+        lower-left, Daifuku's transform is his lower-left, and a shop item's sprite is centred on its
+        ItemPoint, so its bottom is ItemPoint.y - PlaqueHeight / 2. The approved mockup draws, back to
+        front: torii, Daifuku, counter, then the bowl and the three plaques on the counter top. The bowl
+        and the plaques stand ABOVE the counter's anchor on screen, so without a lift they sort behind it
+        (Alexandria forces shop items to -1.25, which is why they would vanish behind the counter).
+        They must land just in front of the counter (within 2 px of depth), so a player standing at the
+        counter front still draws in front of the goods."""
+        L = StallLayout(self)
+        z = {
+            'torii': L.torii[1] - L.h['ToriiHeightOffGround'],
+            'daifuku': L.npc[1] - 0.0,     # Alexandria leaves his HeightOffGround at its default
+            'counter': L.stall[1] - L.h['StallHeightOffGround'],
+            'bowl': L.kinsuke[1] - L.h['KinsukeHeightOffGround'],
+        }
+        for i, item in enumerate(L.items):
+            z['item%d' % i] = (item[1] - L.plaque_h / 2 / PX) - L.h['ShopItemHeightOffGround']
+        self.assertGreater(z['torii'], z['daifuku'], 'the gate must draw behind Daifuku: %r' % z)
+        self.assertGreater(z['daifuku'], z['counter'], 'Daifuku must draw behind the counter: %r' % z)
+        for front in ['bowl'] + ['item%d' % i for i in range(len(L.items))]:
+            self.assertLess(z[front], z['counter'], front + ' must draw in front of the counter: %r' % z)
+            self.assertGreaterEqual(z[front], z['counter'] - 2 / PX,
+                                    front + ' is lifted so far forward a player at the counter front '
+                                    'would draw behind it: %r' % z)
 
-        So this asserts the computed z, combining each prop's Y offset with its HeightOffGround, rather
-        than comparing HeightOffGround values that only tell half the story. Required order, front to
-        back: bowl, counter, Daifuku (at +DaifukuBehindCounter, depth untouched by this file), torii."""
+    def test_live_shop_items_get_their_depth_after_do_setup(self):
+        """Alexandria's CustomShopItemController.Initialize forces HeightOffGround -1.25 on every foyer
+        item (archaeology 1.5 / 2 row 15), which sorts the plaques behind the counter. DoSetup only runs
+        after character select, and a pluto_stall move or reconcile moves the live clone (children keep
+        a stale z), so the override must run in the stock probe (after DoSetup) and on every placement
+        (foyer load, move, reconcile), and must call UpdateZDepth. It logs what it did."""
         stall = self.source('ShrineStall.cs')
+        m = re.search(r'private static void RefreshLiveShopDepth\(GameObject live, string when\)(.*?)\n        \}\n',
+                      stall, re.S)
+        self.assertIsNotNone(m, 'ShrineStall.cs missing RefreshLiveShopDepth(GameObject live, string when)')
+        body = m.group(1)
+        for needle in ('CustomShopItemController', 'HeightOffGround = ShopItemHeightOffGround',
+                       '.UpdateZDepth()', 'TalkDoerLite', 'DescribeDepth(', '_kinsukeSprite'):
+            self.assertIn(needle, body, 'RefreshLiveShopDepth missing ' + needle)
+        d = re.search(r'private static string DescribeDepth\(tk2dBaseSprite sprite\)(.*?)\n        \}\n', stall, re.S)
+        self.assertIsNotNone(d, 'ShrineStall.cs missing DescribeDepth(tk2dBaseSprite sprite)')
+        for needle in ('WorldCenter', 'position.z', 'HeightOffGround'):
+            self.assertIn(needle, d.group(1), 'the depth log must report each sprite\'s ' + needle)
 
-        def constant(name):
-            match = re.search(name + r'\s*=\s*(-?[\d.]+)f', stall)
-            self.assertIsNotNone(match, 'ShrineStall.cs missing a parseable ' + name + ' constant')
-            return float(match.group(1))
+        probe = stall[stall.index('class StockProbe'):]
+        probe = probe[:probe.index('private static string FormatSize')]
+        self.assertLess(probe.index('RefreshLiveShopDepth(gameObject'), probe.index('LogStock(gameObject, "after'),
+                        'the probe must fix item depth (after DoSetup) before it reports the stock')
 
-        def offset_y(expr):
-            """The Y term of a Vector3 offset expression, relative to StallPosition."""
-            match = re.search(expr, stall)
-            self.assertIsNotNone(match, 'ShrineStall.cs missing offset ' + expr)
-            return match
+        placement = stall[stall.index('private static void PlaceBackdropProps()'):]
+        placement = placement[:placement.index('private static void DestroyProps()')]
+        self.assertLess(placement.index('ReconcileLiveShopPosition();'), placement.index('RefreshLiveShopDepth('),
+                        'every placement (foyer load, pluto_stall move, reconcile) must refresh depth '
+                        'after the live shop is where the config says')
+        self.assertRegex(stall, r'"pluto_shrine_stall_kinsuke", KinsukeHeightOffGround\)',
+                         'the bowl must get KinsukeHeightOffGround')
 
-        daifuku_y = constant('DaifukuBehindCounter')
-        # torii and counter sit on the stall's own ground line (Vector3.zero offsets)
-        self.assertRegex(stall, r'ToriiOffset\s*=\s*Vector3\.zero',
-                          'the torii shares the stall anchor, so its world Y offset is zero')
-        self.assertRegex(stall, r'StallOffset\s*=\s*Vector3\.zero',
-                          'the counter shares the stall anchor, so its world Y offset is zero')
-        kinsuke_match = re.search(r'KinsukeOffset\s*=\s*StallOffset\s*\+\s*new Vector3\([^,]+,\s*([\d.]+)f?\s*/\s*16f\s*,', stall)
-        self.assertIsNotNone(kinsuke_match, "ShrineStall.cs missing a parseable KinsukeOffset Y term")
-        kinsuke_y = float(kinsuke_match.group(1)) / 16.0
+    def test_footprint_uses_the_drawn_sizes(self):
+        """pluto_stall reports how far the assembly reaches; the half-widths must be the new art."""
+        stall = self.source('ShrineStall.cs')
+        body = stall[stall.index('private static void LogFootprint()'):]
+        body = body[:body.index('private static string FormatPos')]
+        halves = dict((n, float(w)) for n, w in re.findall(r'(\w+)Half = (\d+)f / 16f / 2f', body))
+        files = {'Torii': 'torii.png', 'Stall': 'stall.png', 'Kinsuke': 'kinsuke_idle_001.png',
+                 'Daifuku': 'daifuku_idle_001.png'}
+        self.assertEqual(set(halves), set(files), 'LogFootprint half-widths: %r' % halves)
+        for name, png in files.items():
+            self.assertEqual(halves[name], png_size(png)[0], name + 'Half must be its drawn width / 2')
+        self.assertIn('DaifukuNpcPosition.x', body, "Daifuku's reach is measured from where he now stands")
 
-        z_torii = 0.0 - constant('ToriiHeightOffGround')
-        z_counter = 0.0 - constant('StallHeightOffGround')
-        z_kinsuke = kinsuke_y - constant('KinsukeHeightOffGround')
-        z_daifuku = daifuku_y - 0.0    # Alexandria manages his depth; this file leaves it alone
-
-        self.assertLess(z_kinsuke, z_counter,
-                         "the bowl must draw in front of the counter it rests on (z = worldY - "
-                         "heightOffGround; raising it without compensating puts it behind, the 2.20.4 bug)")
-        self.assertLess(z_counter, z_daifuku,
-                         'the counter must draw in front of Daifuku, so he reads as standing behind it')
-        self.assertLess(z_daifuku, z_torii,
-                         'the gate must draw behind Daifuku, framing the whole stall')
+    def test_stock_report_says_empty_slots_are_expected_before_character_select(self):
+        """2.20.7 tester nearly misread three EMPTY slots: DoSetup only stocks after character select."""
+        stall = self.source('ShrineStall.cs')
+        body = stall[stall.index('private static void LogStock('):]
+        body = body[:body.index('\n        }\n')]
+        self.assertIn('expected before character select', body)
 
     def test_diagnostics_and_moves_resolve_the_live_shop_not_the_template(self):
         """The single most expensive bug of this round: the object SetUpFoyerShop returns is a template
@@ -846,7 +1014,7 @@ class ShrineStallWiringTests(unittest.TestCase):
         for needle in ('t.position', 'GetComponent<Renderer>', 'renderer.enabled', 'renderer.bounds'):
             self.assertIn(needle, diag,
                            'LogShopDiagnostics must report ' + needle + ' for each child in the hierarchy')
-        prop_log = stall[stall.find('private static void PlaceProp('):stall.find('private static int LoadSpriteId')]
+        prop_log = stall[stall.find('PlaceProp(string[] fileNames'):stall.find('private static int LoadSpriteId')]
         self.assertIn('resolved to', prop_log,
                        "PlaceProp must log each prop's own resolved world position")
         self.assertIn('depth(heightOffGround)', prop_log,
@@ -906,6 +1074,79 @@ class StallArtTests(unittest.TestCase):
         for name in ('torii.png', 'stall.png', 'blueprint.png'):
             self.assertTrue((SHOP / name).exists(), 'missing ' + name)
         self.assertTrue(PREVIEW.exists(), 'missing docs/art-preview/shrine-stall-2200.png')
+
+
+class StallArtInstallTests(unittest.TestCase):
+    """The approved 2026-09-18 art ships through tools/make_art.py: the committed Resources/Shop PNGs
+    must be exactly what the pipeline regenerates (build.sh runs make_art before building), at the
+    approved sizes, with the new vermilion-light key in the shared palette."""
+
+    @classmethod
+    def setUpClass(cls):
+        if str(TOOLS) not in sys.path:
+            sys.path.insert(0, str(TOOLS))
+
+    def test_palette_has_vermilion_light(self):
+        import pixel
+        self.assertEqual(pixel.PALETTE.get('t'), (0xF0, 0x68, 0x48, 255),
+                         "tools/pixel.py PALETTE needs 't' #F06848 (torii vermilion light, art-spec D4)")
+
+    def test_shipped_sizes(self):
+        expected = {'torii.png': (136, 56), 'stall.png': (104, 23), 'blueprint.png': (14, 16),
+                    'daifuku_idle_001.png': (26, 32), 'daifuku_talk_001.png': (26, 32)}
+        for i in range(1, 5):
+            expected['kinsuke_idle_%03d.png' % i] = (12, 14)
+        for name, size in expected.items():
+            self.assertEqual(png_size(name), size, name)
+
+    def test_resources_are_what_make_art_regenerates(self):
+        import make_art
+        from PIL import Image, ImageChops
+        with tempfile.TemporaryDirectory() as tmp:
+            old = make_art.RES
+            make_art.RES = tmp
+            try:
+                make_art.shrine_stall()
+            finally:
+                make_art.RES = old
+            made = sorted(p.name for p in pathlib.Path(tmp, 'Shop').glob('*.png'))
+            self.assertEqual(made, sorted(p.name for p in SHOP.glob('*.png')))
+            for name in made:
+                with Image.open(pathlib.Path(tmp, 'Shop', name)) as a, Image.open(SHOP / name) as b:
+                    a, b = a.convert('RGBA'), b.convert('RGBA')
+                    self.assertEqual(a.size, b.size, name)
+                    self.assertIsNone(ImageChops.difference(a, b).getbbox(),
+                                      name + ' differs from what make_art.py regenerates')
+
+
+class StallLayout(object):
+    """Parses ShrineStall.cs's layout constants (tiles unless noted) so tests assert numbers, not text."""
+
+    def __init__(self, t):
+        src = (SRC / 'ShrineStall.cs').read_text(encoding='utf-8')
+        c = cs_float_consts(src)
+
+        def vec(name):
+            m = re.search(r'\b' + name + r'\s*=\s*new Vector3\(', src)
+            t.assertIsNotNone(m, 'ShrineStall.cs missing ' + name + ' = new Vector3(...)')
+            args = vector_literals(src[m.start():src.index(';', m.start()) + 1])[0]
+            return tuple(cs_eval(a, c) for a in args)
+
+        self.stall = vec('StallOffset')
+        self.torii = vec('ToriiOffset')
+        self.kinsuke = vec('KinsukeOffset')
+        self.npc = vec('DaifukuNpcPosition')
+        self.talk = vec('DaifukuTalkPointOffset')
+        m = re.search(r'\bItemPositions\s*=\s*(?:new Vector3\[\]\s*)?\{(.*?)\};', src, re.S)
+        t.assertIsNotNone(m, 'ShrineStall.cs missing an ItemPositions array')
+        self.items = [tuple(cs_eval(a, c) for a in args) for args in vector_literals(m.group(1))]
+        t.assertEqual(len(self.items), 3, 'three item slots')
+        for name in ('DaifukuAnchorColumn', 'PlaqueHeight', 'ToriiHeightOffGround', 'StallHeightOffGround',
+                     'KinsukeHeightOffGround', 'ShopItemHeightOffGround'):
+            t.assertIn(name, c, 'ShrineStall.cs missing const float ' + name)
+        self.daifuku_col = c['DaifukuAnchorColumn']
+        self.plaque_h = c['PlaqueHeight']
+        self.h = c
 
 
 if __name__ == '__main__':

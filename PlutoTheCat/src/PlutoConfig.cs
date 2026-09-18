@@ -122,26 +122,13 @@ namespace PlutoTheCat
         public static int StallPriceConeOfShame = 15;
         public static int StallPriceSprayBottle = 15;
         public static int StallPriceFeatherTeaser = 15;
-        // 2.20.1: the (10.5, 22.1) default was a guess made with no game install and ran the stall
-        // off-screen (user report: "it is outside the screen in the breach"). ShrineStall.cs's own
-        // offsets put the leftmost prop (stall.png) left of StallPosition; FoyerPosition (14.6, 22.1) is
-        // where Pluto stands and is known visible, so this default put the assembly's LEFT edge at
-        // Pluto's own spot: 19.7 = 14.6 + 5.0625, rounded, using the (now-superseded) offset arithmetic
-        // of that round.
-        //
-        // 2.20.3: DO NOT re-derive this value from FoyerPosition again - that is exactly the mistake that
-        // produced the 2.20.2 placement bug the tester reported (torii rendering, but low/left of where
-        // it should be, Daifuku entirely missing ~28 tiles away). FoyerPosition (14.6, 22.1) is consumed
-        // by Alexandria's CharacterAPI for where PLUTO HIMSELF stands, a different coordinate space/system
-        // than BreachShopTools' placement of a foyer shop's root - the two are not interchangeable, and
-        // arithmetic built on that assumption is unverified by construction. The tester's own in-game
-        // `pluto_stall here` readings during the 2.20.2 test put the actual walkable Breach play area
-        // around x=40-42, y=43-59 - nowhere near (19.7, 22.1). The value below is KNOWN WRONG and is left
-        // as-is deliberately (not replaced with another guess) until the tester runs `pluto_stall here` /
-        // `pluto_stall save` again on the build that carries the ShrineStall.cs root-cause fixes (parent-
-        // then-world-position npcPosition bug, counter-under-torii offset, measured bowl height) - only
-        // then will a `pluto_stall here` reading describe the assembly this default is meant to place.
-        public static Vector3 StallPosition = new Vector3(19.7f, 22.1f, 0f);
+        // 2026-09-18: the user's own spot, measured in game with pluto_where/pluto_stall and saved to the
+        // tester's config; the user confirmed the strip about 4.25 tiles either side of it is clear floor,
+        // which the redesigned 8.5 x 5 tile stall (centred on this point) needs. It replaces two guesses:
+        // (10.5, 22.1) in 2.20.0 ran the stall off-screen, and (19.7, 22.1) in 2.20.1-2.20.7 was derived from
+        // FoyerPosition, a different coordinate system (never derive this from FoyerPosition again). Both
+        // retired values migrate to this one on load (BindShrineStall); any other value is the player's.
+        public static Vector3 StallPosition = new Vector3(61.063f, 18.25f, 0f);
         public static bool StallUnlocksDisabled = false;
 
         // Bound by BindShrineStall so pluto_stall save (ShrineStall.cs) can write a moved position
@@ -279,17 +266,18 @@ namespace PlutoTheCat
             StallPriceConeOfShame = PlutoConfigRules.Clamp("StallPriceConeOfShame", cfg.Bind(S, "StallPriceConeOfShame", StallPriceConeOfShame, "Hegemony credits to unlock the Cone of Shame.").Value, StallPriceConeOfShame, Warn);
             StallPriceSprayBottle = PlutoConfigRules.Clamp("StallPriceSprayBottle", cfg.Bind(S, "StallPriceSprayBottle", StallPriceSprayBottle, "Hegemony credits to unlock the Spray Bottle.").Value, StallPriceSprayBottle, Warn);
             StallPriceFeatherTeaser = PlutoConfigRules.Clamp("StallPriceFeatherTeaser", cfg.Bind(S, "StallPriceFeatherTeaser", StallPriceFeatherTeaser, "Hegemony credits to unlock the Feather Teaser.").Value, StallPriceFeatherTeaser, Warn);
-            stallPositionEntry = cfg.Bind(S, "StallPosition", "19.7,22.1", "Where the Shrine Stall stands in the Breach (x,y). Use the pluto_stall console command in-game to find a good spot, then pluto_stall save to write it here automatically.");
+            stallPositionEntry = cfg.Bind(S, "StallPosition", "61.063,18.25", "Where the Shrine Stall stands in the Breach (x,y). Use the pluto_stall console command in-game to find a good spot, then pluto_stall save to write it here automatically.");
             StallPosition = Vec(stallPositionEntry.Value, StallPosition);
-            // See PlutoConfigRules.IsLegacyBrokenStallPosition: migrates anyone stuck on the 2.20.0 default that
-            // put the Shrine Stall off-screen, without touching a position a player deliberately chose.
-            if (PlutoConfigRules.IsLegacyBrokenStallPosition(StallPosition.x, StallPosition.y))
+            // Migrates anyone still on a retired default - the 2.20.0 one that put the Shrine Stall off-screen
+            // (PlutoConfigRules.IsLegacyBrokenStallPosition) or the 2.20.1-2.20.7 one (IsRetiredStallDefault) -
+            // without touching a position a player deliberately chose: both match only their exact value.
+            if (PlutoConfigRules.IsLegacyBrokenStallPosition(StallPosition.x, StallPosition.y) || IsRetiredStallDefault(StallPosition.x, StallPosition.y))
             {
-                StallPosition = new Vector3(19.7f, 22.1f, 0f);
+                string was = FormatVec(StallPosition);
+                StallPosition = new Vector3(61.063f, 18.25f, 0f);
                 stallPositionEntry.Value = FormatVec(StallPosition);
-                Warn("StallPosition was still the broken 2.20.0 default (10.5, 22.1), which put the Shrine Stall " +
-                    "off-screen; migrated the config to the current default (19.7, 22.1). Use pluto_stall and " +
-                    "pluto_stall save if you want it somewhere else.");
+                Warn("StallPosition was still a retired default (" + was + "); migrated the config to the current " +
+                    "default (61.063, 18.25). Use pluto_stall and pluto_stall save if you want it somewhere else.");
             }
             StallUnlocksDisabled = cfg.Bind(S, "StallUnlocksDisabled", StallUnlocksDisabled, "Testing only: treat all ten cat items as already unlocked.").Value;
         }
@@ -306,6 +294,13 @@ namespace PlutoTheCat
             if (stallPositionEntry == null) return false;
             stallPositionEntry.Value = FormatVec(StallPosition);
             return true;
+        }
+
+        /// <summary>The 2.20.1-2.20.7 default (19.7, 22.1), retired 2026-09-18. Exact match (float noise only), like
+        /// PlutoConfigRules.IsLegacyBrokenStallPosition, so a nearby position a player chose is never moved.</summary>
+        private static bool IsRetiredStallDefault(float x, float y)
+        {
+            return Math.Abs(x - 19.7f) < 0.0001f && Math.Abs(y - 22.1f) < 0.0001f;
         }
 
         private static string FormatVec(Vector3 v)
