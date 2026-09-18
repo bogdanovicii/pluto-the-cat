@@ -45,6 +45,9 @@ namespace PlutoTheCat
         // the backdrop props) without a Breach reload. Null until Init() succeeds; cleared by Teardown().
         private static GameObject _shopObject;
         private static bool _commandRegistered;
+        // Set by MoveStall when it moved the live clone itself, consumed by the PlaceBackdropProps it then
+        // calls: the live shop's bodies are only re-registered after a real move (M1).
+        private static bool _liveShopMovedByCommand;
 
         /// <summary>Alexandria names the shop root "&lt;prefix&gt;:&lt;name&gt;_Shop" and keys registeredShops by the
         /// same string, so this prefix is how FindLiveShop tells our stall from another mod's.</summary>
@@ -75,6 +78,20 @@ namespace PlutoTheCat
         // talkPointOffset is relative to DAIFUKU, not the root (archaeology 1.3): centred over him, 3 px
         // above his 32-px canvas - the same point as Alexandria's own default (0.8125, 2.1875).
         private static readonly Vector3 DaifukuTalkPointOffset = new Vector3(DaifukuAnchorColumn / 16f, 35f / 16f, 0f);
+
+        // Talk reach, in TILES (world units). Alexandria leaves TalkDoerLite.overrideInteractionRadius at -1
+        // (SetUpTalkDoer IL_0079), so the game's default reach applies: INFERRED about 1 tile, measured by
+        // GetDistanceToPoint to Daifuku's own body. That body starts 21 px (1.3125 tiles) behind the solid
+        // counter front, and a player touching the counter has his centre only ~0.12-0.25 tiles above it, so
+        // the nearest he can get is ~1.06-1.19 tiles: just out of the default reach. 1.75 tiles covers that
+        // with half a tile to spare. It only raises the ceiling, not the distance, so when the player stands
+        // at an item the nearer plaque is still the one chosen (INFERRED nearest-interactable rule).
+        // Units: GetOverrideMaxDistance is compared with GetDistanceToPoint, which is world units (VERIFIED
+        // for Alexandria's own IPlayerInteractables, e.g. HatPedestal: Vector2.Distance to WorldCenter vs 1.5).
+        // That TalkDoerLite.GetOverrideMaxDistance returns this field is INFERRED (the stub's body is stripped);
+        // pluto_stall bodies logs GetOverrideMaxDistance() from the live NPC so the tester can confirm it.
+        private const float DaifukuTalkRadiusTiles = 1.75f;
+        private const float PixelsPerTile = 16f;
 
         // Item slots. Alexandria centres each shop item (Anchor.MiddleCenter) on its ItemPoint, and the foyer
         // meta-shop draws blueprint.png (the 14x16 ema plaque) in every slot, so an ItemPoint is the slot's
@@ -167,6 +184,10 @@ namespace PlutoTheCat
             // Daifuku himself. The values are the counter-frame layout above.
             LogLootTable(table);
 
+            // Daifuku is not snapped by Alexandria, so an off-grid StallPosition (the 61.063 default) would
+            // leave him a sub-pixel off the counter. Snapped in memory only; the config file keeps the user's text.
+            SnapStallPositionToPixelGrid("registration");
+
             GameObject shop = ShopAPI.SetUpFoyerShop(
                 "Daifuku", ShopPrefix,
                 PlutoConfig.StallPosition,
@@ -204,7 +225,8 @@ namespace PlutoTheCat
             }
 
             _shopObject = shop;
-            Plugin.Log("shrine stall: registered at " + PlutoConfig.StallPosition);
+            Plugin.Log("shrine stall: registered at " + FormatPos(PlutoConfig.StallPosition));
+            ExtendDaifukuReach(shop);
 
             if (_foyerHandler == null)
             {
@@ -219,6 +241,49 @@ namespace PlutoTheCat
                 RegisterConsoleCommand();
                 _commandRegistered = true;
             }
+        }
+
+        /// <summary>
+        /// Sets Daifuku's talk reach on the TEMPLATE, straight after SetUpFoyerShop, so every clone
+        /// PlaceBreachShops instantiates inherits it (a public serialized float, copied by Instantiate).
+        /// See DaifukuTalkRadiusTiles for why the default reach does not get past the counter.
+        /// </summary>
+        private static void ExtendDaifukuReach(GameObject shop)
+        {
+            TalkDoerLite talker = shop != null ? shop.GetComponentInChildren<TalkDoerLite>(true) : null;
+            if (talker == null)
+            {
+                Plugin.Log("shrine stall: no TalkDoerLite on the registered shop - Daifuku keeps the default talk reach "
+                    + "and is probably out of reach behind the counter");
+                return;
+            }
+            talker.overrideInteractionRadius = DaifukuTalkRadiusTiles;
+            Plugin.Log("shrine stall: Daifuku's talk reach (overrideInteractionRadius) set to "
+                + DaifukuTalkRadiusTiles.ToString("0.###", CultureInfo.InvariantCulture)
+                + " tiles (Alexandria left it at -1 = game default); pluto_stall bodies reports what the live NPC returns");
+        }
+
+        /// <summary>Rounds a position to the 1/16-tile art-pixel grid (Daifuku is not snapped by Alexandria).</summary>
+        private static Vector3 SnapToPixelGrid(Vector3 position)
+        {
+            return new Vector3(
+                Mathf.Round(position.x * PixelsPerTile) / PixelsPerTile,
+                Mathf.Round(position.y * PixelsPerTile) / PixelsPerTile,
+                position.z);
+        }
+
+        /// <summary>Snaps PlutoConfig.StallPosition IN MEMORY ONLY (the config file keeps the user's text until
+        /// pluto_stall save) and logs the snapped value when it changed.</summary>
+        private static void SnapStallPositionToPixelGrid(string when)
+        {
+            Vector3 was = PlutoConfig.StallPosition;
+            Vector3 snapped = SnapToPixelGrid(was);
+            PlutoConfig.StallPosition = snapped;
+            if ((snapped - was).sqrMagnitude > 0f)
+                Plugin.Log("shrine stall: snapped the stall position (" + when + ") to the 1/16-tile pixel grid: "
+                    + was.x.ToString("0.#####", CultureInfo.InvariantCulture) + "," + was.y.ToString("0.#####", CultureInfo.InvariantCulture)
+                    + " -> " + snapped.x.ToString("0.####", CultureInfo.InvariantCulture) + "," + snapped.y.ToString("0.####", CultureInfo.InvariantCulture)
+                    + " (in memory only; the config file is unchanged)");
         }
 
         /// <summary>
@@ -325,7 +390,18 @@ namespace PlutoTheCat
         /// </summary>
         private static void MoveStall(Vector3 newPosition)
         {
+            // The props now carry solid bodies, so a move outside the Breach would drop an invisible wall into a
+            // dungeon room. MainMenuFoyerController only exists in the Breach scene (see PlaceIfFoyerAlreadyUp).
+            if (UnityEngine.Object.FindObjectOfType<MainMenuFoyerController>() == null)
+            {
+                Plugin.Log("shrine stall: refused to move - not in the Breach (no MainMenuFoyerController); "
+                    + "the stall and its colliders only belong there. Run pluto_stall here / <x> <y> in the Breach.");
+                return;
+            }
+
             PlutoConfig.StallPosition = newPosition;
+            SnapStallPositionToPixelGrid("move");
+            newPosition = PlutoConfig.StallPosition;
 
             // The template's offset is what PlaceBreachShops reads on the NEXT foyer load, so it has to be
             // rewritten whether or not a live clone exists right now. 2.20.5 only did this inside the
@@ -341,6 +417,7 @@ namespace PlutoTheCat
             {
                 live.transform.position = newPosition;
                 SetBreachOffset(live, newPosition);
+                _liveShopMovedByCommand = true;   // PlaceBackdropProps re-registers its bodies at the new spot
             }
             else
             {
@@ -515,16 +592,39 @@ namespace PlutoTheCat
             // 2.20.4 diagnostic (tester's ask): logs the live shop's whole hierarchy on every placement, so
             // "the shopkeeper is missing" or an unexplained sprite is hard data on the next run instead of
             // another round of screenshots and guessing.
-            ReconcileLiveShopPosition();
-            // Registered rigidbodies do not follow a raw transform move (archaeology 3.2), and every move
-            // (pluto_stall, reconcile, foyer placement) ends up here, so Daifuku's collider is refreshed once.
-            ShrineStallCollision.ReinitializeShopBodies(FindLiveShop());
+            bool reconciled = ReconcileLiveShopPosition();
+            bool liveShopMoved = reconciled || _liveShopMovedByCommand;
+            _liveShopMovedByCommand = false;
+            // Registered rigidbodies do not follow a raw transform move (archaeology 3.2), so Daifuku's collider
+            // is re-registered - but ONLY after a real move (pluto_stall, or a reconcile that moved the clone).
+            // A plain foyer placement runs during MainMenuFoyerController.Awake, before Daifuku's own Start has
+            // registered his body; his Start registers it where he stands. ReinitializeShopBodies also checks
+            // PhysicsEngine.HasInstance.
+            if (liveShopMoved)
+                ShrineStallCollision.ReinitializeShopBodies(FindLiveShop());
             // After the clone is where the config says: a move or reconcile shifts its children in y
             // without touching their z, and the shop items (once DoSetup has stocked them) need their lift.
             RefreshLiveShopDepth(FindLiveShop(), "placement");
-            LogShopDiagnostics();
-            ShrineStallCollision.LogBodies(FindLiveShop(), _counterProp, _toriiProp, _kinsukeProp);
+            // The probe is what lifts the items once DoSetup has stocked them, so it goes on before any
+            // diagnostic: a throwing log line must never cost the items their depth, nor cut off the other
+            // OnFoyerAwake handlers. Each diagnostic is caught and logged on its own.
             AttachStockProbe();
+            try
+            {
+                LogShopDiagnostics();
+            }
+            catch (Exception e)
+            {
+                Plugin.Log("shrine stall: shop diagnostics threw (placement continues): " + e);
+            }
+            try
+            {
+                ShrineStallCollision.LogBodies(FindLiveShop(), _counterProp, _toriiProp, _kinsukeProp);
+            }
+            catch (Exception e)
+            {
+                Plugin.Log("shrine stall: collision diagnostics threw (placement continues): " + e);
+            }
         }
 
         /// <summary>Destroys the props placed by the previous foyer load. The flipbook dies with its object.</summary>
@@ -683,18 +783,20 @@ namespace PlutoTheCat
         /// Puts the live clone where the config says, every time the props are placed. PlaceBreachShops
         /// positions the clone from the template's BreachShopComp.offset; if that reflection-written
         /// offset is ever stale or the write silently fails, this is what still makes a pluto_stall move
-        /// survive the next Breach load. Cheap and idempotent.
+        /// survive the next Breach load. Cheap and idempotent. Returns true only when it actually moved the
+        /// clone, so the caller re-registers the clone's bodies only after a real move.
         /// </summary>
-        private static void ReconcileLiveShopPosition()
+        private static bool ReconcileLiveShopPosition()
         {
             GameObject live = FindLiveShop();
-            if (live == null) return;
+            if (live == null) return false;
             Vector3 want = PlutoConfig.StallPosition;
-            if ((live.transform.position - want).sqrMagnitude < 0.0001f) return;
+            if ((live.transform.position - want).sqrMagnitude < 0.0001f) return false;
             Plugin.Log("shrine stall: live shop was at " + FormatPos(live.transform.position)
                 + " but the config says " + FormatPos(want) + " - moved it");
             live.transform.position = want;
             SetBreachOffset(live, want);
+            return true;
         }
 
         /// <summary>
@@ -954,17 +1056,19 @@ namespace PlutoTheCat
         }
 
         /// <summary>
-        /// Runs LogStock once DoSetup can have run. For a FOYER_META shop vanilla BaseShopController.Start
-        /// starts HandleDelayedFoyerInitialization, which waits while GameManager.IsSelectingCharacter or
-        /// PrimaryPlayer is null and THEN calls DoSetup - so a placement-time report can only ever say
-        /// "not run yet". This waits for the same condition plus a short grace period, logs once, and also
-        /// logs if it gave up waiting, so a missing report is never silent.
+        /// Lifts the items and runs LogStock once DoSetup HAS run, not merely could have. For a FOYER_META shop
+        /// vanilla BaseShopController.Start starts HandleDelayedFoyerInitialization, which waits while
+        /// GameManager.IsSelectingCharacter or PrimaryPlayer is null and THEN calls DoSetup - so a
+        /// placement-time report can only ever say "not run yet". A fixed delay after character select is not
+        /// enough either: DoSetup can land later (returning to the Breach after a run), and then nothing would
+        /// lift the items off Alexandria's -1.25. So the probe waits for DoSetup's own mark - the live shop's
+        /// m_itemControllers, which Alexandria's CustomShopController.DoSetup assigns (IL_0476) and the stock
+        /// log already reads - to be non-null, then applies the depth and logs once. It gives up, and says
+        /// so, after GiveUpSeconds, so a missing report is never silent.
         /// </summary>
         public sealed class StockProbe : MonoBehaviour
         {
-            private const float GraceSeconds = 1.5f;
             private const float GiveUpSeconds = 600f;
-            private float readyFor;
             private float waited;
             private bool done;
 
@@ -972,21 +1076,24 @@ namespace PlutoTheCat
             {
                 if (done) return;
                 waited += Time.unscaledDeltaTime;
-                bool ready = GameManager.HasInstance && !GameManager.Instance.IsSelectingCharacter
-                    && GameManager.Instance.PrimaryPlayer != null;
-                if (ready) readyFor += Time.unscaledDeltaTime;
-                if (ready && readyFor >= GraceSeconds)
+                CustomShopController shop = GetComponent<CustomShopController>();
+                bool stocked = shop != null && ReadField(shop, "m_itemControllers") != null;
+                if (stocked)
                 {
                     done = true;
-                    RefreshLiveShopDepth(gameObject, "after character select");   // DoSetup has stocked the items now
-                    LogStock(gameObject, "after character select");
+                    bool selecting = GameManager.HasInstance && GameManager.Instance.IsSelectingCharacter;
+                    Plugin.Log("shrine stall: stock probe - DoSetup stocked the live shop "
+                        + waited.ToString("0.#", CultureInfo.InvariantCulture) + "s after placement"
+                        + (selecting ? " (character select still up)" : ""));
+                    RefreshLiveShopDepth(gameObject, "after DoSetup");   // DoSetup has stocked the items now
+                    LogStock(gameObject, "after DoSetup");
                 }
                 else if (waited >= GiveUpSeconds)
                 {
                     done = true;
-                    Plugin.Log("shrine stall: stock probe gave up after " + GiveUpSeconds + "s - no character was "
-                        + "selected; type pluto_stall stock to report it by hand");
-                    RefreshLiveShopDepth(gameObject, "probe timeout");
+                    Plugin.Log("shrine stall: stock probe gave up after " + GiveUpSeconds + "s - DoSetup never stocked "
+                        + "the live shop (m_itemControllers still null); the items keep Alexandria's depth. Type "
+                        + "pluto_stall stock to report it by hand");
                     LogStock(gameObject, "probe timeout");
                 }
             }

@@ -147,11 +147,17 @@ namespace PlutoTheCat
         /// INFERRED (archaeology 3.2): a registered SpeculativeRigidbody does not follow a raw transform move, so
         /// after MoveStall / ReconcileLiveShopPosition moves the live clone, Daifuku's collider and talk region
         /// would stay at the old spot. Bodies on inactive objects are skipped (they register when they wake).
-        /// Returns how many bodies were reinitialised.
+        /// The caller only calls this after a real move; with no PhysicsEngine there is nothing to re-register
+        /// with, so it does nothing. Returns how many bodies were reinitialised.
         /// </summary>
         internal static int ReinitializeShopBodies(GameObject liveShop)
         {
             if (liveShop == null) return 0;
+            if (!PhysicsEngine.HasInstance)
+            {
+                Plugin.Log("shrine stall collision: no PhysicsEngine yet - live shop bodies left to register on their own Start");
+                return 0;
+            }
             int count = 0;
             foreach (SpeculativeRigidbody body in liveShop.GetComponentsInChildren<SpeculativeRigidbody>(true))
             {
@@ -169,10 +175,12 @@ namespace PlutoTheCat
         /// collider's layer, its Manual pixel box, the world box the physics engine reports
         /// (PixelCollider.UnitBottomLeft / UnitDimensions) next to the box expected from the transform (flagged
         /// STALE if they disagree: the "did not follow the move" case) and the sprite's world bounds. Then the
-        /// reach numbers: from the counter-front standing point under each target to Daifuku's talk point and to
-        /// each item centre, both straight-line and as the interactable itself measures it
-        /// (GetDistanceToPoint) with its override radius; and, if a player exists, the same from the player's
-        /// actual centre, so standing at the counter and re-running this settles the reach question.
+        /// reach, for Daifuku and each item: the interactable's OWN distance (GetDistanceToPoint, the value the
+        /// game compares with its max) from the counter-front point under the target and, if a player exists,
+        /// from the player's actual centre, next to the max it is compared with (GetOverrideMaxDistance, or the
+        /// assumed default) and an in-reach / OUT OF REACH verdict. Standing at the counter and re-running this
+        /// settles the reach question. The distance to Daifuku's speech bubble anchor is logged separately and
+        /// labelled as not the reach.
         /// </summary>
         internal static void LogBodies(GameObject liveShop, GameObject counterProp, params GameObject[] otherProps)
         {
@@ -229,13 +237,17 @@ namespace PlutoTheCat
             }
             if (body.PixelColliders == null) body.PixelColliders = new List<PixelCollider>();
             body.PixelColliders.AddRange(colliders);
-            body.Reinitialize();
 
-            // pluto_stall here drops the stall on the player's own position, so a fresh body can spawn overlapping
-            // the player. Ghost exceptions let anything already inside walk out instead of being stuck (INFERRED
-            // from the name and signature; vanilla uses it when spawning solid objects).
+            // Without a PhysicsEngine (the foyer can still be waking up) the body registers itself on its own
+            // Start; Reinitialize is only for re-registering with an engine that exists.
             if (PhysicsEngine.HasInstance)
+            {
+                body.Reinitialize();
+                // pluto_stall here drops the stall on the player's own position, so a fresh body can spawn
+                // overlapping the player. Ghost exceptions let anything already inside walk out instead of being
+                // stuck (INFERRED from the name and signature; vanilla uses it when spawning solid objects).
                 PhysicsEngine.Instance.RegisterOverlappingGhostCollisionExceptions(body);
+            }
 
             Plugin.Log("shrine stall collision: attached " + what + " (" + colliders.Length + " box"
                 + (colliders.Length == 1 ? "" : "es") + ") to '" + prop.name + "'");
@@ -309,41 +321,68 @@ namespace PlutoTheCat
                 Plugin.Log("shrine stall collision: player center " + F(player.CenterPosition)
                     + (player.specRigidbody != null ? " feet " + F(player.specRigidbody.UnitBottomCenter) : ""));
 
+            // REACH = the interactable's own GetDistanceToPoint, the number the game compares with its max
+            // interaction distance (GetOverrideMaxDistance when > 0, else the game default, INFERRED ~1 tile).
+            // Straight-line distances to a drawn point are NOT the reach and are labelled as such.
             TalkDoerLite talker = liveShop.GetComponentInChildren<TalkDoerLite>(true);
             if (talker == null)
                 Plugin.Log("shrine stall collision: no TalkDoerLite under the live shop - Daifuku reach not logged");
             else
             {
-                Vector2 talk = talker.speakPoint != null ? (Vector2)talker.speakPoint.position : (Vector2)talker.transform.position;
-                LogReachTo("Daifuku talk point" + (talker.speakPoint != null ? "" : " (no speakPoint; NPC transform)"),
-                    talk, frontY, player, talker.GetDistanceToPoint, talker.GetOverrideMaxDistance());
+                tk2dBaseSprite daifukuSprite = talker.GetComponent<tk2dBaseSprite>();
+                float underX = daifukuSprite != null ? daifukuSprite.WorldCenter.x : talker.transform.position.x;
+                LogReachTo("Daifuku (talk)", underX, frontY, player, talker.GetDistanceToPoint, talker.GetOverrideMaxDistance());
+                if (talker.speakPoint != null)
+                {
+                    // Where his speech bubble is anchored, over his head: a drawing point, not the reach.
+                    Vector2 bubble = talker.speakPoint.position;
+                    Plugin.Log("shrine stall collision: (not the reach) straight-line distance from the counter front to "
+                        + "Daifuku's speech bubble anchor " + F(bubble) + ": "
+                        + F1(Vector2.Distance(new Vector2(bubble.x, frontY), bubble)) + " tiles");
+                }
             }
 
             CustomShopItemController[] items = liveShop.GetComponentsInChildren<CustomShopItemController>(true);
-            if (items.Length == 0) Plugin.Log("shrine stall collision: no shop items under the live shop - item reach not logged");
+            if (items.Length == 0)
+                Plugin.Log("shrine stall collision: no shop items under the live shop - item reach not logged "
+                    + "(they exist once DoSetup has run, after character select; re-run pluto_stall bodies then)");
             for (int i = 0; i < items.Length; i++)
             {
                 CustomShopItemController item = items[i];
                 if (item == null) continue;
-                Vector2 centre = item.sprite != null ? item.sprite.WorldCenter : (Vector2)item.transform.position;
-                LogReachTo("item " + i + " '" + item.name + "' centre", centre, frontY, player,
+                // Alexandria's CustomShopItemController has no reach setting of its own (GetOverrideMaxDistance
+                // returns -1), and for META_CURRENCY it measures to the plaque's sprite rectangle
+                // (UseOmnidirectionalItemFacing): this line is what the tester judges the items' reach by.
+                float underX = item.sprite != null ? item.sprite.WorldCenter.x : item.transform.position.x;
+                LogReachTo("item " + i + " '" + item.name + "'", underX, frontY, player,
                     item.GetDistanceToPoint, item.GetOverrideMaxDistance());
             }
         }
 
         private delegate float DistanceTo(Vector2 point);
 
-        private static void LogReachTo(string label, Vector2 target, float frontY, PlayerController player,
+        // INFERRED (vanilla bodies are stubbed): the game's reach when an interactable has no override.
+        private const float AssumedDefaultReachTiles = 1f;
+
+        private static void LogReachTo(string label, float underX, float frontY, PlayerController player,
             DistanceTo measure, float overrideMax)
         {
-            Vector2 stand = new Vector2(target.x, frontY);
-            string line = "shrine stall collision: reach to " + label + " " + F(target)
-                + ": from counter front " + F(stand) + " straight " + F1(Vector2.Distance(stand, target))
-                + " tiles, interactable says " + F1(measure(stand));
+            float max = overrideMax > 0f ? overrideMax : AssumedDefaultReachTiles;
+            string maxText = overrideMax > 0f
+                ? F1(overrideMax) + " tiles (its override)"
+                : "game default, assumed ~" + F1(AssumedDefaultReachTiles) + " tile (override " + F1(overrideMax) + ")";
+            Vector2 stand = new Vector2(underX, frontY);
+            float fromFront = measure(stand);
+            string line = "shrine stall collision: REACH to " + label + " = the interactable's own distance: from the "
+                + "counter front " + F(stand) + " " + F1(fromFront) + " tiles";
             if (player != null)
-                line += "; from player center straight " + F1(Vector2.Distance(player.CenterPosition, target))
-                    + ", interactable says " + F1(measure(player.CenterPosition));
-            line += "; override max distance " + F1(overrideMax) + " (<= 0 = game default)";
+            {
+                float fromPlayer = measure(player.CenterPosition);
+                line += ", from the player centre " + F(player.CenterPosition) + " " + F1(fromPlayer) + " tiles ("
+                    + (fromPlayer <= max ? "in reach" : "OUT OF REACH") + ")";
+            }
+            line += "; max " + maxText + " -> from the counter front "
+                + (fromFront <= max ? "in reach" : "OUT OF REACH (player centre stands a little above the line; judge by the player figure)");
             Plugin.Log(line);
         }
 

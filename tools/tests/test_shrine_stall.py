@@ -927,7 +927,7 @@ class ShrineStallWiringTests(unittest.TestCase):
         self.assertIn('private static void PlaceIfFoyerAlreadyUp()', stall,
                        'ShrineStall.cs missing PlaceIfFoyerAlreadyUp()')
         body = stall[stall.index('private static void PlaceIfFoyerAlreadyUp()'):]
-        body = body[:body.index('private static void ReconcileLiveShopPosition()')]
+        body = body[:body.index('private static bool ReconcileLiveShopPosition()')]
         self.assertIn('FindObjectOfType<MainMenuFoyerController>()', body,
                        'the catch-up must key off the same controller whose Awake raises OnFoyerAwake')
         self.assertIn('"Alexandria.NPCAPI.BreachShopTools"', body,
