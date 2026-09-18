@@ -34,6 +34,10 @@ namespace PlutoTheCat
         // items must sort in front of, and the bowl's depth is re-logged beside theirs.
         private static tk2dBaseSprite _counterSprite;
         private static tk2dBaseSprite _kinsukeSprite;
+        // The solid props from the current placement, kept so pluto_stall bodies can log their colliders.
+        private static GameObject _toriiProp;
+        private static GameObject _counterProp;
+        private static GameObject _kinsukeProp;
         private static readonly Dictionary<string, int> SpriteIdCache = new Dictionary<string, int>();
         private static System.Action _foyerHandler;
 
@@ -226,6 +230,7 @@ namespace PlutoTheCat
         ///   pluto_stall &lt;x&gt; &lt;y&gt;   - move it to explicit coordinates
         ///   pluto_stall save       - write the current position back to the config file
         ///   pluto_stall stock      - log what the live shop actually stocked, slot by slot
+        ///   pluto_stall bodies     - log the stall's colliders and the reach to Daifuku and the items
         /// </summary>
         private static void RegisterConsoleCommand()
         {
@@ -242,6 +247,14 @@ namespace PlutoTheCat
                     GameObject live = FindLiveShop();
                     if (live == null) Plugin.Log("shrine stall: stock - no live shop in the scene");
                     else LogStock(live, "on request");
+                    return;
+                }
+
+                if (args.Length == 1 && string.Equals(args[0], "bodies", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Run it standing at the counter front after character select: reach is measured from
+                    // the player too, and the shop items only exist once DoSetup has run.
+                    ShrineStallCollision.LogBodies(FindLiveShop(), _counterProp, _toriiProp, _kinsukeProp);
                     return;
                 }
 
@@ -275,7 +288,7 @@ namespace PlutoTheCat
                 }
                 else
                 {
-                    Plugin.Log("shrine stall: usage - pluto_stall (report) | pluto_stall here | pluto_stall <x> <y> | pluto_stall save | pluto_stall stock");
+                    Plugin.Log("shrine stall: usage - pluto_stall (report) | pluto_stall here | pluto_stall <x> <y> | pluto_stall save | pluto_stall stock | pluto_stall bodies");
                     return;
                 }
 
@@ -482,20 +495,35 @@ namespace PlutoTheCat
         {
             DestroyProps();
             // Back to front, as in the approved mockup (the draw order itself comes from z, see Depth above).
-            PlaceProp(new[] { "torii.png" }, PlutoConfig.StallPosition + ToriiOffset, "pluto_shrine_stall_torii", ToriiHeightOffGround);
-            _counterSprite = SpriteOf(PlaceProp(new[] { "stall.png" }, PlutoConfig.StallPosition + StallOffset, "pluto_shrine_stall_stall", StallHeightOffGround));
-            _kinsukeSprite = SpriteOf(PlaceProp(
+            _toriiProp = PlaceProp(new[] { "torii.png" }, PlutoConfig.StallPosition + ToriiOffset, "pluto_shrine_stall_torii", ToriiHeightOffGround);
+            _counterProp = PlaceProp(new[] { "stall.png" }, PlutoConfig.StallPosition + StallOffset, "pluto_shrine_stall_stall", StallHeightOffGround);
+            _counterSprite = SpriteOf(_counterProp);
+            _kinsukeProp = PlaceProp(
                 new[] { "kinsuke_idle_001.png", "kinsuke_idle_002.png", "kinsuke_idle_003.png", "kinsuke_idle_004.png" },
-                PlutoConfig.StallPosition + KinsukeOffset, "pluto_shrine_stall_kinsuke", KinsukeHeightOffGround));
+                PlutoConfig.StallPosition + KinsukeOffset, "pluto_shrine_stall_kinsuke", KinsukeHeightOffGround);
+            _kinsukeSprite = SpriteOf(_kinsukeProp);
+
+            // P3 (redesign): the counter and the torii post bases are solid, and a player-only blocker closes
+            // the band behind the counter. The bowl sits on the counter top, inside the counter's body.
+            if (_toriiProp != null) ShrineStallCollision.AttachToriiBody(_toriiProp);
+            if (_counterProp != null)
+            {
+                ShrineStallCollision.AttachCounterBody(_counterProp);
+                ShrineStallCollision.AttachBackBlocker(_counterProp);
+            }
 
             // 2.20.4 diagnostic (tester's ask): logs the live shop's whole hierarchy on every placement, so
             // "the shopkeeper is missing" or an unexplained sprite is hard data on the next run instead of
             // another round of screenshots and guessing.
             ReconcileLiveShopPosition();
+            // Registered rigidbodies do not follow a raw transform move (archaeology 3.2), and every move
+            // (pluto_stall, reconcile, foyer placement) ends up here, so Daifuku's collider is refreshed once.
+            ShrineStallCollision.ReinitializeShopBodies(FindLiveShop());
             // After the clone is where the config says: a move or reconcile shifts its children in y
             // without touching their z, and the shop items (once DoSetup has stocked them) need their lift.
             RefreshLiveShopDepth(FindLiveShop(), "placement");
             LogShopDiagnostics();
+            ShrineStallCollision.LogBodies(FindLiveShop(), _counterProp, _toriiProp, _kinsukeProp);
             AttachStockProbe();
         }
 
@@ -507,6 +535,9 @@ namespace PlutoTheCat
             Props.Clear();
             _counterSprite = null;
             _kinsukeSprite = null;
+            _toriiProp = null;
+            _counterProp = null;
+            _kinsukeProp = null;
         }
 
         private static tk2dBaseSprite SpriteOf(GameObject prop)

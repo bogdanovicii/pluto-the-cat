@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.20.8 (test build, not released)
+The Shrine Stall redesign, drawn to the mockups the user approved on 2026-09-18.
+- **Nothing to buy (P1):** the three items now sit on the counter top. Two of them used to hang past its right end, and the first sat over Daifuku. The game normally forces shop items to draw behind the counter; after stocking, their depth is reset so they draw in front of it. The item spots sit 2 px higher, so the crimson mats show under the plaques.
+- **Flat, overlapping stall (P2):** new art in the game's 3/4 view. There is a wider counter (6.5 tiles) with a visible top face, and a taller torii whose two posts both stand clear of the counter. Daifuku stands behind the counter with his paws on it. Kinsuke's bowl is smaller and sits 1.3 tiles from him instead of covering him. Locked items show as an ema plaque instead of a blueprint. The Japanese decorations (noren, maneki-neko, stone lantern, koi banners) are dropped.
+- **No collision (P3):** the counter's footprint and the torii post bases are solid. A player-only wall stops you walking round a post into the space behind the counter. The bowl sits inside the counter's footprint. Every move refreshes the colliders.
+- **The stall's default position is 61.063, 18.25, the spot the user chose in game.** The two old defaults (19.7, 22.1 and 10.5, 22.1) move to it automatically. A position you chose yourself is never changed.
+- `pluto_stall bodies` logs every collider and the reach from the counter front, and from the player, to Daifuku's talk point and each item. `pluto_here` now works as another name for `pluto_where`. The stock report now says outright that empty slots are expected before character select.
+
 ## 2.20.7 (test build, not released)
 - **The Shrine Stall stocks its items again.** Its loot table was created bare, which leaves the table's list of included sub-tables null. When a live shop set itself up in the Breach, compiling that table threw a NullReferenceException and no items were ever stocked. This stayed hidden until 2.20.6 because until then no live shop existed. The table is now created with Alexandria's `LootUtility.CreateLootTable()`, which initialises both lists. (Confirmed from 11 Steam-machine logs: the exception appeared in every run with a live shop and in no other run.)
 - `pluto_stall stock` logs the loot table and what each item slot holds. A probe also logs the stock about 1.5 s after character select.

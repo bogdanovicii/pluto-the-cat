@@ -230,5 +230,36 @@ class ShrineStallCollisionSourceTests(unittest.TestCase):
             self.assertTrue(counter[0][0] <= x - 8 and x + 8 <= counter[0][1], 'item slot off the counter')
 
 
+class ShrineStallCollisionWiringTests(unittest.TestCase):
+    """The collision entry points do nothing unless ShrineStall.cs calls them on the placed props."""
+
+    def stall(self):
+        return (COLLISION.parent / 'ShrineStall.cs').read_text(encoding='utf-8')
+
+    def place_backdrop(self):
+        m = re.search(r'private static void PlaceBackdropProps\(\)(.*?)\n        \}\n', self.stall(), re.S)
+        self.assertIsNotNone(m, 'ShrineStall.cs missing PlaceBackdropProps()')
+        return m.group(1)
+
+    def test_bodies_attached_to_placed_props(self):
+        body = self.place_backdrop()
+        self.assertRegex(body, r'AttachToriiBody\(_toriiProp\)', 'the torii prop must get its post bodies')
+        self.assertRegex(body, r'AttachCounterBody\(_counterProp\)', 'the counter prop must get its body')
+        self.assertRegex(body, r'AttachBackBlocker\(_counterProp\)', 'the band behind the counter must be closed')
+        self.assertLess(body.index('_counterProp = PlaceProp'), body.index('AttachCounterBody'),
+                        'bodies must be attached after the counter is placed')
+
+    def test_bodies_reinitialized_after_every_move(self):
+        body = self.place_backdrop()
+        self.assertIn('ShrineStallCollision.ReinitializeShopBodies(FindLiveShop())', body)
+        self.assertLess(body.index('ReconcileLiveShopPosition();'), body.index('ReinitializeShopBodies'),
+                        'Reinitialize must run after the live shop has been moved into place')
+
+    def test_bodies_logged_and_command(self):
+        stall = self.stall()
+        self.assertIn('ShrineStallCollision.LogBodies(FindLiveShop(), _counterProp, _toriiProp, _kinsukeProp)', self.place_backdrop())
+        self.assertRegex(stall, r'string\.Equals\(args\[0\], "bodies"', 'pluto_stall bodies must exist')
+
+
 if __name__ == '__main__':
     unittest.main()
