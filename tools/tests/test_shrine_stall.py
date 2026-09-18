@@ -840,6 +840,44 @@ class ShrineStallWiringTests(unittest.TestCase):
         self.assertIn('depth(heightOffGround)', prop_log,
                        "PlaceProp must log each prop's resolved draw depth")
 
+    def test_stall_loot_table_is_fully_initialised(self):
+        """Root cause of "i dont see anything to buy" (2.20.6). The live clone's BaseShopController.Start
+        runs HandleDelayedFoyerInitialization for a FOYER_META shop, which calls DoSetup once a character
+        is picked; Alexandria's DoSetup calls shopItems.GetCompiledRawItems() for every slot, and vanilla
+        GenericLootTable.GetCompiledCollection reads includedLootTables.Count unconditionally. A table from
+        a bare ScriptableObject.CreateInstance<GenericLootTable>() has includedLootTables == null (and
+        tablePrerequisites == null), so DoSetup throws a NullReferenceException before a single item is
+        stocked - logged by Unity only, never through Plugin.Log. LootUtility.CreateLootTable() (Alexandria
+        0.5.10 IL) initialises defaultItemDrops, includedLootTables and tablePrerequisites."""
+        stall = self.source('ShrineStall.cs')
+        self.assertIn('LootUtility.CreateLootTable(', stall,
+                       'the stall loot table must be built with LootUtility.CreateLootTable(), which '
+                       'initialises includedLootTables; a null list makes DoSetup throw before stocking')
+        self.assertNotIn('CreateInstance<GenericLootTable>', stall,
+                          'a bare CreateInstance<GenericLootTable>() leaves includedLootTables null')
+
+    def test_stock_diagnostics(self):
+        """The stock is decided by DoSetup on the live clone, and only after a character is picked - long
+        after the placement-time hierarchy dump. So the stock report has to (a) log the loot table at
+        registration and (b) run later, once DoSetup can have run, and report per slot what was stocked,
+        its price, and whether its prerequisites are met. Unconditional, in the shrine stall: style."""
+        stall = self.source('ShrineStall.cs')
+        self.assertIn('private static void LogLootTable(', stall, 'missing a registration-time loot table log')
+        self.assertIn('LogLootTable(table)', stall, 'Init must log the loot table it registers')
+        self.assertIn('shrine stall: loot table', stall)
+        self.assertIn('private static void LogStock(', stall, 'missing a per-slot stock report')
+        self.assertIn('shrine stall: stock slot', stall)
+        self.assertIn('PrerequisitesMet()', stall, 'the stock report must say whether prerequisites are met')
+        self.assertIn('CurrentPrice', stall, 'the stock report must log each slot\'s price')
+        self.assertIn('class StockProbe', stall,
+                       'the stock report must run after DoSetup (delayed probe), not at placement time')
+        self.assertIn('IsSelectingCharacter', stall,
+                       'the probe must wait for the same condition HandleDelayedFoyerInitialization waits for')
+        self.assertIn('"stock"', stall, 'pluto_stall stock must re-run the report on demand')
+        body = stall[stall.find('private static void LogStock('):]
+        body = body[:body.find('\n        }\n')]
+        self.assertNotIn('#if', body)
+
 
 class StallArtTests(unittest.TestCase):
     """The resource paths are a contract with ShrineStall.cs (ShopAPI loads them

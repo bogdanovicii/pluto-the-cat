@@ -166,8 +166,15 @@ namespace PlutoTheCat
                 PlutoConfig.StallPriceFeatherTeaser,
             };
 
-            GenericLootTable table = ScriptableObject.CreateInstance<GenericLootTable>();
-            table.defaultItemDrops = new WeightedGameObjectCollection();
+            // Stock root cause (2026-09-18): LootUtility.CreateLootTable, never a bare CreateInstance. The live
+            // clone's BaseShopController.Start -> HandleDelayedFoyerInitialization calls DoSetup once a
+            // character is picked, and Alexandria's DoSetup calls shopItems.GetCompiledRawItems() for every
+            // slot (CustomShopController::DoSetup IL_02ab). Vanilla GenericLootTable.GetCompiledCollection
+            // reads includedLootTables.Count unconditionally, and a bare ScriptableObject.CreateInstance leaves
+            // that list (and tablePrerequisites) null: DoSetup threw a NullReferenceException before
+            // stocking a single slot, logged by Unity only - "i dont see anything to buy". CreateLootTable
+            // (Alexandria 0.5.10 IL) initialises defaultItemDrops, includedLootTables and tablePrerequisites.
+            GenericLootTable table = LootUtility.CreateLootTable();
             foreach (string id in PlutoUnlocks.Ids)
             {
                 if (!Game.Items.ContainsID(id)) continue;
@@ -215,6 +222,8 @@ namespace PlutoTheCat
             // it sets _shopObject.transform.position directly, and with npcPosition zero the NPC's local
             // offset from that root is (0,0,0), so it lands exactly on the new position instead of a
             // further PlutoConfig.StallPosition away from it.
+            LogLootTable(table);
+
             GameObject shop = ShopAPI.SetUpFoyerShop(
                 "Daifuku", ShopPrefix,
                 PlutoConfig.StallPosition,
@@ -283,6 +292,7 @@ namespace PlutoTheCat
         ///   pluto_stall here       - move the whole assembly to the player's current position
         ///   pluto_stall &lt;x&gt; &lt;y&gt;   - move it to explicit coordinates
         ///   pluto_stall save       - write the current position back to the config file
+        ///   pluto_stall stock      - log what the live shop actually stocked, slot by slot
         /// </summary>
         private static void RegisterConsoleCommand()
         {
@@ -291,6 +301,14 @@ namespace PlutoTheCat
                 if (args == null || args.Length == 0)
                 {
                     ReportStallStatus();
+                    return;
+                }
+
+                if (args.Length == 1 && string.Equals(args[0], "stock", StringComparison.OrdinalIgnoreCase))
+                {
+                    GameObject live = FindLiveShop();
+                    if (live == null) Plugin.Log("shrine stall: stock - no live shop in the scene");
+                    else LogStock(live, "on request");
                     return;
                 }
 
@@ -324,7 +342,7 @@ namespace PlutoTheCat
                 }
                 else
                 {
-                    Plugin.Log("shrine stall: usage - pluto_stall (report) | pluto_stall here | pluto_stall <x> <y> | pluto_stall save");
+                    Plugin.Log("shrine stall: usage - pluto_stall (report) | pluto_stall here | pluto_stall <x> <y> | pluto_stall save | pluto_stall stock");
                     return;
                 }
 
@@ -520,6 +538,7 @@ namespace PlutoTheCat
             // run instead of another round of screenshots and guessing.
             ReconcileLiveShopPosition();
             LogShopDiagnostics();
+            AttachStockProbe();
         }
 
         /// <summary>Destroys the props placed by the previous foyer load. The flipbook dies with its object.</summary>
@@ -745,6 +764,159 @@ namespace PlutoTheCat
                     + " renderer=" + (renderer != null ? "present enabled=" + renderer.enabled : "none")
                     + " bounds=" + (renderer != null ? FormatSize(renderer.bounds.size) : "n/a")
                     + " sprite=" + spriteState);
+            }
+        }
+
+        /// <summary>
+        /// Registration-time half of the stock report: every entry of the loot table handed to
+        /// SetUpFoyerShop, with its price (the entry weight, which DoSetup rounds into the price) and whether
+        /// its prerequisites are met right now (met = unlocked = DoSetup will NOT stock it). Also reports the
+        /// two lists whose null-ness broke 2.20.0-2.20.6, so a regression is one grep away.
+        /// </summary>
+        private static void LogLootTable(GenericLootTable table)
+        {
+            if (table == null || table.defaultItemDrops == null || table.defaultItemDrops.elements == null)
+            {
+                Plugin.Log("shrine stall: loot table is NULL or has no element list - the shop can stock nothing");
+                return;
+            }
+            List<WeightedGameObject> entries = table.defaultItemDrops.elements;
+            Plugin.Log("shrine stall: loot table has " + entries.Count + " entr" + (entries.Count == 1 ? "y" : "ies")
+                + " (includedLootTables " + (table.includedLootTables == null ? "NULL" : "ok")
+                + ", tablePrerequisites " + (table.tablePrerequisites == null ? "NULL" : "ok") + ")");
+            foreach (WeightedGameObject entry in entries)
+            {
+                if (entry == null) { Plugin.Log("shrine stall: loot table entry NULL"); continue; }
+                GameObject go = entry.gameObject;
+                PickupObject pickup = go != null ? go.GetComponent<PickupObject>() : null;
+                Plugin.Log("shrine stall: loot table entry pickup " + entry.pickupId + " " + DescribePickup(pickup)
+                    + " price " + Mathf.RoundToInt(entry.weight) + " " + DescribePrereqs(pickup));
+            }
+        }
+
+        /// <summary>
+        /// Stock half of the report: what DoSetup actually put in each slot of the LIVE shop. DoSetup builds
+        /// a "Shop item N" child under each ItemPoint with a CustomShopItemController whose `item` is the
+        /// blueprint clone (not the real cat item - see OnPurchase), so the real item is recovered from the
+        /// clone's SaveFlagToSetOnAcquisition, the one field DoSetup copies from our FLAG prerequisite.
+        /// m_shopItems / m_itemControllers are protected in the real game (the stub is publicized), so they
+        /// are read by reflection; null means DoSetup has not run on this clone (or threw before assigning).
+        /// </summary>
+        private static void LogStock(GameObject live, string when)
+        {
+            CustomShopController shop = live != null ? live.GetComponent<CustomShopController>() : null;
+            if (shop == null)
+            {
+                Plugin.Log("shrine stall: stock (" + when + ") - no CustomShopController on the live shop");
+                return;
+            }
+            System.Collections.IList chosen = ReadField(shop, "m_shopItems") as System.Collections.IList;
+            System.Collections.IList controllers = ReadField(shop, "m_itemControllers") as System.Collections.IList;
+            Transform[] points = shop.spawnPositions;
+            Plugin.Log("shrine stall: stock (" + when + ") on '" + live.name + "': DoSetup "
+                + (chosen == null ? "has NOT run (m_shopItems null)" : "chose " + chosen.Count + " item(s)")
+                + ", item controllers " + (controllers == null ? "NULL (DoSetup did not finish)" : controllers.Count.ToString())
+                + ", slots " + (points == null ? 0 : points.Length)
+                + ", loot table " + (shop.shopItems == null ? "NULL" : "entries=" + (shop.shopItems.defaultItemDrops == null
+                    || shop.shopItems.defaultItemDrops.elements == null ? -1 : shop.shopItems.defaultItemDrops.elements.Count)
+                    + " includedLootTables=" + (shop.shopItems.includedLootTables == null ? "NULL" : "ok")));
+            if (points == null) return;
+
+            for (int i = 0; i < points.Length; i++)
+            {
+                Transform point = points[i];
+                CustomShopItemController slot = point != null ? point.GetComponentInChildren<CustomShopItemController>(true) : null;
+                GameObject choice = chosen != null && i < chosen.Count ? chosen[i] as GameObject : null;
+                PickupObject chosenPickup = choice != null ? choice.GetComponent<PickupObject>() : null;
+                if (slot == null)
+                {
+                    Plugin.Log("shrine stall: stock slot " + i + " EMPTY (no shop item under "
+                        + (point != null ? point.name : "null point") + "); DoSetup chose "
+                        + (chosenPickup != null ? DescribePickup(chosenPickup) + " " + DescribePrereqs(chosenPickup) : "nothing"));
+                    continue;
+                }
+                PickupObject shown = slot.item;
+                string realId = null;
+                if (shown != null)
+                    foreach (string id in PlutoUnlocks.Ids)
+                        if (PlutoUnlocks.IsRegistered(id) && shown.SaveFlagToSetOnAcquisition == PlutoUnlocks.Flag(id)) { realId = id; break; }
+                PickupObject real = realId != null && Game.Items.ContainsID(realId) ? Game.Items[realId] : chosenPickup;
+                Plugin.Log("shrine stall: stock slot " + i + " " + (real != null ? DescribePickup(real) : "unidentified")
+                    + " shown as " + DescribePickup(shown)
+                    + " price " + slot.CurrentPrice + " (" + slot.CurrencyType + ")"
+                    + " " + DescribePrereqs(real)
+                    + " active=" + slot.gameObject.activeInHierarchy);
+            }
+        }
+
+        private static object ReadField(object target, string name)
+        {
+            for (System.Type t = target.GetType(); t != null; t = t.BaseType)
+            {
+                System.Reflection.FieldInfo f = t.GetField(name, System.Reflection.BindingFlags.Instance
+                    | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+                if (f != null) return f.GetValue(target);
+            }
+            return null;
+        }
+
+        private static string DescribePickup(PickupObject pickup)
+        {
+            if (pickup == null) return "(null pickup)";
+            return "id " + pickup.PickupObjectId + " '" + (pickup.EncounterNameOrDisplayName ?? pickup.name) + "'";
+        }
+
+        private static string DescribePrereqs(PickupObject pickup)
+        {
+            if (pickup == null) return "prereqs n/a";
+            EncounterTrackable et = pickup.encounterTrackable;
+            if (et == null) return "prereqs NO-ENCOUNTERTRACKABLE (DoSetup would throw on this entry)";
+            int n = et.prerequisites == null ? 0 : et.prerequisites.Length;
+            return "prereqs met=" + et.PrerequisitesMet() + " (" + n + " prerequisite(s); met = unlocked = not stocked)";
+        }
+
+        /// <summary>Puts a StockProbe on the live clone; the clone (and its probe) dies with the scene.</summary>
+        private static void AttachStockProbe()
+        {
+            GameObject live = FindLiveShop();
+            if (live == null || live.GetComponent<StockProbe>() != null) return;
+            live.AddComponent<StockProbe>();
+        }
+
+        /// <summary>
+        /// Runs LogStock once DoSetup can have run. For a FOYER_META shop vanilla BaseShopController.Start
+        /// starts HandleDelayedFoyerInitialization, which waits while GameManager.IsSelectingCharacter or
+        /// PrimaryPlayer is null and THEN calls DoSetup - so a placement-time report can only ever say
+        /// "not run yet". This waits for the same condition plus a short grace period, logs once, and also
+        /// logs if it gave up waiting, so a missing report is never silent.
+        /// </summary>
+        public sealed class StockProbe : MonoBehaviour
+        {
+            private const float GraceSeconds = 1.5f;
+            private const float GiveUpSeconds = 600f;
+            private float readyFor;
+            private float waited;
+            private bool done;
+
+            private void Update()
+            {
+                if (done) return;
+                waited += Time.unscaledDeltaTime;
+                bool ready = GameManager.HasInstance && !GameManager.Instance.IsSelectingCharacter
+                    && GameManager.Instance.PrimaryPlayer != null;
+                if (ready) readyFor += Time.unscaledDeltaTime;
+                if (ready && readyFor >= GraceSeconds)
+                {
+                    done = true;
+                    LogStock(gameObject, "after character select");
+                }
+                else if (waited >= GiveUpSeconds)
+                {
+                    done = true;
+                    Plugin.Log("shrine stall: stock probe gave up after " + GiveUpSeconds + "s - no character was "
+                        + "selected; type pluto_stall stock to report it by hand");
+                    LogStock(gameObject, "probe timeout");
+                }
             }
         }
 
