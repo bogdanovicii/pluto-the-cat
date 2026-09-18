@@ -31,8 +31,10 @@ namespace PlutoTheCat
         // stays below Daifuku's 1.75, so standing at a plaque still selects the nearer plaque.
         internal const float ShrineItemReachTiles = 1.5f;
 
-        // The warp puts the player's feet (specRigidbody.UnitBottomCenter) this many art pixels in front of the
-        // counter collider's front edge.
+        // The warp puts the TOP of the player's ground collider (the PlayerCollider box, which is what the counter
+        // stops) this many art pixels in front of the counter collider's front edge - i.e. as close as walking up
+        // can get. Aiming the body's bottom instead would sink the ground box into the counter and over-report
+        // reach (2.20.9 review).
         private const int StandGapPx = 2;
         private const float PixelsPerTile = 16f;
         // Long enough for several player Updates, so m_lastInteractionTarget reflects the new spot.
@@ -159,13 +161,13 @@ namespace PlutoTheCat
             float underX = sprite != null ? sprite.WorldCenter.x : expected.transform.position.x;
             Vector2 feet = new Vector2(underX, ShrineStallCollision.CounterFrontY(counterProp) - StandGapPx / PixelsPerTile);
             // WarpToPoint(Vector2 targetPoint, bool useDefaultPoof = false, bool doFollowers = false) places the
-            // player's transform (INFERRED: the stub body is stripped). The feet's offset from the transform does
-            // not change with a translation, so aiming the transform at feet - offset puts the FEET on the point.
-            // The probe logs the feet the player actually ended up with, so a wrong inference shows at once.
-            Vector2 feetOffset = player.specRigidbody.UnitBottomCenter - (Vector2)player.transform.position;
+            // player's transform (INFERRED: the stub body is stripped). The ground box's offset from the transform
+            // does not change with a translation, so aiming the transform at point - offset puts the box's top on
+            // the point. The probe logs where it actually ended up, so a wrong inference shows at once.
+            Vector2 feetOffset = GroundTopCenter(player) - (Vector2)player.transform.position;
             player.WarpToPoint(feet - feetOffset, false, false);
             FreeFromOverlaps(player, "after the warp");
-            Plugin.Log("shrine stall: stand " + target + " - warped the player's feet to " + F(feet) + " ("
+            Plugin.Log("shrine stall: stand " + target + " - warped the top of the player's ground collider to " + F(feet) + " ("
                 + StandGapPx + " px in front of the counter collider's front edge, under " + expectedLabel
                 + "); asking the game in " + StandProbeDelaySeconds.ToString("0.#", CultureInfo.InvariantCulture) + " s");
             player.StartCoroutine(StandProbe(player, target, expected, expectedLabel, liveShop, feet));
@@ -189,10 +191,23 @@ namespace PlutoTheCat
             bool ok = chosen != null && expected != null && chosen.gameObject == expected.gameObject;
             Plugin.Log("shrine stall: stand " + target + ": the game selected " + Describe(selected, liveShop)
                 + " (expected " + expectedLabel + ") -> " + (ok ? "REACH OK" : "NOT REACHED"));
-            Vector2 feet = player.specRigidbody != null ? player.specRigidbody.UnitBottomCenter : player.CenterPosition;
-            Plugin.Log("shrine stall: stand " + target + ": player centre " + F(player.CenterPosition) + " feet " + F(feet)
+            Vector2 feet = GroundTopCenter(player);
+            Plugin.Log("shrine stall: stand " + target + ": player centre " + F(player.CenterPosition) + " ground collider top " + F(feet)
                 + " (aimed " + F(intendedFeet) + ", off by " + F(feet - intendedFeet) + ")");
             ShrineStall.ReportWhere("pluto_stall stand " + target);
+        }
+
+        /// <summary>Top-centre of the player's PlayerCollider box (the one solid scenery stops), falling back to the
+        /// whole body's bottom-centre, logged as such, if no such box exists.</summary>
+        private static Vector2 GroundTopCenter(PlayerController player)
+        {
+            SpeculativeRigidbody body = player.specRigidbody;
+            if (body != null && body.PixelColliders != null)
+                foreach (PixelCollider c in body.PixelColliders)
+                    if (c != null && c.CollisionLayer == CollisionLayer.PlayerCollider)
+                        return new Vector2(c.UnitBottomLeft.x + c.UnitDimensions.x / 2f, c.UnitBottomLeft.y + c.UnitDimensions.y);
+            Plugin.Log("shrine stall: stand - no PlayerCollider box on the player; aiming the body's bottom instead");
+            return body != null ? body.UnitBottomCenter : player.CenterPosition;
         }
 
         /// <summary>PlayerController.m_lastInteractionTarget (private in the game, public in the publicized stub),

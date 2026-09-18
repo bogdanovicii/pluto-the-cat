@@ -205,7 +205,7 @@ class Fix3StandProbeTests(unittest.TestCase):
         stand = self.stand()
         self.assertIn('ShrineStallCollision.CounterFrontY(counterProp)', stand)
         self.assertRegex(stand, r'-\s*StandGapPx\s*/\s*PixelsPerTile')
-        self.assertIn('UnitBottomCenter', stand, 'aim the FEET, not the transform')
+        self.assertIn('GroundTopCenter(player)', stand, 'aim the ground collider top, not the transform')
         self.assertRegex(stand, r'\.WarpToPoint\([^;]*,\s*false,\s*false\)', 'WarpToPoint(Vector2, bool useDefaultPoof, bool doFollowers)')
         coll = read(COLLISION_CS)
         front = method_body(coll, r'internal\s+static\s+float\s+CounterFrontY\(\s*GameObject\s+counterProp\s*\)')
@@ -239,6 +239,18 @@ class Fix3StandProbeTests(unittest.TestCase):
         text = self.reach()
         self.assertIn('"Daifuku"', text)
         self.assertIn('"Shop item "', text)
+
+
+class StandAimsTheGroundColliderTop(unittest.TestCase):
+    """2.20.9 controller review: aiming the whole body's bottom at the counter front sinks the ground box
+    into the counter and over-reports reach. The warp must aim the PlayerCollider box's top."""
+
+    def test_warp_aims_ground_collider_top(self):
+        src = (pathlib.Path(__file__).resolve().parents[2] / 'PlutoTheCat' / 'src' / 'ShrineStallReach.cs').read_text(encoding='utf-8')
+        code = re.sub(r'//.*', '', src)
+        self.assertIn('CollisionLayer.PlayerCollider', code)
+        self.assertRegex(code, r'Vector2 feetOffset = GroundTopCenter\(player\)')
+        self.assertNotRegex(code, r'feetOffset = player\.specRigidbody\.UnitBottomCenter')
 
 
 if __name__ == '__main__':
