@@ -6,6 +6,12 @@ Breach, beside the Breach shop, selling permanent per-save unlocks for ten cat i
 section `Shrine Stall 2.20`). Until unlocked, those ten no longer drop anywhere. Ordered riskiest first, because
 several of the failure modes below are silent by design.
 
+> **2.20.5 note.** Builds 2.20.0-2.20.4 moved and inspected the shop *template* rather than the live
+> copy Alexandria places each Breach load, so the shopkeeper was never where the stall was and
+> `pluto_stall` could not move him. The diagnostic block now reports the **live** shop: look for
+> `LIVE shop root ... at <x,y> (config says <x,y>)` and a `child 'pluto_shrine_stall:Daifuku'` line whose
+> position matches it. If those two agree and a ginger cat is visible behind the counter, this is fixed.
+
 ## 1. Does the stall exist at all?
 
 `ShopAPI.SetUpFoyerShop` (Alexandria) wraps its entire body in a try/catch that only logs and returns `null` — a

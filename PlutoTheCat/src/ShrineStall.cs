@@ -38,6 +38,10 @@ namespace PlutoTheCat
         private static GameObject _shopObject;
         private static bool _commandRegistered;
 
+        /// <summary>Alexandria names the shop root "&lt;prefix&gt;:&lt;name&gt;_Shop" and keys registeredShops by the
+        /// same string, so this prefix is how FindLiveShop tells our stall from another mod's.</summary>
+        private const string ShopPrefix = "pluto_shrine_stall";
+
         // 2.20.3 root-cause fix (placement round 2): the design (docs/superpowers/specs/
         // 2026-09-17-shrine-stall-design.md, "Under the gate: a counter...") wants the stall counter
         // CENTERED UNDER the torii gate, not offset from it. The earlier -2.0625 nudge came from an
@@ -48,8 +52,29 @@ namespace PlutoTheCat
         // needs no offset at all: StallOffset.x == ToriiOffset.x. Same Y for both keeps their bottom rows
         // on one ground line. Still no game install this session - re-confirm visually the first time the
         // stall is on screen.
-        private static readonly Vector3 ToriiOffset = new Vector3(-3.0f, 0f, 0f);
-        private static readonly Vector3 StallOffset = new Vector3(-3.0f, 0f, 0f);
+        // 2.20.5 (placement round 3, from the first diagnostic run): the -3.0 was wrong in a way no
+        // amount of prop-vs-prop reasoning could catch, because it was measured against the wrong thing.
+        // Daifuku does not stand at "StallPosition + some offset" - PlaceBreachShops sets the live shop
+        // clone's transform straight to BreachShopComp.offset, which IS PlutoConfig.StallPosition. So the
+        // shopkeeper is always exactly at StallPosition, and every -3.0 here pushed the entire visible
+        // stall three tiles to his left: he would have stood three tiles clear of his own counter even
+        // once the clone moved (tester's 2.20.4 log: props resolved to x=14.25/15.19/16.75 while the shop
+        // anchor was 19.7). Both props are therefore centered on him now - counter around him so he is
+        // behind it, gate around both so it frames them - which is also what makes the gate read as a
+        // gate: at 4.875 tiles against the counter's 3, sharing a center leaves ~0.94 tiles of pillar
+        // showing on EACH side. Before, the whole gate sat left of the counter and only its left pillar
+        // was visible (tester screenshot, 2.20.4).
+        private static readonly Vector3 ToriiOffset = Vector3.zero;
+        private static readonly Vector3 StallOffset = Vector3.zero;
+
+        // Daifuku's own local offset inside the shop clone, passed as SetUpFoyerShop's npcPosition. Not
+        // zero: at zero he stands on the counter's own ground line, and since the counter is 2.25 tiles
+        // tall against his 2, the counter would cover him completely. A tile of +Y is this engine's usual
+        // "further back" - it raises him on screen AND pushes his z back (z = y - heightOffGround), so he
+        // reads as standing behind the counter with roughly his top 0.75 tile visible above its lip, and
+        // he sorts behind it without any special-casing. UNVERIFIED in game; the amount is the first thing
+        // to tune if he is hidden or floating.
+        private const float DaifukuBehindCounter = 1.0f;
 
         // Kinsuke's bowl (kinsuke_idle_*, 22x20px) rests on the stall counter (design: "Daifuku stands
         // behind the counter, Kinsuke's bowl rests on it"), so it is offset from the stall itself rather
@@ -72,7 +97,13 @@ namespace PlutoTheCat
         // (0.75-tile) rightward nudge below is therefore kept as the deliberate design choice it always
         // was - clearing the three purchasable items that sit at the stall's own center - not a
         // measurement correction.
-        private static readonly Vector3 KinsukeOffset = StallOffset + new Vector3(12f / 16f, 16f / 16f, 0f);
+        //
+        // 2.20.5: X widened from 0.75 to 0.9 tiles. The counter's right edge is at StallOffset.x + 1.5,
+        // and the bowl's own half-width is ~0.69, so at 0.75 it was fine on paper - but the tester
+        // measured it hanging 0.06 tiles PAST the counter's end on screen, resting on air (2.20.4 report,
+        // bowl center 16.75 against a counter edge of 16.688). 0.9 puts its center on the right half of
+        // the surface with its whole width inboard. The Y stays at the measured 1.0-tile counter lip.
+        private static readonly Vector3 KinsukeOffset = StallOffset + new Vector3(0.9f, 16f / 16f, 0f);
 
         // 2.20.4 depth fix: PlaceProp used to build plain Unity SpriteRenderer GameObjects at z=0 with no
         // sortingOrder/sortingLayer and none of this game's own depth handling - the same tk2d-based
@@ -89,9 +120,33 @@ namespace PlutoTheCat
         // back to front: torii (furthest back) -> stall/counter -> Kinsuke's bowl -> Daifuku (managed by
         // Alexandria's own NPC depth handling, not this file, and left at its default so he stays in front
         // of all three).
-        private const float ToriiHeightOffGround = -1.0f;
-        private const float StallHeightOffGround = -0.6f;
-        private const float KinsukeHeightOffGround = -0.3f;
+        // 2.20.5 depth fix. The 2.20.4 values were chosen as if HeightOffGround were the only thing
+        // feeding the sort, but the tester derived the real relationship from our own diagnostic numbers:
+        //
+        //     z = worldY - heightOffGround          (lower z draws IN FRONT)
+        //
+        // and that exposed a double-count. The bowl is the only piece raised in world Y (a tile, to sit on
+        // the counter lip), so that lift also pushed it a full tile BACKWARDS, swamping its -0.3:
+        //     counter 22.125 - (-0.6) = 22.725 (front)   torii 22.125 - (-1.0) = 23.125 (middle)
+        //     bowl    23.125 - (-0.3) = 23.425 (BACK)
+        // Intended gate/counter/bowl; actual counter/gate/bowl, with the bowl behind everything.
+        //
+        // The tester's suggested fix was to give all three props one world Y and carry the whole lift with
+        // heightOffGround. Not taken, deliberately: it assumes HeightOffGround also raises the sprite
+        // visually, which this session cannot confirm - and the bowl's current world-Y lift is the one
+        // piece of this composition a human has confirmed looks right ("sitting ON the counter surface",
+        // 2.20.4). Breaking a verified visual to fix an unverified sort would be a bad trade. Instead the
+        // lift stays and the bowl's heightOffGround compensates for it.
+        //
+        // Resulting z, with P = StallPosition.y, front to back:
+        //     bowl     (P + 1.0) - ( 1.4) = P - 0.4     frontmost
+        //     counter  (P      ) - ( 0.0) = P
+        //     Daifuku  (P + 1.0) - ( 0.0) = P + 1.0     behind the counter, in front of the gate
+        //     torii    (P      ) - (-1.5) = P + 1.5     backmost
+        // Monotonic, and it no longer depends on the props' world Y agreeing with each other.
+        private const float ToriiHeightOffGround = -1.5f;
+        private const float StallHeightOffGround = 0.0f;
+        private const float KinsukeHeightOffGround = 1.4f;
 
         public static void Init()
         {
@@ -161,7 +216,7 @@ namespace PlutoTheCat
             // offset from that root is (0,0,0), so it lands exactly on the new position instead of a
             // further PlutoConfig.StallPosition away from it.
             GameObject shop = ShopAPI.SetUpFoyerShop(
-                "Daifuku", "pluto_shrine_stall",
+                "Daifuku", ShopPrefix,
                 PlutoConfig.StallPosition,
                 idlePaths, IdleFps,
                 talkPaths, TalkFps,
@@ -173,11 +228,14 @@ namespace PlutoTheCat
                 ShrineStallLines.PurchaseKey,
                 ShrineStallLines.PurchaseFailedKey,
                 ShrineStallLines.IntroKey,
-                Vector3.zero,               // talkPointOffset; unverified, tune once visible in game
-                Vector3.zero,               // npcPosition: NPC's local offset from the shop root at build
-                                            // time (see the comment above this call), not a second copy
-                                            // of the world position - must stay zero for a single
-                                            // stationary shopkeeper co-located with his own props
+                new Vector3(0f, DaifukuBehindCounter, 0f),   // talkPointOffset: follow him behind the
+                                            // counter, so the talk prompt is where he is and not on the
+                                            // counter's ground line. 2.20.4 logged SpeechPoint at the
+                                            // same place as the NPC, so these two want to agree.
+                new Vector3(0f, DaifukuBehindCounter, 0f),   // npcPosition: his LOCAL offset from the shop
+                                            // root at build time (see the comment above this call), never
+                                            // a second copy of the world position. A tile of +Y stands
+                                            // him behind his own counter instead of inside it.
                 ShopAPI.VoiceBoxes.BELLO,
                 ShopAPI.defaultItemPositions,
                 1f,                         // costModifier
@@ -283,14 +341,22 @@ namespace PlutoTheCat
         {
             PlutoConfig.StallPosition = newPosition;
 
-            if (_shopObject != null)
+            GameObject live = FindLiveShop();
+            if (live != null)
             {
-                _shopObject.transform.position = newPosition;
+                live.transform.position = newPosition;
+                // Also rewrite the placement offset both objects carry, or the next foyer load drops the
+                // stall back where it was: PlaceBreachShops re-reads BreachShopComp.offset off the
+                // template every time. The type is internal to Alexandria, so this goes through
+                // reflection rather than a direct reference - a no-op if that ever changes, which is why
+                // the in-memory move above does not depend on it.
+                SetBreachOffset(live, newPosition);
+                SetBreachOffset(_shopObject, newPosition);
             }
             else
             {
-                Plugin.Log("shrine stall: Daifuku's GameObject is not tracked this session (has the shop "
-                    + "built yet?) - only the backdrop props were moved. Reload the Breach to also place Daifuku.");
+                Plugin.Log("shrine stall: no live shop found in the scene - only the backdrop props were "
+                    + "moved. Daifuku is placed by Alexandria on foyer load; reload the Breach to move him too.");
             }
 
             PlaceBackdropProps();
@@ -309,13 +375,19 @@ namespace PlutoTheCat
         /// offset zero, torii, stall, Kinsuke) reach, so the user can tell whether it now fits on screen.</summary>
         private static void LogFootprint()
         {
-            float[] offsets = { 0f, ToriiOffset.x, StallOffset.x, KinsukeOffset.x };
-            float minOffset = offsets[0], maxOffset = offsets[0];
-            foreach (float offset in offsets)
-            {
-                if (offset < minOffset) minOffset = offset;
-                if (offset > maxOffset) maxOffset = offset;
-            }
+            // Real drawn extents, not just anchor offsets: every prop is bottom-CENTER pivoted, so each
+            // one reaches half its art width either side of its own offset. The gate is the widest at
+            // 78px/16 = 4.875 tiles, so it sets both edges now that everything shares a center. Reporting
+            // anchors alone understated the width and made the stall look like it fitted where it did not.
+            const float ToriiHalf = 78f / 16f / 2f;     // 2.4375
+            const float StallHalf = 48f / 16f / 2f;     // 1.5
+            const float KinsukeHalf = 22f / 16f / 2f;   // 0.6875
+            const float DaifukuHalf = 26f / 16f / 2f;   // 0.8125
+            float[] lefts = { -DaifukuHalf, ToriiOffset.x - ToriiHalf, StallOffset.x - StallHalf, KinsukeOffset.x - KinsukeHalf };
+            float[] rights = { DaifukuHalf, ToriiOffset.x + ToriiHalf, StallOffset.x + StallHalf, KinsukeOffset.x + KinsukeHalf };
+            float minOffset = lefts[0], maxOffset = rights[0];
+            foreach (float edge in lefts) if (edge < minOffset) minOffset = edge;
+            foreach (float edge in rights) if (edge > maxOffset) maxOffset = edge;
             float left = PlutoConfig.StallPosition.x + minOffset;
             float right = PlutoConfig.StallPosition.x + maxOffset;
             Plugin.Log("shrine stall: footprint spans x=" + left.ToString("0.##", CultureInfo.InvariantCulture)
@@ -516,18 +588,74 @@ namespace PlutoTheCat
         /// hierarchy, per the tester's measurement, ~3x58 art px - too thin for any of our own art) in one
         /// pass, without guessing which child is which ahead of time.
         /// </summary>
+        /// <summary>
+        /// Finds the shop that is actually in the Breach, which is NOT the object SetUpFoyerShop returned.
+        ///
+        /// Verified in the Alexandria 0.5.10 IL (BreachShopTools::PlaceBreachShops, IL_00a1 onward): on
+        /// every foyer load it walks registeredShops.Values and, for each, calls
+        /// Object.Instantiate&lt;GameObject&gt;(prefab), SetActive(true) on the clone, then sets the CLONE's
+        /// transform.position from its BreachShopComp.offset. The registered object is a template that
+        /// stays at the Unity origin for the whole session.
+        ///
+        /// That is the 2.20.0-2.20.4 bug in one sentence: this file stored the template, so pluto_stall
+        /// moved something nothing renders and the diagnostics measured it too - which is why 2.20.4
+        /// reported the shop root, Daifuku, all three ItemPoints and the SpeechPoint at 0,0 while the
+        /// props sat correctly at the stall position. Daifuku was healthy the whole time (renderer
+        /// present, sprite bound, bounds 1.625x2 matching his art exactly); he was just standing on a
+        /// template at the origin.
+        ///
+        /// Matched by component rather than by a "(Clone)" name suffix, so it survives Unity changing how
+        /// it names clones, and filtered by our own prefix so another mod's breach shop is never touched.
+        /// </summary>
+        /// <summary>
+        /// Rewrites Alexandria's BreachShopComp.offset, the value PlaceBreachShops positions the clone
+        /// from on every foyer load. The component is internal to Alexandria 0.5.10, so it is reached by
+        /// reflection over the object's components; a miss is logged once and otherwise ignored, since the
+        /// caller has already moved the transform for this session either way.
+        /// </summary>
+        private static void SetBreachOffset(GameObject target, Vector3 position)
+        {
+            if (target == null) return;
+            foreach (Component component in target.GetComponents<Component>())
+            {
+                if (component == null || component.GetType().Name != "BreachShopComp") continue;
+                System.Reflection.FieldInfo field = component.GetType().GetField("offset");
+                if (field != null && field.FieldType == typeof(Vector3)) field.SetValue(component, position);
+                return;
+            }
+            Plugin.Log("shrine stall: no BreachShopComp on '" + target.name + "' - this move lasts only "
+                + "until the next Breach load; use pluto_stall save to make it stick.");
+        }
+
+        private static GameObject FindLiveShop()
+        {
+            CustomShopController[] shops = UnityEngine.Object.FindObjectsOfType<CustomShopController>();
+            foreach (CustomShopController shop in shops)
+            {
+                if (shop == null) continue;
+                GameObject go = shop.gameObject;
+                if (go == _shopObject) continue;                 // the template: registered, never placed
+                if (!go.name.StartsWith(ShopPrefix)) continue;    // someone else's breach shop
+                return go;
+            }
+            return null;
+        }
+
         private static void LogShopDiagnostics()
         {
-            if (_shopObject == null)
+            GameObject live = FindLiveShop();
+            if (live == null)
             {
-                Plugin.Log("shrine stall: shopkeeper GameObject is null - Daifuku was never built this "
-                    + "session (see the SetUpFoyerShop failure logged above, if any)");
+                Plugin.Log("shrine stall: NO LIVE SHOP in the scene"
+                    + (_shopObject == null
+                        ? " and no template either - SetUpFoyerShop never returned one (see any failure logged above)"
+                        : " - the template exists, so registration worked but Alexandria has not placed a clone yet"));
                 return;
             }
 
-            Transform[] all = _shopObject.GetComponentsInChildren<Transform>(true);
-            Plugin.Log("shrine stall: shop root '" + _shopObject.name + "' at " + FormatPos(_shopObject.transform.position)
-                + " has " + all.Length + " transform(s) in its hierarchy");
+            Transform[] all = live.GetComponentsInChildren<Transform>(true);
+            Plugin.Log("shrine stall: LIVE shop root '" + live.name + "' at " + FormatPos(live.transform.position)
+                + " (config says " + FormatPos(PlutoConfig.StallPosition) + ") has " + all.Length + " transform(s)");
 
             foreach (Transform t in all)
             {

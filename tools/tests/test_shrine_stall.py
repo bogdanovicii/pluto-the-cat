@@ -347,8 +347,13 @@ class ShrineStallWiringTests(unittest.TestCase):
         move_match = re.search(r'private static void MoveStall\(Vector3 newPosition\)(.*?)\n        \}', stall, re.S)
         self.assertIsNotNone(move_match, 'ShrineStall.cs missing a MoveStall(Vector3) that both here/<x> <y> paths share')
         move_body = move_match.group(1)
-        self.assertIn('_shopObject', move_body,
-                       'MoveStall must move the tracked Daifuku GameObject, not just the backdrop props')
+        self.assertIn('FindLiveShop()', move_body,
+                       'MoveStall must move the LIVE shop clone, not the stored template. Verified in the '
+                       'Alexandria 0.5.10 IL (BreachShopTools::PlaceBreachShops, IL_00a1 onward): every '
+                       'foyer load Instantiates the registered object and positions the CLONE, leaving the '
+                       'registered one at the origin forever. 2.20.0-2.20.4 moved and measured that '
+                       'template, so pluto_stall moved nothing visible and the 2.20.4 diagnostics reported '
+                       'the whole hierarchy at 0,0 while the props sat correctly at the stall position.')
         self.assertIn('PlaceBackdropProps()', move_body, 'MoveStall must also re-place the three backdrop props at the new position')
         self.assertIn('_shopObject = shop;', stall, 'Init() must keep a reference to the built shop GameObject so it can later be moved')
 
@@ -365,14 +370,19 @@ class ShrineStallWiringTests(unittest.TestCase):
         stall = self.source('ShrineStall.cs')
         npc_position_line = next((l for l in stall.splitlines() if '// npcPosition:' in l), None)
         self.assertIsNotNone(npc_position_line, 'ShrineStall.cs missing the npcPosition argument (marked by a trailing "// npcPosition:" comment)')
-        self.assertIn('Vector3.zero', npc_position_line,
-                       'npcPosition must be Vector3.zero - it is Daifuku\'s offset from the shop root at '
-                       'build time, not a second copy of PlutoConfig.StallPosition (see the comment above '
-                       'the SetUpFoyerShop call for the IL evidence)')
         self.assertNotIn('PlutoConfig.StallPosition', npc_position_line,
-                          'npcPosition must not reuse PlutoConfig.StallPosition - SetUpFoyerShop already '
-                          'adds that in separately (as BreachShopComp.offset) when the shop root is placed, '
-                          'so passing it here doubles Daifuku\'s distance from the Breach origin')
+                          'npcPosition must not reuse PlutoConfig.StallPosition - the shop root is already '
+                          'placed there from BreachShopComp.offset, so passing it here doubles Daifuku\'s '
+                          'distance from the Breach origin (the 2.20.2 bug: ~28 tiles from his own props)')
+        self.assertIn('DaifukuBehindCounter', npc_position_line,
+                       'npcPosition must be the DaifukuBehindCounter local offset. It is deliberately NOT '
+                       'zero: at zero he stands on the counter\'s own ground line, and the counter (2.25 '
+                       'tiles tall) is taller than he is (2), so it would cover him completely.')
+        offset_match = re.search(r'DaifukuBehindCounter\s*=\s*(-?[\d.]+)f', stall)
+        self.assertIsNotNone(offset_match, 'ShrineStall.cs missing a parseable DaifukuBehindCounter constant')
+        self.assertGreater(float(offset_match.group(1)), 0.0,
+                            'DaifukuBehindCounter must be positive: +Y is this engine\'s "further back", '
+                            'which both raises him above the counter lip and sorts him behind it')
 
     def test_stall_offset_centers_counter_under_torii(self):
         """2.20.2 root cause 2 (tester report: counter sits low and to the left of the torii): the design
@@ -384,10 +394,14 @@ class ShrineStallWiringTests(unittest.TestCase):
         # Capture the FULL first-argument expression (not just its leading literal), so an old
         # "-3.0f - 2.0625f" style nudge is actually evaluated rather than truncated to "-3.0" and
         # spuriously matching.
-        torii_match = re.search(r'ToriiOffset = new Vector3\(([^,]+),', stall)
-        stall_match = re.search(r'StallOffset = new Vector3\(([^,]+),', stall)
-        self.assertIsNotNone(torii_match, 'ShrineStall.cs missing a parseable ToriiOffset declaration')
-        self.assertIsNotNone(stall_match, 'ShrineStall.cs missing a parseable StallOffset declaration')
+        # Both may be written either as Vector3.zero (2.20.5 onwards, once the props were re-centered on
+        # the shopkeeper himself) or as an explicit new Vector3(x, ...). Accept either and compare the X.
+        def offset_x(name):
+            if re.search(name + r'\s*=\s*Vector3\.zero', stall):
+                return 0.0
+            match = re.search(name + r'\s*=\s*new Vector3\(([^,]+),', stall)
+            self.assertIsNotNone(match, 'ShrineStall.cs missing a parseable ' + name + ' declaration')
+            return to_number(match.group(1))
         # Safe evaluator for the tiny subset of C# float arithmetic these fields use (e.g. "-3.0f",
         # "-3.0f - 2.0625f"): sum the signed float literals rather than calling eval() on source text.
         def to_number(expr):
@@ -395,8 +409,8 @@ class ShrineStallWiringTests(unittest.TestCase):
             terms = re.findall(r'[+-]?\s*[\d.]+', cleaned)
             self.assertTrue(terms, 'could not parse float literals out of %r' % expr)
             return sum(float(t.replace(' ', '')) for t in terms)
-        torii_x = to_number(torii_match.group(1))
-        stall_x = to_number(stall_match.group(1))
+        torii_x = offset_x('ToriiOffset')
+        stall_x = offset_x('StallOffset')
         self.assertEqual(torii_x, stall_x,
                           'StallOffset.x must equal ToriiOffset.x so the counter is centered under the '
                           'torii (both sprites are bottom-center pivoted; equal X centers one under the '
@@ -409,7 +423,7 @@ class ShrineStallWiringTests(unittest.TestCase):
         pixels widen from the narrower noren curtain above to the full 48px width) starts at row 20 (from
         the top), so the counter surface sits (36 - 20) / 16 = 1.0 tile above the ground line - not 1.75."""
         stall = self.source('ShrineStall.cs')
-        kinsuke_match = re.search(r'KinsukeOffset = StallOffset \+ new Vector3\([\d.]+f / 16f, ([\d.]+)f / 16f,', stall)
+        kinsuke_match = re.search(r'KinsukeOffset\s*=\s*StallOffset\s*\+\s*new Vector3\([^,]+,\s*([\d.]+)f\s*/\s*16f\s*,', stall)
         self.assertIsNotNone(kinsuke_match, 'ShrineStall.cs missing a parseable KinsukeOffset declaration')
         self.assertEqual(float(kinsuke_match.group(1)), 16.0,
                           "KinsukeOffset's Y numerator over 16f must be 16 (i.e. 1.0 tile, the measured "
@@ -644,13 +658,20 @@ class ShrineStallWiringTests(unittest.TestCase):
                        'PlaceProp must call UpdateZDepth() after setting HeightOffGround, like every other '
                        'tk2d depth site in this codebase')
 
-    def test_prop_depth_ordering_puts_torii_furthest_back_then_stall_then_kinsuke(self):
-        """The torii (77x48px) and the counter (48x36px) are both large enough to fully hide Daifuku
-        (24x31px) if they draw in front of him, so the three backdrop props must have a strict, explicit
-        back-to-front order: torii furthest back, then the counter, then Kinsuke's bowl - leaving Daifuku
-        (whose own depth this file does not touch) in front of all three. More negative HeightOffGround
-        means further back (see CoffeeMugItem.cs's -0.5f puddle and PuffedUpItem.cs's -0.6f "always
-        behind" fur layer)."""
+    def test_prop_depth_ordering_is_correct_after_world_y_is_accounted_for(self):
+        """The 2.20.4 build ordered the props by HeightOffGround alone and got the order wrong in game,
+        because that is not what decides depth. The tester derived the real relationship from our own
+        diagnostic output:
+
+            z = worldY - heightOffGround        (lower z draws in front)
+
+        Kinsuke's bowl is the only prop raised in world Y (a tile, to sit on the counter lip), so that
+        lift also pushed it a tile backwards and swamped its -0.3: measured z came out counter 22.725,
+        torii 23.125, bowl 23.425 - the bowl behind everything, when it should be in front.
+
+        So this asserts the computed z, combining each prop's Y offset with its HeightOffGround, rather
+        than comparing HeightOffGround values that only tell half the story. Required order, front to
+        back: bowl, counter, Daifuku (at +DaifukuBehindCounter, depth untouched by this file), torii."""
         stall = self.source('ShrineStall.cs')
 
         def constant(name):
@@ -658,15 +679,60 @@ class ShrineStallWiringTests(unittest.TestCase):
             self.assertIsNotNone(match, 'ShrineStall.cs missing a parseable ' + name + ' constant')
             return float(match.group(1))
 
-        torii = constant('ToriiHeightOffGround')
-        counter = constant('StallHeightOffGround')
-        kinsuke = constant('KinsukeHeightOffGround')
-        self.assertLess(torii, counter,
-                         'the torii must be further back (more negative HeightOffGround) than the counter')
-        self.assertLess(counter, kinsuke,
-                         "the counter must be further back than Kinsuke's bowl")
-        self.assertLess(kinsuke, 0.0,
-                         "Kinsuke's bowl must still be behind Daifuku's own (unmodified, ~0) depth")
+        def offset_y(expr):
+            """The Y term of a Vector3 offset expression, relative to StallPosition."""
+            match = re.search(expr, stall)
+            self.assertIsNotNone(match, 'ShrineStall.cs missing offset ' + expr)
+            return match
+
+        daifuku_y = constant('DaifukuBehindCounter')
+        # torii and counter sit on the stall's own ground line (Vector3.zero offsets)
+        self.assertRegex(stall, r'ToriiOffset\s*=\s*Vector3\.zero',
+                          'the torii shares the stall anchor, so its world Y offset is zero')
+        self.assertRegex(stall, r'StallOffset\s*=\s*Vector3\.zero',
+                          'the counter shares the stall anchor, so its world Y offset is zero')
+        kinsuke_match = re.search(r'KinsukeOffset\s*=\s*StallOffset\s*\+\s*new Vector3\([^,]+,\s*([\d.]+)f?\s*/\s*16f\s*,', stall)
+        self.assertIsNotNone(kinsuke_match, "ShrineStall.cs missing a parseable KinsukeOffset Y term")
+        kinsuke_y = float(kinsuke_match.group(1)) / 16.0
+
+        z_torii = 0.0 - constant('ToriiHeightOffGround')
+        z_counter = 0.0 - constant('StallHeightOffGround')
+        z_kinsuke = kinsuke_y - constant('KinsukeHeightOffGround')
+        z_daifuku = daifuku_y - 0.0    # Alexandria manages his depth; this file leaves it alone
+
+        self.assertLess(z_kinsuke, z_counter,
+                         "the bowl must draw in front of the counter it rests on (z = worldY - "
+                         "heightOffGround; raising it without compensating puts it behind, the 2.20.4 bug)")
+        self.assertLess(z_counter, z_daifuku,
+                         'the counter must draw in front of Daifuku, so he reads as standing behind it')
+        self.assertLess(z_daifuku, z_torii,
+                         'the gate must draw behind Daifuku, framing the whole stall')
+
+    def test_diagnostics_and_moves_resolve_the_live_shop_not_the_template(self):
+        """The single most expensive bug of this round: the object SetUpFoyerShop returns is a template
+        that Alexandria Instantiates per foyer load, positioning the clone and leaving the template at the
+        origin. Measuring or moving the template looks exactly like "the shopkeeper does not exist", with
+        nothing in the log to distinguish the two - which cost four builds. FindLiveShop must exist, must
+        match by component and our own prefix (not a "(Clone)" name suffix), must exclude the template
+        explicitly, and must be what the diagnostics report."""
+        stall = self.source('ShrineStall.cs')
+        self.assertIn('private static GameObject FindLiveShop()', stall,
+                       'ShrineStall.cs missing FindLiveShop()')
+        body_start = stall.index('private static GameObject FindLiveShop()')
+        body = stall[body_start:stall.index('private static void LogShopDiagnostics', body_start)]
+        self.assertIn('FindObjectsOfType<CustomShopController>()', body,
+                       'FindLiveShop must find the live shop by component rather than by name suffix')
+        self.assertIn('go == _shopObject', body,
+                       'FindLiveShop must skip the registered template, which never moves off the origin')
+        self.assertIn('ShopPrefix', body,
+                       "FindLiveShop must filter by our own prefix so another mod's breach shop is never moved")
+
+        diag_start = stall.index('private static void LogShopDiagnostics')
+        diag = stall[diag_start:stall.index('private static string FormatSize', diag_start)] \
+            if 'private static string FormatSize' in stall[diag_start:] else stall[diag_start:]
+        self.assertIn('FindLiveShop()', diag,
+                       'LogShopDiagnostics must report the LIVE shop; reporting the template is what made '
+                       'the 2.20.4 run show every child at 0,0')
 
     def test_shopkeeper_diagnostic_logs_the_whole_shop_hierarchy(self):
         """The tester asked for a diagnostic that distinguishes a working stall from one with no visible

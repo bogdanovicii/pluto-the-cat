@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.20.5 (test build, not released)
+- **The Shrine Stall's shopkeeper finally stands at his own stall.** For five builds the mod held the wrong object: `SetUpFoyerShop` returns a *template*, which Alexandria instantiates on every Breach load, positioning the **clone** and leaving the template at the world origin forever. So `pluto_stall` moved something nothing renders, and the diagnostics measured it too — which is why 2.20.4 reported Daifuku, the three item points and the speech point all at 0,0 while the props sat correctly at the stall. Daifuku was healthy the whole time; he was standing on a template. The mod now finds the live shop in the scene and moves and inspects that.
+- **The stall is composed around the shopkeeper instead of three tiles to his left.** The gate and counter are now centred on him, so he stands behind his counter and the gate frames both — previously only the gate's left pillar was visible, with its right pillar hidden behind the counter.
+- **Kinsuke's bowl no longer sorts behind everything.** Depth here is `z = worldY − heightOffGround`, so raising the bowl a tile to sit on the counter also pushed it a tile backwards and swamped its depth value. Its height is now compensated for, and the draw order is bowl, counter, Daifuku, gate, front to back.
+- The bowl also moved 0.9 tiles right of the counter centre, so it rests on the surface instead of hanging off the end.
+- The stall's footprint report now measures the drawn sprite edges rather than just the anchors, so it no longer understates how wide the stall is.
+
 ## 2.20.4 (test build, not released)
 
 - **Fix: Daifuku still didn't render, even after 2.20.3 placed him at the right position.** The torii

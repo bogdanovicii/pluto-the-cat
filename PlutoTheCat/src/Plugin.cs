@@ -17,7 +17,7 @@ namespace PlutoTheCat
     {
         public const string GUID = "bogdan.etg.plutothecat";
         public const string NAME = "Pluto The Cat";
-        public const string VERSION = "2.20.4";
+        public const string VERSION = "2.20.5";
 
         // Embedded-resource roots (RootNamespace + folder path, '/' separated).
         public const string SPRITE_ROOT = "PlutoTheCat/Resources/SpriteRoot";
