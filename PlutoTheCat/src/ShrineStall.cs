@@ -348,6 +348,23 @@ namespace PlutoTheCat
 
                 MoveStall(target);
             });
+
+            // Read-only: logs where the player stands so layout landmarks (the Breach shop door, the
+            // walkway) can be measured in world tiles without moving anything.
+            ETGModConsole.Commands.AddUnit("pluto_where", args =>
+            {
+                PlayerController player = GameManager.HasInstance ? GameManager.Instance.PrimaryPlayer : null;
+                if (player == null)
+                {
+                    Plugin.Log("pluto_where: no player found");
+                    return;
+                }
+                Vector2 at = player.CenterPosition;
+                Vector2 feet = player.specRigidbody != null ? player.specRigidbody.UnitBottomCenter : at;
+                Plugin.Log("pluto_where: center " + FormatPos(new Vector3(at.x, at.y, 0f))
+                    + " feet " + FormatPos(new Vector3(feet.x, feet.y, 0f))
+                    + " stall " + FormatPos(PlutoConfig.StallPosition));
+            });
         }
 
         /// <summary>

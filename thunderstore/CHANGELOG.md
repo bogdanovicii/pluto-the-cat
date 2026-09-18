@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.20.7 (test build, not released)
+- **The Shrine Stall stocks its items again.** Its loot table was created bare, which leaves the table's list of included sub-tables null. When a live shop set itself up in the Breach, compiling that table threw a NullReferenceException and no items were ever stocked. This stayed hidden until 2.20.6 because until then no live shop existed. The table is now created with Alexandria's `LootUtility.CreateLootTable()`, which initialises both lists. (Confirmed from 11 Steam-machine logs: the exception appeared in every run with a live shop and in no other run.)
+- `pluto_stall stock` logs the loot table and what each item slot holds. A probe also logs the stock about 1.5 s after character select.
+- New `pluto_where` console command: logs where the player is standing, for measuring the Breach shop door. It moves nothing.
+- Known: items still sit at the old anchors, two of them past the counter's right edge. The stall's art and layout are being redesigned separately.
+
 ## 2.20.6 (test build, not released)
 - **The Shrine Stall now appears on your first visit to the Breach**, not only after coming back from a run. The event Alexandria uses to place Breach shops is raised when the title screen's controller wakes — and the title screen *is* the Breach, so it fires at launch, before this mod has registered its shop. Alexandria placed nothing of ours, and starting a run does not reload the scene, so it never tried again. The mod now notices the Breach is already up when it registers and triggers Alexandria's own placement straight away. (Diagnosed and confirmed on the Steam machine with `load_level tt_foyer`, which placed the shop correctly on the first reload.)
 - **`pluto_stall` moves now survive the next Breach load.** A move made before the shop existed was only applied to the live copy, not to the template Alexandria places from, so the next load put the stall back where it started. The template is now updated on every move, and each Breach load also re-checks the live shop against the configured position.

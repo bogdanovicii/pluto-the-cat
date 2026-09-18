@@ -305,6 +305,18 @@ class ShrineStallWiringTests(unittest.TestCase):
         self.assertIn('BraveTime.DeltaTime', stall,
                        'the flipbook must advance on BraveTime.DeltaTime, like the rest of this codebase')
 
+    def test_where_command_is_read_only(self):
+        """2.20.7: pluto_where measures landmarks (the Breach shop door) for the redesign's collision
+        work. It must log the player's position and must never move the stall."""
+        stall = self.source('ShrineStall.cs')
+        m = re.search(r'AddUnit\("pluto_where", args =>(.*?)\n            \}\);', stall, re.S)
+        self.assertIsNotNone(m, 'ShrineStall.cs must register a pluto_where console command')
+        body = m.group(1)
+        self.assertIn('PrimaryPlayer', body, 'pluto_where must read the live player')
+        self.assertIn('Plugin.Log(', body, 'pluto_where must log what it measured')
+        for mover in ('MoveStall', 'SetBreachOffset', 'PersistStallPosition', '.position ='):
+            self.assertNotIn(mover, body, 'pluto_where must not move or save anything (%s)' % mover)
+
     def test_stall_placement_command(self):
         """2.20.1: the (10.5, 22.1) launch default ran the shrine stall off-screen in the Breach (user
         report). This asserts the fix has three real, independently-checkable parts: a better default,
